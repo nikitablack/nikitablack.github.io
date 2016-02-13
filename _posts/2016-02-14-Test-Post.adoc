@@ -3,6 +3,8 @@
 
 Hello World!
 
+[%hardbreaks]
+
 [[app-listing]]
 [source,cpp]
 .Main.cpp
