@@ -1,17 +1,36 @@
 = Test Post
-:hp-tags: c++, test
+:hp-tags: c++17, test
 
 Hello World!
 
+
 '''
-test test
+<<<
+
+test test test
 
 [[app-listing]]
 [source,cpp]
 .Main.cpp
 ----
-while(true)
-{
-	int i{42};
-}
+// Main.cpp
+// A sample C++ file highlighted with source filter.
+// This filter does a lot more languages.
+#include "tricks.h"
+using namespace std;
+
+int alpha(int &p, Framework &f) {
+    the->setcolor("red");
+    float x1= ( f.p2x(p+1) ) - ( f.dC() / 2 );
+    switch ( p % 4 ) { // Just some random code.
+       case 0:
+           the->line(x1, yb, x2, y0);
+           break;
+       case 1:
+           the->line(x1, y0, x2, yb);
+           break;
+    } // end of switch block
+    the->setwidth(0);
+    return 0; // Don't expect this to compile.
+} //end fun alpha
 ----
