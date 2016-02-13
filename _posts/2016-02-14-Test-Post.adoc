@@ -1,3 +1,14 @@
 = Test Post
+:hp-tags: c++, test
 
 Hello World!
+
+[[app-listing]]
+[source,cpp]
+.Main.cpp
+----
+while(true)
+{
+	int i{42};
+}
+----
