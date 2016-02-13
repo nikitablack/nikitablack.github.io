@@ -4,7 +4,7 @@
 Hello World!
 
 [[app-listing]]
-[source,cpp]
+[source,cc]
 .Main.cpp
 ----
 while(true)
