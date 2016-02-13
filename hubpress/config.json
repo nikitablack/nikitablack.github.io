@@ -1,10 +1,1 @@
-{
-  "meta": {
-    "username": "nikitablack",
-    "repositoryName": "nikitablack.github.io",
-    "branch": "master"
-  },
-  "theme": {
-    "name": "Casper"
-  }
-}
+{"meta":{"username":"nikitablack","repositoryName":"nikitablack.github.io","branch":"master"},"site":{"title":"Simply about complex","description":"c++, graphics and stuff","logo":"Logo","cover":"Image","postsPerPage":"5","disqus":"nikitablack","url":"https://nikitablack.github.io"},"socialnetwork":{},"theme":{"name":"Casper","url":"//nikitablack.github.io/themes/Casper"}}
