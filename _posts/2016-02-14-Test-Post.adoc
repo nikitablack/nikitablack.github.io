@@ -1,9 +1,9 @@
 = Test Post
 :hp-tags: c++17, test
 
-Hello World!
-
 image::cover.png[]
+
+Hello World!
 
 '''
 
