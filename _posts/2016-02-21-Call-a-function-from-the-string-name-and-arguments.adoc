@@ -17,3 +17,13 @@ I'll not describe how I'm receiving this string as well how I'm parsing it, but 
 { "foo", "42", "10.5" }
 ----
 Having this I need somehow call a correct function and pass a correct number of parameters with a correct type.
+
+There's no way to call an unknown function knowing only a name. At least I don't know such a way. So in order to call something I need first register it. I have a wrapper class `Cheat` for my function and a helper function to create an instance:
+[source,c]
+----
+template<typename ...Args>
+std::shared_ptr<CheatBase> makeCheat(void(*funcPtr)(Args... arguments))
+{
+	return std::make_shared<Cheat<Args...>>(funcPtr);
+}
+----
