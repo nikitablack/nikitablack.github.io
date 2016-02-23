@@ -31,4 +31,6 @@ The registration is very simple - I store this cheat in `std::map` where the key
 ----
 myMap["foo"] = makeCheat(&foo);
 ----
-Thanks to type deduction I don't need to provide template parameters to function.
+Thanks to type deduction I don't need to provide template parameters for the function.
+
+NOTE: Here for simplcity I'm passing arguments by value. The better approach is to use http://en.cppreference.com/w/cpp/utility/forward[perfect forwarding]
