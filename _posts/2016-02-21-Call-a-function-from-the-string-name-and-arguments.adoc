@@ -1,3 +1,4 @@
 = Call a function from the string name and arguments
 :hp-tags: c++
 
+Recently I had an interesting task - a cheat system. All the system should do is to call functions during apllication (in my case - a game) run.
