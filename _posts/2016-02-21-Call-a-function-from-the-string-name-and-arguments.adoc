@@ -35,3 +35,5 @@ myMap["foo"] = makeCheat(&foo);
 Thanks to type deduction I don't need to provide template parameters for the function.
 
 NOTE: Here for simplcity I'm passing arguments by value. The better approach is to use http://en.cppreference.com/w/cpp/utility/forward[perfect forwarding]
+
+That was boring. But now the interesting part - the cheat implementation. 
