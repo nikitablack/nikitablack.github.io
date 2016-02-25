@@ -60,3 +60,11 @@ private:
 <1> The only data member is a pointer to a function which I need to call.
 
 NOTE: For simplcity I'm the only functions that can be passed are global or static functions or lambdas without capture (such a lambda can be casted to function pointer). But member functions can be edded with additional template argument and a little code.
+
+The function pointer is passed in cheat constructor:
+[source,cpp]
+----
+Cheat(void(* const funcPtr)(Args...)) : func{ funcPtr }
+{
+}
+----
