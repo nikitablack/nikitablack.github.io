@@ -1,7 +1,7 @@
 = Call a function from the string name and arguments
 :hp-tags: c++
 
-Recently I had an interesting task - a cheat system. All the system should do is to call functions during apllication (in my case - a game) run through a console command (game console). Functions can accept different number of arguments. In simple words the system should be able to call a function:
+Recently I had an interesting task on my work - creation of a cheat system. All the system should do is to call functions during apllication run (in my case - a game) through a console command (game console). Functions can accept different number of arguments. In simple words the system should be able to call a function:
 
 [source,cpp]
 ----
@@ -12,14 +12,14 @@ with a console command:
 ----
 foo 42 10.5
 ----
-I'll not describe how I'm receiving this string as well how I'm parsing it, but at some point I'm operating with a vector of strings where the first element - the name of the function, like this:
+I'll not describe in this post how I'm receiving this string as well how I'm parsing it. Let's assume that I'm operating with a vector of strings where the first element - the name of the function and the rest - function parameters:
 [source,cpp]
 ----
 { "foo", "42", "10.5" }
 ----
 Having this I need somehow call a correct function and pass a correct number of parameters with a correct type.
 
-There's no way to call an unknown function knowing only a name. At least I don't know such a way. So in order to call something I need first register it. I have a wrapper class `Cheat` (more on this later) for my function and a helper to create an instance of it:
+There's no way to call an unknown function by it's name. At least I don't know such a way. So in order to call something I need first register it. I have a wrapper class for my function and a helper to create an instance of it:
 [source,cpp]
 ----
 template<typename ...Args>
@@ -28,7 +28,7 @@ std::shared_ptr<CheatBase> makeCheat(void(*funcPtr)(Args... arguments))
 	return std::make_shared<Cheat<Args...>>(funcPtr);
 }
 ----
-The registration is very simple - I store this cheat in `std::map` where the key is the name:
+The returned `CheatBase` (more on this later) is that wrapper I wrote about. And the registration is very simple - I store this cheat in `std::map` where the key is the name of the cheat:
 ----
 myMap["foo"] = makeCheat(&foo);
 ----
@@ -36,4 +36,22 @@ Thanks to type deduction I don't need to provide template parameters for the fun
 
 NOTE: Here for simplcity I'm passing arguments by value. The better approach is to use http://en.cppreference.com/w/cpp/utility/forward[perfect forwarding]
 
-That was boring. But now the interesting part - the cheat implementation. 
+That was pretty standard and boring. And now the interesting part - the actual cheat implementation. Since I'm having a deal with functions with different signatures and I need to store them somehow and somewhere I can't just use raw function pointers or http://en.cppreference.com/w/cpp/utility/functional/function[std::function] - every object will have a differnt type, like `std::function<bool()>` or `std::function<bool(int, float)>` etc. I need a base class or interface which I'll operate on:
+[source,cpp]
+----
+class CheatBase
+{
+public:
+	virtual ~CheatBase() {};
+	virtual bool call(const std::vector<std::string>& cheatParams) = 0;
+};
+----
+It's an abstract class with pure virtual function which takes an array of parameters as strings which will be converted to corresponding types. The concrete class is a templated class ans since I don't know the number of arguments before I'll use http://en.cppreference.com/w/cpp/language/parameter_pack[variadic templates]:
+[source,cpp]
+----
+template<typename ...Args>
+class Cheat : public CheatBase
+{
+	// implementation
+}
+----
