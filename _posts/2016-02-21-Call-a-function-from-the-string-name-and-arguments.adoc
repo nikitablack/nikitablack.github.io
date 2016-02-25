@@ -75,7 +75,7 @@ The second public method is `call` override:
 ----
 bool call(const std::vector<std::string>& cheatParams) override
 {
-	if (sizeof...(Args) != cheatParams.size())
+	if (sizeof...(Args) != cheatParams.size()) # <1>
 	{
 		// if a number of passed arguments is not equal to a number of parameters declared in cheat return false - this is an error.
 		return false;
@@ -85,7 +85,25 @@ bool call(const std::vector<std::string>& cheatParams) override
 
 	return true;
 }
-
 ----
+<1> http://en.cppreference.com/w/cpp/language/sizeof...[`sizeof...(Args)`] return a number of arguments of parameter pack. This operator also can be used during compile-time.
+
 NOTE: Instead of `call()` function I could use `operator()()`.
 
+All magic happens in `callHelper()` function.
+
+[source,cpp]
+----
+template <std::size_t... Idx>
+void callHelper(const std::vector<std::string>& strArgs, std::index_sequence<Idx...>)
+{
+	(func)(fromString<Args>(getStringFromArray<Idx>(strArgs))...);
+}
+
+template <std::size_t N>
+std::string getStringFromArray(const std::vector<std::string>& strArgs)
+{
+	return strArgs[N];
+}
+----
+`callHelper()` is a variadic templated function which accepts a vector with string arguments that should be converted to appropriated type and a http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. What are this integers? Why?
