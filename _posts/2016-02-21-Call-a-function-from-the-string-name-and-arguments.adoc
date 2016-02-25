@@ -68,3 +68,24 @@ Cheat(void(* const funcPtr)(Args...)) : func{ funcPtr }
 {
 }
 ----
+
+The second public method is `call` override:
+
+[source,cpp]
+----
+bool call(const std::vector<std::string>& cheatParams) override
+{
+	if (sizeof...(Args) != cheatParams.size())
+	{
+		// if a number of passed arguments is not equal to a number of parameters declared in cheat return false - this is an error.
+		return false;
+	}
+
+	callHelper(cheatParams, std::index_sequence_for<Args...>{});
+
+	return true;
+}
+
+----
+NOTE: Instead of `call()` function I could use `operator()()`.
+
