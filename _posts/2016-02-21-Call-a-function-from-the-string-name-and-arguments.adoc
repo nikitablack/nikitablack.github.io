@@ -131,4 +131,19 @@ typename std::enable_if<std::is_same<T, float>::value, float>::type fromString(c
 	return std::stof(str);
 }
 ----
-The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good article with links can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog].
+The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good article with links can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog]. But in two words - `std::is_same<T, int>::value` return `true` if `T` is `int` and `false` overwise. Next, `std::enable_if<true, int>::type` will return `int` and `std::enable_if<false, int>::type` simply will not compile. That means I'll get a *compile time* error if I'll use a type for which there's no overload exist!
+Knowing this I can create a first version od `callHelper()` function:
+[source,cpp]
+----
+void callHelper(const std::vector<std::string>& strArgs)
+{
+	foo(fromString<Args>(somehow_get_string_from_array())...);
+}
+----
+`Args` is a parameter pack and `fromString<Args>()...` is a parameter pack expansion. For my case with `int` and `float` this will become:
+----
+void callHelper(const std::vector<std::string>& strArgs)
+{
+	foo(fromString<int>(somehow_get_string_from_array()), fromString<float>(somehow_get_string_from_array()));
+}
+----
