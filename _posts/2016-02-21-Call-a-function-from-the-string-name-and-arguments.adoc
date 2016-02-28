@@ -116,3 +116,4 @@ But I have only vector of strings `{"42", "10.5"}`. So I need some conversion fu
 ----
 foo(fromString("42"), fromString("10.5"));
 ----
+In order to convert to correct type `fromString()` should be a templated function with specialization for *every* type I need.
