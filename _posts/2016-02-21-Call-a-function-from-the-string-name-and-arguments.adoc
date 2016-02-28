@@ -137,14 +137,14 @@ Knowing this I can create a first version od `callHelper()` function:
 ----
 void callHelper(const std::vector<std::string>& strArgs)
 {
-	foo(fromString<Args>(somehow_get_string_from_array())...);
+	foo(fromString<Args>(getStringFromArray(strArgs))...);
 }
 ----
 `Args` is a parameter pack and `fromString<Args>()...` is a parameter pack expansion. For my case with `int` and `float` this will become:
 ----
 void callHelper(const std::vector<std::string>& strArgs)
 {
-	foo(fromString<int>(somehow_get_string_from_array()), fromString<float>(somehow_get_string_from_array()));
+	foo(fromString<int>(getStringFromArray(strArgs)), fromString<float>(getStringFromArray(strArgs)));
 }
 ----
-I already have two `fromString()` overloads for my types.
+I already have two `fromString()` overloads for my types. Now the trick is to pass the correct string, i.e. implement 
