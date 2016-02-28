@@ -131,3 +131,4 @@ typename std::enable_if<std::is_same<T, float>::value, float>::type fromString(c
 	return std::stof(str);
 }
 ----
+The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good article with links can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog].
