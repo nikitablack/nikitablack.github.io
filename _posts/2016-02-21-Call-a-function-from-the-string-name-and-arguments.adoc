@@ -147,3 +147,4 @@ void callHelper(const std::vector<std::string>& strArgs)
 	foo(fromString<int>(somehow_get_string_from_array()), fromString<float>(somehow_get_string_from_array()));
 }
 ----
+I already have two `fromString()` overloads for my types.
