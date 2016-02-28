@@ -147,4 +147,4 @@ void callHelper(const std::vector<std::string>& strArgs)
 	foo(fromString<int>(getStringFromArray(strArgs)), fromString<float>(getStringFromArray(strArgs)));
 }
 ----
-I already have two `fromString()` overloads for my types. Now the trick is to pass the correct string, i.e. implement 
+I already have two `fromString()` overloads for my types. Now the trick is to pass the correct string, i.e. implement `getStringFromArray()` function.
