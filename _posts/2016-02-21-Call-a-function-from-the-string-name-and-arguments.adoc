@@ -106,4 +106,13 @@ std::string getStringFromArray(const std::vector<std::string>& strArgs)
 	return strArgs[N];
 }
 ----
-`callHelper()` is a variadic templated function which accepts a vector with string arguments that should be converted to appropriated type and a http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. What are this integers? Why?
+`callHelper()` is a variadic templated function which accepts a vector with string arguments that should be converted to appropriated type and a http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. What are this integers? Why? I can better explain it if I'll start from the end. In the very end I need to call my function with correct parameters:
+[source,cpp]
+----
+foo(42, 10.5);
+----
+But I have only vector of strings `{"42", "10.5"}`. So I need some conversion function that will return a correct type from the string. Moreover I need to call this function several times - once for each parameter:
+[source,cpp]
+----
+foo(fromString("42"), fromString("10.5"));
+----
