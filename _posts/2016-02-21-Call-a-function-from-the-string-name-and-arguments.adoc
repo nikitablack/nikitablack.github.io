@@ -116,4 +116,18 @@ But I have only vector of strings `{"42", "10.5"}`. So I need some conversion fu
 ----
 foo(fromString("42"), fromString("10.5"));
 ----
-In order to convert to correct type `fromString()` should be a templated function with specialization for *every* type I need.
+In order to convert to correct type `fromString()` should be a templated function with overload for *every* type I need. For my case with `int` and `float` the two overloads are:
+[source,cpp]
+----
+template<typename T>
+typename std::enable_if<std::is_same<T, int>::value, int>::type fromString(const std::string& str)
+{
+	return std::stoi(str);
+}
+
+template<typename T>
+typename std::enable_if<std::is_same<T, float>::value, float>::type fromString(const std::string& str)
+{
+	return std::stof(str);
+}
+----
