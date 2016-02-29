@@ -140,11 +140,42 @@ void callHelper(const std::vector<std::string>& strArgs)
 	foo(fromString<Args>(getStringFromArray(strArgs))...);
 }
 ----
+
 `Args` is a parameter pack and `fromString<Args>()...` is a parameter pack expansion. For my case with `int` and `float` this will become:
+
+[source,cpp]
 ----
 void callHelper(const std::vector<std::string>& strArgs)
 {
 	foo(fromString<int>(getStringFromArray(strArgs)), fromString<float>(getStringFromArray(strArgs)));
 }
 ----
+
 I already have two `fromString()` overloads for my types. Now the trick is to pass the correct string, i.e. implement `getStringFromArray()` function.
+The naive approach would be to remove this function completely and just use `strArgs` together with some counter which will be incremented every time I access vector element:
+
+[source,cpp]
+----
+void callHelper(const std::vector<std::string>& strArgs)
+{
+	size_t counter{0};
+	foo(fromString<int>(strArgs[counter++], fromString<float>(strArgs[counter++]));
+}
+----
+
+Unfortunately this not works. The C++ standard does not specify the order of function arguments eveluation. That means it can differ from compiler to compiler. And it possible to have this setup:
+
+[source,cpp]
+----
+foo(fromString<int>(strArgs[1], fromString<float>(strArgs[0])); // will pass wrong arguments
+----
+
+I need instead robust solution that will work with all compilers. No imagine if I'll rewrite `callHelper` slightly:
+[source,cpp]
+----
+void callHelper(const std::vector<std::string>& strArgs)
+{
+	foo(fromString<int>(getStringFromArray<0>(strArgs)), fromString<float>(getStringFromArray<1>(strArgs)));
+}
+----
+Notice the extra template parameters `<0>` and `<1>`.
