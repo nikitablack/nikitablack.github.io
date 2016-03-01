@@ -175,4 +175,37 @@ void callHelper(const std::vector<std::string>& strArgs)
 }
 ----
 
-Notice the extra template parameters <0> and <1>.
+Notice the extra template parameters <0> and <1>. And the definition of `getStringFromArray()` function:
+
+[source,cpp]
+----
+template <std::size_t N>
+std::string getStringFromArray(const std::vector<std::string>& strArgs)
+{
+	return strArgs[N];
+}
+----
+
+Now no matter what is the order this function will return correct string, since `<0>` and `<1>` template paameters will always be in right order. The next question is how to ensure this order of integers? And here http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers] comes to the resque. For the moment let's not think how we create one but see what happens when the function receives it:
+
+[source,cpp]
+----
+template <std::size_t... Idx>
+void callHelper(const std::vector<std::string>& strArgs, std::index_sequence<Idx...>)
+{
+	(func)(fromString<Args>(getStringFromArray<Idx>(strArgs))...);
+}
+----
+
+The function itself templated with http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter[non-type] parameter pack, in simple words the template parameters are integers with number equal to the number of `Args` (class parameter pack). This `Idx` sequence will be deduced from the function second nameless argument `std::index_sequence<Idx...>`. So the only reason for this second argument is to provide compile-time integers. In the function's body the two parameter packs - `Args` and `Idx` will be expanded together simultaneously. In my case everything will be expanded to:
+
+[source,cpp]
+----
+template <0, 1>
+void callHelper(const std::vector<std::string>& strArgs, std::index_sequence<0, 1>)
+{
+	(func)(fromString<int>(getStringFromArray<0>(strArgs)), fromString<float>(getStringFromArray<1>(strArgs)));
+}
+----
+
+Amazing, isn't it?
