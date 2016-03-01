@@ -209,3 +209,10 @@ void callHelper(const std::vector<std::string>& strArgs, std::index_sequence<0, 
 ----
 
 Amazing, isn't it?
+
+There's last piece of puzzle left - how to get integer sequence? In C++11 this should be done manually. https://ngathanasiou.wordpress.com/2015/02/19/compile-time-integer-sequences/[Here] the great explanation how to do this. But happy owners of c++14 compliant compiler can use http://en.cppreference.com/w/cpp/utility/integer_sequence[ standard sequence of integers]. I'll put here explanation directly from the link:
+
+__
+A helper alias template std::index_sequence_for is defined to convert any type parameter pack into an index sequence of the same length.
+__
+
