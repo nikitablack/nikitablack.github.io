@@ -1,7 +1,7 @@
 = Call a function from the string name and arguments
 :hp-tags: c++
 
-Recently I had an interesting task on my work - creation of a cheat system. All the system should do is to call functions during apllication run (in my case - a game) through a console command (game console). Functions can accept different number of arguments. In simple words the system should be able to call a function:
+Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments. In other words the system should be able to call a function:
 
 [source,cpp]
 ----
@@ -9,17 +9,35 @@ bool foo(int, float);
 ----
 
 with a console command:
+
 ----
 foo 42 10.5
 ----
-I'll not describe in this post how I'm receiving this string as well how I'm parsing it. Let's assume that I'm operating with a vector of strings where the first element - the name of the function and the rest - function parameters:
+
+I'll not describe in this post how I'm receiving this string as well how I'm parsing it. Let's assume that I'm operating with a vector of strings where the first element - the name of the function and the rest - function parameters. So at some point I have this vector:
+
 [source,cpp]
 ----
 { "foo", "42", "10.5" }
 ----
-Having this I need somehow call a correct function and pass a correct number of parameters with a correct type.
 
-There's no way to call an unknown function by it's name. At least I don't know such a way. So in order to call something I need first register it. I have a wrapper class for my function and a helper to create an instance of it:
+And I need somehow call a correct function and pass a correct number of parameters with a correct type.
+
+There's no way to call an unknown function just knowing it's name in C++. At least I don't know such a way. So in order to call something I need first register it. By registration I mean storing of a function pointer together with some string - it's name. The `std::map` is a good candidate for that. But I don't store raw pointer. Instead, I have a wrapper class, called `Cheat`, for my function. Cheat is a templated class with function arguments types as template parameters. It's declaration looks like this:
+
+[source,cpp]
+----
+template<typename ...Args>
+class Cheat : public CheatBase
+{
+	// implementation
+private:
+	void(* const func)(Args...); # <1>
+}
+----
+
+Here `func` is our function pointer. As you already guessed, it's not possible to store instances of this class directly in `std::map` because for every new function with a new signature the `Cheat` class type will be different. For example `Cheat<int>` for the function taking one `int` parameter and  `Cheat<int, float>` for the function takind an `int` and a `float`.
+
 [source,cpp]
 ----
 template<typename ...Args>
@@ -28,6 +46,7 @@ std::shared_ptr<CheatBase> makeCheat(void(*funcPtr)(Args... arguments))
 	return std::make_shared<Cheat<Args...>>(funcPtr);
 }
 ----
+
 The returned `CheatBase` (more on this later) is that wrapper I wrote about. And the registration is very simple - I store this cheat in `std::map` where the key is the name of the cheat:
 ----
 myMap["foo"] = makeCheat(&foo);
