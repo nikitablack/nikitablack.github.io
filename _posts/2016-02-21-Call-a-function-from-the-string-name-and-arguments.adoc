@@ -110,7 +110,7 @@ bool call(const std::vector<std::string>& cheatParams) override
 
 
 
-All magic happens in `callHelper()` function.
+All the magic happens in `callHelper()` function.
 
 [source,cpp]
 ----
