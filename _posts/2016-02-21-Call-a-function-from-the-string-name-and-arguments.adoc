@@ -40,7 +40,11 @@ private:
 }
 ----
 
-Here `func` is our pointer to function which we need to call later. As you already guessed, it's not possible to store instances of this class directly in `std::map` because for every new function with a new signature the `Cheat` class type will be different. For example `Cheat<int>` for the function taking one `int` parameter and  `Cheat<int, float>` for the function takind an `int` and a `float`. Therefore they all should have common base class. It's very simple:
+Here `func` is our pointer to function which we need to call later.
+
+NOTE: For simplcity the only functions that can be passed are global or static functions or lambdas without capture (such a lambda can be casted to function pointer). But member functions can be added with additional template argument and a little bit of code.
+
+As you already guessed, it's not possible to store instances of this class directly in `std::map` because for every new function with a new signature the `Cheat` class type will be different. For example `Cheat<int>` for the function taking one `int` parameter and  `Cheat<int, float>` for the function takind an `int` and a `float`. Therefore they all should have common base class. It's very simple:
 
 [source,cpp]
 ----
@@ -82,16 +86,12 @@ Btw, the strange looking `template<typename ...Args>` is called a http://en.cppr
 That was pretty standard and boring. And now the interesting part - the actual cheat implementation!
 
 
-
-
-The concrete class is a templated class ans since I don't know the number of arguments before I'll use :
-
  
 
 
 
 
-NOTE: For simplcity I'm the only functions that can be passed are global or static functions or lambdas without capture (such a lambda can be casted to function pointer). But member functions can be edded with additional template argument and a little code.
+
 
 The function pointer is passed in cheat constructor:
 [source,cpp]
