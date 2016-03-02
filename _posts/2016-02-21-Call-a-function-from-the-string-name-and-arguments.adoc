@@ -108,7 +108,7 @@ bool call(const std::vector<std::string>& cheatParams) override
 ----
 <1> http://en.cppreference.com/w/cpp/language/sizeof...[`sizeof...(Args)`] return a number of arguments of parameter pack that was used during `Cheat` class instantiation. This operator also can be used during compile-time.
 
-First we check that we passed correct number of arguments. And all the magic happens in `callHelper()` function.
+First we check that we passed correct number of arguments. And all the magic happens in `callHelper()` function. Don't think about `index_sequence_for<Args...>` for now, we'll come to this later.
 
 [source,cpp]
 ----
