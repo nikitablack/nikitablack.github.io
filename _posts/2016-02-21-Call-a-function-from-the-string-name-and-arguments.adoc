@@ -144,7 +144,7 @@ typename std::enable_if<std::is_same<T, int>::value, int>::type fromString(const
 }
 ----
 
-For the `float` it's similar. The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good article with links can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog]. But in two words - `std::is_same<T, int>::value` return `true` if `T` is `int` and `false` overwise. Next, `std::enable_if<true, int>::type` will return `int` and `std::enable_if<false, int>::type` simply will not compile. That means I'll get a *compile time* error if I'll use a type for which there's no overload exist!
+For the `float` it's similar. The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good explanation can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog]. But in two words - `std::is_same<T, int>::value` return `true` if `T` is `int` and `false` overwise. Next, `std::enable_if<true, int>::type` will return `int` and `std::enable_if<false, int>::type` simply will not compile. That means I'll get a *compile time* error if I'll use a type for which there's no overload exist!
 Knowing this I can create a first version od `callHelper()` function:
 [source,cpp]
 ----
