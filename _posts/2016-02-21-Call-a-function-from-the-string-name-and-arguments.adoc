@@ -216,22 +216,36 @@ void callHelper(const std::vector<std::string>& strArgs, std::index_sequence<Idx
 }
 ----
 
-The function itself now templated with http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter[non-type] parameter pack, in simple words the template parameters are integers and their number is equal to the number of `Args` (`Cheat` class parameter pack). This `Idx` sequence will be deduced from the function's second unnamed argument `std::index_sequence<Idx...>`. Do you see, we even don't have the name for it! The sole reason for this second argument is to provide compile-time integers `...Idx`. In the function's body the two parameter packs - `Args` and `Idx` will be expanded together simultaneously according to http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion[aforementioned rules]. In my case everything will be expanded to:
+The function itself now templated with http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter[non-type] parameter pack, in simple words the template parameters are integers and their number is equal to the number of `Args` (`Cheat` class parameter pack). This `Idx` sequence will be deduced from the function's second unnamed argument `std::index_sequence<Idx...>`. Do you see, we even don't have the name for it! The sole reason for this second argument is to provide compile-time integers `...Idx`. In the function's body the two parameter packs - `Args` and `Idx` will be expanded together simultaneously according to http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion[aforementioned rules]. In our case everything will be expanded to:
 
 [source,cpp]
 ----
-template <0, 1>
+template <0, 1> // this is deduced from the function's second argument
 void callHelper(const std::vector<std::string>& strArgs, std::index_sequence<0, 1>)
 {
-	(func)(fromString<int>(getStringFromArray<0>(strArgs)), fromString<float>(getStringFromArray<1>(strArgs)));
+	foo(fromString<int>(getStringFromArray<0>(strArgs)), fromString<float>(getStringFromArray<1>(strArgs)));
 }
 ----
 
 Amazing, isn't it?
 
-There's last piece of puzzle left - how to get integer sequence? In C++11 this should be done manually. https://ngathanasiou.wordpress.com/2015/02/19/compile-time-integer-sequences/[Here] the great explanation how to do this. But happy owners of c++14 compliant compiler can use http://en.cppreference.com/w/cpp/utility/integer_sequence[ standard sequence of integers]. I'll put here explanation directly from the link:
+  
+
+There's a last piece of puzzle left - how to get this integer sequence? The bad news - in C++11 this should be done manually.  https://ngathanasiou.wordpress.com/2015/02/19/compile-time-integer-sequences[Here] the great explanation how to do this. And actually on my work I have to use this solution.
+
+But the happy owners of C++14 compliant compiler (and me in this post) can use http://en.cppreference.com/w/cpp/utility/integer_sequence[standard sequence of integers]. I'll put here explanation directly from the link:
 
 __
 A helper alias template std::index_sequence_for is defined to convert any type parameter pack into an index sequence of the same length.
 __
 
+Putting this all together we can call our helper like this:
+
+[source,cpp]
+----
+callHelper(cheatParams, std::index_sequence_for<Args...>{});
+----
+
+Where, again, `Args...` is a `Cheat` class parameter pack.
+
+The source code together with usage example can be found https://github.com/nikitablack/cpp-tests/blob/master/StringArgsFunction/StringArgsFunction.cpp[here].
