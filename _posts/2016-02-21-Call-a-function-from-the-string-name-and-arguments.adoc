@@ -36,7 +36,27 @@ private:
 }
 ----
 
-Here `func` is our function pointer. As you already guessed, it's not possible to store instances of this class directly in `std::map` because for every new function with a new signature the `Cheat` class type will be different. For example `Cheat<int>` for the function taking one `int` parameter and  `Cheat<int, float>` for the function takind an `int` and a `float`.
+Here `func` is our function pointer. As you already guessed, it's not possible to store instances of this class directly in `std::map` because for every new function with a new signature the `Cheat` class type will be different. For example `Cheat<int>` for the function taking one `int` parameter and  `Cheat<int, float>` for the function takind an `int` and a `float`. Therefore they all should have common base class. It's very simple:
+
+[source,cpp]
+----
+class CheatBase
+{
+public:
+	virtual ~CheatBase() {};
+	virtual bool call(const std::vector<std::string>& cheatParams) = 0;
+};
+----
+
+It's an abstract class with pure virtual function which takes an array of parameters as strings which will be converted to corresponding types.
+
+
+
+
+
+
+
+
 
 [source,cpp]
 ----
@@ -47,6 +67,8 @@ std::shared_ptr<CheatBase> makeCheat(void(*funcPtr)(Args... arguments))
 }
 ----
 
+
+
 The returned `CheatBase` (more on this later) is that wrapper I wrote about. And the registration is very simple - I store this cheat in `std::map` where the key is the name of the cheat:
 ----
 myMap["foo"] = makeCheat(&foo);
@@ -56,16 +78,12 @@ Thanks to type deduction I don't need to provide template parameters for the fun
 NOTE: Here for simplcity I'm passing arguments by value. The better approach is to use http://en.cppreference.com/w/cpp/utility/forward[perfect forwarding]
 
 That was pretty standard and boring. And now the interesting part - the actual cheat implementation. Since I'm having a deal with functions with different signatures and I need to store them somehow and somewhere I can't just use raw function pointers or http://en.cppreference.com/w/cpp/utility/functional/function[std::function] - every object will have a differnt type, like `std::function<bool()>` or `std::function<bool(int, float)>` etc. I need a base class or interface which I'll operate on:
-[source,cpp]
-----
-class CheatBase
-{
-public:
-	virtual ~CheatBase() {};
-	virtual bool call(const std::vector<std::string>& cheatParams) = 0;
-};
-----
-It's an abstract class with pure virtual function which takes an array of parameters as strings which will be converted to corresponding types. The concrete class is a templated class ans since I don't know the number of arguments before I'll use http://en.cppreference.com/w/cpp/language/parameter_pack[variadic templates]:
+
+
+
+
+
+ The concrete class is a templated class ans since I don't know the number of arguments before I'll use http://en.cppreference.com/w/cpp/language/parameter_pack[variadic templates]:
 [source,cpp]
 ----
 template<typename ...Args>
