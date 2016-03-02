@@ -156,14 +156,17 @@ void callHelper(const std::vector<std::string>& strArgs)
 }
 ----
 
-As you remember, `Args` is a parameter pack. And `fromString<Args>()...` is a parameter pack expansion. For my case with `int` and `float` this will become:
+As you remember, `Args` is a parameter pack. And `fromString<Args>()...` is a parameter pack expansion. There're http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion[strict rules] how parameter pack is expanded. For our case with `int` and `float` this will become it will be expanded:
+
+[source,cpp]
 ----
 void callHelper(const std::vector<std::string>& strArgs)
 {
 	foo(fromString<int>(getStringFromArray(strArgs)), fromString<float>(getStringFromArray(strArgs)));
 }
 ----
-I already have two `fromString()` overloads for my types. Now the trick is to pass the correct string, i.e. implement `getStringFromArray()` function. The naive approach would be to remove this function completely and just use strArgs together with some counter which will be incremented every time I access vector element:
+
+We already have two `fromString()` overloads for our types. Now the trick is to pass the correct string to them, i.e. implement `getStringFromArray()` function. The naive approach would be to remove this function completely and just use `strArgs` vector together with some counter which will be incremented every time I access vector element:
 
 [source,cpp]
 ----
@@ -174,11 +177,11 @@ void callHelper(const std::vector<std::string>& strArgs)
 }
 ----
 
-Unfortunately this not works. The C++ standard does not specify the order of function arguments eveluation. That means it can differ from compiler to compiler. And it possible to have this setup:
+Unfortunately this will not work. The C++ standard does not specify the http://en.cppreference.com/w/cpp/language/eval_order[order of function arguments eveluation]. That means it can differ from compiler to compiler. And it's absolutelly possible to have this setup:
 
 [source,cpp]
 ----
-foo(fromString<int>(strArgs[1]), fromString<float>(strArgs[0])); // will pass wrong arguments
+foo(fromString<int>(strArgs[1]), fromString<float>(strArgs[0])); // notice how we pass wrong arguments
 ----
 
 I need instead robust solution that will work with all compilers. No imagine if I’ll rewrite callHelper slightly:
