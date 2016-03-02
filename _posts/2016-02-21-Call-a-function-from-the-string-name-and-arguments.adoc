@@ -184,7 +184,7 @@ Unfortunately this will not work. The C++ standard does not specify the http://e
 foo(fromString<int>(strArgs[1]), fromString<float>(strArgs[0])); // notice how we pass wrong arguments
 ----
 
-I need instead robust solution that will work with all compilers. No imagine if I’ll rewrite callHelper slightly:
+We need instead a robust solution that will work with across compilers. Imagine if we’ll rewrite `callHelper` slightly:
 
 [source,cpp]
 ----
@@ -194,7 +194,7 @@ void callHelper(const std::vector<std::string>& strArgs)
 }
 ----
 
-Notice the extra template parameters <0> and <1>. And the definition of `getStringFromArray()` function:
+Notice the extra template parameters `<0>` and `<1>`. And the definition of `getStringFromArray()` function:
 
 [source,cpp]
 ----
@@ -205,7 +205,7 @@ std::string getStringFromArray(const std::vector<std::string>& strArgs)
 }
 ----
 
-Now no matter what is the order this function will return correct string, since `<0>` and `<1>` template paameters will always be in right order. The next question is how to ensure this order of integers? And here http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers] comes to the resque. For the moment let's not think how we create one but see what happens when the function receives it:
+Now no matter what was the evaluation order our function will return correct string, since `<0>` and `<1>` are template parameters and will always be in right sequence. And this order is guaranteed by http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. For the moment let's not think how we create one but see what happens when the function receives it:
 
 [source,cpp]
 ----
