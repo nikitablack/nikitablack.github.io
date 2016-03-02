@@ -144,8 +144,10 @@ typename std::enable_if<std::is_same<T, int>::value, int>::type fromString(const
 }
 ----
 
-For the `float` it's similar. The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good explanation can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog]. But in two words - `std::is_same<T, int>::value` return `true` if `T` is `int` and `false` overwise. Next, `std::enable_if<true, int>::type` will return `int` and `std::enable_if<false, int>::type` simply will not compile. That means I'll get a *compile time* error if I'll use a type for which there's no overload exist!
-Knowing this I can create a first version od `callHelper()` function:
+For the `float` it's similar. The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good explanation can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog]. In shorts - `std::is_same<T, int>::value` return `true` if `T` is `int` and `false` overwise. Next, `std::enable_if<true, int>::type` will return `int` and `std::enable_if<false, int>::type` simply will not compile. That mean we'll get a *compile time* error if we'll use a type for which there's no overload exist! Awesome, tis types of errors are much much better than exception during runtime.
+
+Knowing all this we can create a first version of our `callHelper()` function:
+
 [source,cpp]
 ----
 void callHelper(const std::vector<std::string>& strArgs)
@@ -153,6 +155,7 @@ void callHelper(const std::vector<std::string>& strArgs)
 	foo(fromString<Args>(getStringFromArray(strArgs))...);
 }
 ----
+
 `Args` is a parameter pack and `fromString<Args>()...` is a parameter pack expansion. For my case with `int` and `float` this will become:
 ----
 void callHelper(const std::vector<std::string>& strArgs)
