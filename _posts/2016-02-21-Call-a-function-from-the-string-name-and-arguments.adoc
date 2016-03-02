@@ -205,18 +205,18 @@ std::string getStringFromArray(const std::vector<std::string>& strArgs)
 }
 ----
 
-Now no matter what was the evaluation order our function will return correct string, since `<0>` and `<1>` are template parameters and will always be in right sequence. And this order is guaranteed by http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. For the moment let's not think how we create one but see what happens when the function receives it:
+Now no matter what was the evaluation order our function will return correct string, since `<0>` and `<1>` are template parameters and will always be in right sequence. And this order is guaranteed by http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers] that we will use. For the moment let's not think how we create one but see what happens when the function receives it:
 
 [source,cpp]
 ----
 template <std::size_t... Idx>
 void callHelper(const std::vector<std::string>& strArgs, std::index_sequence<Idx...>)
 {
-	(func)(fromString<Args>(getStringFromArray<Idx>(strArgs))...);
+	foo(fromString<Args>(getStringFromArray<Idx>(strArgs))...);
 }
 ----
 
-The function itself templated with http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter[non-type] parameter pack, in simple words the template parameters are integers with number equal to the number of `Args` (class parameter pack). This `Idx` sequence will be deduced from the function second nameless argument `std::index_sequence<Idx...>`. So the only reason for this second argument is to provide compile-time integers. In the function's body the two parameter packs - `Args` and `Idx` will be expanded together simultaneously. In my case everything will be expanded to:
+The function itself now templated with http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter[non-type] parameter pack, in simple words the template parameters are integers and their number is equal to the number of `Args` (`Cheat` class parameter pack). This `Idx` sequence will be deduced from the function's second unnamed argument `std::index_sequence<Idx...>`. Do you see, we even don't have the name for it! The sole reason for this second argument is to provide compile-time integers `...Idx`. In the function's body the two parameter packs - `Args` and `Idx` will be expanded together simultaneously according to http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion[aforementioned rules]. In my case everything will be expanded to:
 
 [source,cpp]
 ----
