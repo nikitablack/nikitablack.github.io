@@ -119,11 +119,13 @@ void callHelper(const std::vector<std::string>& strArgs, std::index_sequence<Idx
 }
 ----
 
-Wow! Looks scary. Actually, not. `callHelper()` is a variadic templated function which accepts a vector with string arguments which should be converted to appropriated types and a http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. What are this integers? Why? I can better explain it if we'll start from the end. In the very end I need to call my function with correct parameters:
+Wow! Looks scary. Actually, not. `callHelper()` is a variadic templated function which accepts a vector with string arguments which should be converted to appropriated types and a http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. What are this integers? Why? I can better explain it if we'll start from the end. Let's stick to `foo(int, type)` function signature to the rest of this post. In the very end I need to call this function with correct parameters, for example:
+
 [source,cpp]
 ----
 foo(42, 10.5);
 ----
+
 But I have only vector of strings `{"42", "10.5"}`. So I need some conversion function that will return a correct type from the string. Moreover I need to call this function several times - once for each parameter:
 [source,cpp]
 ----
