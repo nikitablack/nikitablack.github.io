@@ -117,14 +117,9 @@ void callHelper(const std::vector<std::string>& strArgs, std::index_sequence<Idx
 {
 	(func)(fromString<Args>(getStringFromArray<Idx>(strArgs))...);
 }
-
-template <std::size_t N>
-std::string getStringFromArray(const std::vector<std::string>& strArgs)
-{
-	return strArgs[N];
-}
 ----
-`callHelper()` is a variadic templated function which accepts a vector with string arguments that should be converted to appropriated type and a http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. What are this integers? Why? I can better explain it if I'll start from the end. In the very end I need to call my function with correct parameters:
+
+Wow! Looks scary. Actually, not. `callHelper()` is a variadic templated function which accepts a vector with string arguments which should be converted to appropriated types and a http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. What are this integers? Why? I can better explain it if we'll start from the end. In the very end I need to call my function with correct parameters:
 [source,cpp]
 ----
 foo(42, 10.5);
