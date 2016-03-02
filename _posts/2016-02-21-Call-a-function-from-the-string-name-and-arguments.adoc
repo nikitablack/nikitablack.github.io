@@ -56,7 +56,11 @@ public:
 };
 ----
 
-It's an abstract class with pure virtual function which takes an array of parameters as strings which will be converted to corresponding types. Now we can create cheats like this:
+It's an abstract class with pure virtual function which takes an array of parameters as strings which will be converted to corresponding types.
+
+NOTE: Instead of `call()` function we could use `operator()` function.
+
+Now we can create cheats like this:
 
 [source,cpp]
 ----
@@ -85,23 +89,7 @@ Btw, the strange looking `template<typename ...Args>` is called a http://en.cppr
 
 That was pretty standard and boring. And now the interesting part - the actual cheat implementation!
 
-
- 
-
-
-
-
-
-
-The function pointer is passed in cheat constructor:
-[source,cpp]
-----
-Cheat(void(* const funcPtr)(Args...)) : func{ funcPtr }
-{
-}
-----
-
-The second public method is `call` override:
+The heart of the `Cheat` class is a `call()` function override:
 
 [source,cpp]
 ----
@@ -120,7 +108,7 @@ bool call(const std::vector<std::string>& cheatParams) override
 ----
 <1> http://en.cppreference.com/w/cpp/language/sizeof...[`sizeof...(Args)`] return a number of arguments of parameter pack. This operator also can be used during compile-time.
 
-NOTE: Instead of `call()` function I could use `operator()()`.
+
 
 All magic happens in `callHelper()` function.
 
