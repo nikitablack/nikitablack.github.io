@@ -30,13 +30,17 @@ There's no way to call an unknown function just knowing it's name in C++. At lea
 template<typename ...Args>
 class Cheat : public CheatBase
 {
-	// implementation
+	Cheat(void(* const funcPtr)(Args...)) : func{ funcPtr }
+	{
+
+	}
+	// ...
 private:
 	void(* const func)(Args...); # <1>
 }
 ----
 
-Here `func` is our function pointer. As you already guessed, it's not possible to store instances of this class directly in `std::map` because for every new function with a new signature the `Cheat` class type will be different. For example `Cheat<int>` for the function taking one `int` parameter and  `Cheat<int, float>` for the function takind an `int` and a `float`. Therefore they all should have common base class. It's very simple:
+Here `func` is our pointer to function which we need to call later. As you already guessed, it's not possible to store instances of this class directly in `std::map` because for every new function with a new signature the `Cheat` class type will be different. For example `Cheat<int>` for the function taking one `int` parameter and  `Cheat<int, float>` for the function takind an `int` and a `float`. Therefore they all should have common base class. It's very simple:
 
 [source,cpp]
 ----
@@ -48,14 +52,14 @@ public:
 };
 ----
 
-It's an abstract class with pure virtual function which takes an array of parameters as strings which will be converted to corresponding types.
+It's an abstract class with pure virtual function which takes an array of parameters as strings which will be converted to corresponding types. Now we can create cheats like this:
 
+[source,cpp]
+----
+CheatBase* cheat{new Cheat<int, float>};
+----
 
-
-
-
-
-
+Or with a helper:
 
 
 [source,cpp]
@@ -65,15 +69,11 @@ std::shared_ptr<CheatBase> makeCheat(void(*funcPtr)(Args... arguments))
 {
 	return std::make_shared<Cheat<Args...>>(funcPtr);
 }
-----
 
-
-
-The returned `CheatBase` (more on this later) is that wrapper I wrote about. And the registration is very simple - I store this cheat in `std::map` where the key is the name of the cheat:
-----
 myMap["foo"] = makeCheat(&foo);
 ----
-Thanks to type deduction I don't need to provide template parameters for the function.
+
+Thanks to type deduction I don't need to type template parameters for the function.
 
 NOTE: Here for simplcity I'm passing arguments by value. The better approach is to use http://en.cppreference.com/w/cpp/utility/forward[perfect forwarding]
 
