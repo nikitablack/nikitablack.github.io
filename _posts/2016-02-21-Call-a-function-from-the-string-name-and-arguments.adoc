@@ -106,11 +106,9 @@ bool call(const std::vector<std::string>& cheatParams) override
 	return true;
 }
 ----
-<1> http://en.cppreference.com/w/cpp/language/sizeof...[`sizeof...(Args)`] return a number of arguments of parameter pack. This operator also can be used during compile-time.
+<1> http://en.cppreference.com/w/cpp/language/sizeof...[`sizeof...(Args)`] return a number of arguments of parameter pack that was used during `Cheat` class instantiation. This operator also can be used during compile-time.
 
-
-
-All the magic happens in `callHelper()` function.
+First we check that we passed correct number of arguments. And all the magic happens in `callHelper()` function.
 
 [source,cpp]
 ----
