@@ -75,26 +75,21 @@ myMap["foo"] = makeCheat(&foo);
 
 Thanks to type deduction I don't need to type template parameters for the function.
 
-NOTE: Here for simplcity I'm passing arguments by value. The better approach is to use http://en.cppreference.com/w/cpp/utility/forward[perfect forwarding]
+NOTE: Here for simplcity I'm passing arguments by value. The better approach is to use http://en.cppreference.com/w/cpp/utility/forward[perfect forwarding].
 
-That was pretty standard and boring. And now the interesting part - the actual cheat implementation. Since I'm having a deal with functions with different signatures and I need to store them somehow and somewhere I can't just use raw function pointers or http://en.cppreference.com/w/cpp/utility/functional/function[std::function] - every object will have a differnt type, like `std::function<bool()>` or `std::function<bool(int, float)>` etc. I need a base class or interface which I'll operate on:
+Btw, the strange looking `template<typename ...Args>` is called a http://en.cppreference.com/w/cpp/language/parameter_pack[parameter pack]. And together with templated class it's called *variadic template*. This is one of the amazing features of modern C++. I highly recommend you to investigate this topic. It's really really cool! I can recommend for the start this great posts - http://eli.thegreenplace.net/2014/variadic-templates-in-c/[one], https://jguegant.github.io/blogs/tech/thread-safe-multi-type-map.html[two].
+
+That was pretty standard and boring. And now the interesting part - the actual cheat implementation!
 
 
 
 
+The concrete class is a templated class ans since I don't know the number of arguments before I'll use :
 
- The concrete class is a templated class ans since I don't know the number of arguments before I'll use http://en.cppreference.com/w/cpp/language/parameter_pack[variadic templates]:
-[source,cpp]
-----
-template<typename ...Args>
-class Cheat : public CheatBase
-{
-	// implementation
-private:
-	void(* const func)(Args...); # <1>
-}
-----
-<1> The only data member is a pointer to a function which I need to call.
+ 
+
+
+
 
 NOTE: For simplcity I'm the only functions that can be passed are global or static functions or lambdas without capture (such a lambda can be casted to function pointer). But member functions can be edded with additional template argument and a little code.
 
