@@ -126,12 +126,15 @@ Wow! Looks scary. Actually, not. `callHelper()` is a variadic templated function
 foo(42, 10.5);
 ----
 
-But I have only vector of strings `{"42", "10.5"}`. So I need some conversion function that will return a correct type from the string. Moreover I need to call this function several times - once for each parameter:
+But I have only vector of strings `{"42", "10.5"}`. I need some conversion function that will return a correct type from the corresponding string. Moreover I need to call this function several times - once for each parameter:
+
 [source,cpp]
 ----
 foo(fromString("42"), fromString("10.5"));
 ----
-In order to convert to correct type `fromString()` should be a templated function with overload for *every* type I need. For my case with `int` and `float` the two overloads are:
+
+In order to convert to correct type `fromString()` we'll use templated function with overload for *every* type I need. For the case with `int` the overload is:
+
 [source,cpp]
 ----
 template<typename T>
@@ -139,14 +142,9 @@ typename std::enable_if<std::is_same<T, int>::value, int>::type fromString(const
 {
 	return std::stoi(str);
 }
-
-template<typename T>
-typename std::enable_if<std::is_same<T, float>::value, float>::type fromString(const std::string& str)
-{
-	return std::stof(str);
-}
 ----
-The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good article with links can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog]. But in two words - `std::is_same<T, int>::value` return `true` if `T` is `int` and `false` overwise. Next, `std::enable_if<true, int>::type` will return `int` and `std::enable_if<false, int>::type` simply will not compile. That means I'll get a *compile time* error if I'll use a type for which there's no overload exist!
+
+For the `float` it's similar. The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good article with links can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog]. But in two words - `std::is_same<T, int>::value` return `true` if `T` is `int` and `false` overwise. Next, `std::enable_if<true, int>::type` will return `int` and `std::enable_if<false, int>::type` simply will not compile. That means I'll get a *compile time* error if I'll use a type for which there's no overload exist!
 Knowing this I can create a first version od `callHelper()` function:
 [source,cpp]
 ----
