@@ -128,14 +128,14 @@ In the very very end I need to call this function with correct parameters, for e
 foo(42, 10.5);
 ----
 
-But I have only a vector of strings `{"42", "10.5"}`. I need some conversion function that will return a correct type from the corresponding string. Moreover I need to call this function several times - once for each parameter:
+But I have only a vector of strings `{"42", "10.5"}`. I need some conversion function that will return a correct type from the corresponding string. Moreover I need to call this function several times - once for each parameter. Let's call this conversion function `fromString`:
 
 [source,cpp]
 ----
 foo(fromString("42"), fromString("10.5"));
 ----
 
-In order to convert to correct type `fromString()` we'll use templated function with overload for *every* type I need. For the case with `int` the overload is:
+In order to convert to correct type we'll use templated function with overload for *every* type I need. For the case with `int` the overload is (for the `float` it's similar, just replace `int` to `float` and `std::stoi()` to `std::stof()`):
 
 [source,cpp]
 ----
@@ -146,7 +146,18 @@ typename std::enable_if<std::is_same<T, int>::value, int>::type fromString(const
 }
 ----
 
-For the `float` it's similar. The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good explanation can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog]. In shorts - `std::is_same<T, int>::value` return `true` if `T` is `int` and `false` overwise. Next, `std::enable_if<true, int>::type` will return `int` and `std::enable_if<false, int>::type` simply will not compile. That mean we'll get a *compile time* error if we'll use a type for which there's no overload exist! Awesome, tis types of errors are much much better than exception during runtime.
+The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good explanation of what it is can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog]. In short - `std::is_same<T, int>::value` will return `true` if `T` is `int` and `false` overwise. Next, `std::enable_if<true, int>::type` will return `int` and `std::enable_if<false, int>::type` simply will not compile. After substitution we'll have:
+
+[source,cpp]
+----
+template<int>
+int fromString(const std::string& str)
+{
+	return std::stoi(str);
+}
+----
+
+And additional feature of it is that we'll get a *compile time* error if we'll use a type for which there's no overload exist! Awesome, this type of error is much much better than an exception during runtime.
 
 Having all this we can create a first version of our `callHelper()` function:
 
@@ -158,7 +169,7 @@ void callHelper(const std::vector<std::string>& strArgs)
 }
 ----
 
-As you remember, `Args` is a parameter pack. And `fromString<Args>()...` is a parameter pack expansion. There're http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion[strict rules] how parameter pack is expanded. For our case with `int` and `float` this will become it will be expanded:
+As you remember, `Args` is a parameter pack. And `fromString<Args>()...` is a parameter pack expansion. There're http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion[strict rules] how parameter pack is expanded. For our case with `int` and `float` it will be expanded to:
 
 [source,cpp]
 ----
@@ -168,7 +179,7 @@ void callHelper(const std::vector<std::string>& strArgs)
 }
 ----
 
-We already have two `fromString()` overloads for our types. Now the trick is to pass the correct string to them, i.e. implement `getStringFromArray()` function. The naive approach would be to remove this function completely and just use `strArgs` vector together with some counter which will be incremented every time I access vector element:
+We already have two `fromString()` overloads for our types. Now the trick is to pass the correct string from the vector to them, i.e. implement `getStringFromArray()` function. The naive approach would be to remove `getStringFromArray()` completely and just use `strArgs` vector together with some counter which will be incremented every time we access a vector element:
 
 [source,cpp]
 ----
@@ -179,14 +190,14 @@ void callHelper(const std::vector<std::string>& strArgs)
 }
 ----
 
-Unfortunately this will not work. The C++ standard does not specify the http://en.cppreference.com/w/cpp/language/eval_order[order of function arguments eveluation]. That means it can differ from compiler to compiler. And it's absolutelly possible to have this setup:
+Unfortunately this will not work. The C++ standard does not specify the http://en.cppreference.com/w/cpp/language/eval_order[order of function arguments eveluation]. That means it can differ from compiler to compiler. And it's absolutelly possible to have this setup (remember - we have `{ "42", "10.5" }` in our vector):
 
 [source,cpp]
 ----
-foo(fromString<int>(strArgs[1]), fromString<float>(strArgs[0])); // notice how we pass wrong arguments
+foo(fromString<int>(strArgs[1]), fromString<float>(strArgs[0])); // notice how we're passing wrong arguments
 ----
 
-We need instead a robust solution that will work with across compilers. Imagine if we’ll rewrite `callHelper` slightly:
+We need instead a robust solution that will work across compilers. Imagine if we’ll rewrite `callHelper` slightly:
 
 [source,cpp]
 ----
