@@ -1,7 +1,7 @@
 = Call a function from the string name and arguments
 :hp-tags: c++
 
-Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments. In other words the system should be able to call a function:
+Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments with different types. In other words the system should be able to call a function:
 
 [source,cpp]
 ----
@@ -14,16 +14,16 @@ with a console command:
 foo 42 10.5
 ----
 
-I'll not describe in this post how I'm receiving this string as well how I'm parsing it. Let's assume that I'm operating with a vector of strings where the first element - the name of the function and the rest - function parameters. So at some point I have this vector:
+I'll not describe how I'm receiving this string as well how I'm parsing it. Let's assume that we're operating with a vector of strings where the first element - the name of the function and the rest - function parameters. So at some point er have this vector:
 
 [source,cpp]
 ----
 { "foo", "42", "10.5" }
 ----
 
-And I need somehow call a correct function and pass a correct number of parameters with a correct type.
+And we need somehow call a correct function and pass a correct number of parameters with a correct type.
 
-There's no way to call an unknown function just knowing it's name in C++. At least I don't know such a way. So in order to call something I need first register it. By registration I mean storing of a function pointer together with some string - it's name. The `std::map` is a good candidate for that. But I don't store raw pointer. Instead, I have a wrapper class, called `Cheat`, for my function. Cheat is a templated class with function arguments types as template parameters. It's declaration looks like this:
+There's no way to call an unknown function just knowing it's name in C++. At least I don't know such a way. So in order to call something we first need register it. By registration I mean storing of a function pointer together with it's name. The `std::map` is a good candidate for that. But I don't store raw pointer. Instead, I have a wrapper class, called `Cheat`, for my function. Cheat is a templated class with function arguments types as template parameters. It's declaration looks like this:
 
 [source,cpp]
 ----
@@ -81,7 +81,7 @@ std::shared_ptr<CheatBase> makeCheat(void(*funcPtr)(Args... arguments))
 myMap["foo"] = makeCheat(&foo);
 ----
 
-Thanks to type deduction I don't need to type template parameters for the function.
+Thanks to type deduction we don't need to type template parameters for the function.
 
 NOTE: Here for simplcity I'm passing arguments by value. The better approach is to use http://en.cppreference.com/w/cpp/utility/forward[perfect forwarding].
 
@@ -106,9 +106,9 @@ bool call(const std::vector<std::string>& cheatParams) override
 	return true;
 }
 ----
-<1> http://en.cppreference.com/w/cpp/language/sizeof...[`sizeof...(Args)`] return a number of arguments of parameter pack that was used during `Cheat` class instantiation. This operator also can be used during compile-time.
+<1> http://en.cppreference.com/w/cpp/language/sizeof...[`sizeof...(Args)`] return a number of arguments of the parameter pack that was used during `Cheat` class instantiation.
 
-First we check that we passed correct number of arguments. And all the magic happens in `callHelper()` function. Don't think about `index_sequence_for<Args...>` for now, we'll come to this later.
+First we check that we passed correct number of arguments. In the number is wrong simply do nothing and return. And all the magic happens in `callHelper()` function. Don't think about `index_sequence_for<Args...>` for now, we'll come to this later:
 
 [source,cpp]
 ----
@@ -119,7 +119,7 @@ void callHelper(const std::vector<std::string>& strArgs, std::index_sequence<Idx
 }
 ----
 
-Wow! Looks scary. Actually, not. `callHelper()` is a variadic templated function which accepts a vector with string arguments which should be converted to appropriated types and a http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. What are this integers? Why? I can better explain it if we'll start from the end. Let's stick to `foo(int, type)` function signature to the rest of this post. In the very end I need to call this function with correct parameters, for example:
+Wow! Looks scary. Actually, not. `callHelper()` is a variadic templated function which accepts a vector with string arguments (and which should be converted to appropriate types) and a http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. What are this integers? Why? I can better explain it if we'll start from the end. Let's stick to `foo(int, type)` function signature for the rest of this post. In the very end I need to call this function with correct parameters, for example:
 
 [source,cpp]
 ----
