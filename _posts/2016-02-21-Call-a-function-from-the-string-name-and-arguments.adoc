@@ -36,7 +36,7 @@ class Cheat : public CheatBase
 	}
 	// ...
 private:
-	void(* const func)(Args...); # <1>
+	void(* const func)(Args...);
 }
 ----
 
@@ -95,7 +95,7 @@ The heart of the `Cheat` class is a `call()` function override:
 ----
 bool call(const std::vector<std::string>& cheatParams) override
 {
-	if (sizeof...(Args) != cheatParams.size()) # <1>
+	if (sizeof...(Args) != cheatParams.size()) // # <1>
 	{
 		// if a number of passed arguments is not equal to a number of parameters declared in cheat return false - this is an error.
 		return false;
