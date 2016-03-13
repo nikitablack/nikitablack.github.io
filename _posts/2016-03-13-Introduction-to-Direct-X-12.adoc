@@ -145,7 +145,7 @@ NOTE: In Windows every UI control is a window. And as you may guess there're a l
 
 To register a window class we need to use a special structure: https://msdn.microsoft.com/en-us/library/windows/desktop/ms633576%28v=vs.85%29.aspx[`WNDCLASS`] or https://msdn.microsoft.com/en-us/library/windows/desktop/ms633577%28v=vs.85%29.aspx[`WNDCLASSEX`]. The difference between them is that the second have some additional functionality (`EX` means extended). I always prefer to use such 'maximal' types so in my example I'll use https://msdn.microsoft.com/en-us/library/windows/desktop/ms633577%28v=vs.85%29.aspx[`WNDCLASSEX`]. This structure have a lot of fields and I will not describe all of them - please refer to documentation.
 
-First I clear a structure #1. If I'll not do it - the struct will be filled with a garbage and we can get a strange behavior if we'll not fill all the fields.
+1. First I clear a structure. If I'll not do it - the struct will be filled with a garbage and we can get a strange behavior if we'll not fill all the fields.
 
 2 - simply a size of the structure. This line always be the same for this type.
 
