@@ -173,23 +173,23 @@ To register a window class we need to use a special structure: https://msdn.micr
 
 14. After filling a structure we register our class. The function https://msdn.microsoft.com/en-us/library/windows/desktop/ms633587%28v=vs.85%29.aspx[`RegisterClassEx()`] return `0` in case of failure (in this case I simply show a https://msdn.microsoft.com/en-us/library/windows/desktop/ms645505%28v=vs.85%29.aspx[`MessageBox`] window and finish a program).
 
-A window *client area* is an area of the window that doesn't encloses top bar, resize bars, menu etc. We mostly interested in this area when we create different textures or render targets. But when we create a window we specify itâ€™s full size. In order to calculate the full size based on the desired size we use [`AdjustWindowRectEx`](https://msdn.microsoft.com/en-us/library/windows/desktop/ms632667%28v=vs.85%29.aspx) function (#15) where we pass a desired size, window style ([`WS_OVERLAPPEDWINDOW`](https://msdn.microsoft.com/en-us/library/windows/desktop/ms632600%28v=vs.85%29.aspx#WS_OVERLAPPEDWINDOW) is a style for a window with a status bar, thick frame and others - should be the same as a style for window creation), `FALSE` indicating weâ€™re not using any menu, and an extended style (`0` since weâ€™re not using any). The function can return `0` in case of failure but I donâ€™t care too much in this case. In case of success the rect will hold â€œtrueâ€ size (with borders etc).
+15. A window *client area* is an area of the window that doesn't encloses top bar, resize bars, menu etc. We mostly interested in this area when we create different textures or render targets. But when we create a window we specify it's full size. In order to calculate the full size based on the desired size we use https://msdn.microsoft.com/en-us/library/windows/desktop/ms632667%28v=vs.85%29.aspx[`AdjustWindowRectEx()`] function where we pass a desired size, window style (https://msdn.microsoft.com/en-us/library/windows/desktop/ms632600%28v=vs.85%29.aspx#WS_OVERLAPPEDWINDOW[`WS_OVERLAPPEDWINDOW`]) is a style for a window with a status bar, thick frame and others - should be the same as a style for window creation, `FALSE` indicating we're not using any menu, and an extended style (`0` since we're not using any). The function can return `0` in case of failure but I don't care too much in this case. In case of success the rect will hold 'true' size (with borders etc).
 
-Finally weâ€™re ready to create a window #16. [`CreateWindowEx`](https://msdn.microsoft.com/en-us/library/windows/desktop/ms632680%28v=vs.85%29.aspx) to the help. The parameters are:
+16. Finally we're ready to create a window. https://msdn.microsoft.com/en-us/library/windows/desktop/ms632680%28v=vs.85%29.aspx[`CreateWindowEx()`] to the help. The parameters are:
 
-- extended window style - Iâ€™m not using any, so `0`.
-- name of the window class - remember #12.
-- the name of the window that will be shown on the windowâ€™s top bar.
-- window style - same as in #15.
-- x position. `CW_USEDEFAULT` says the system to use some default position. In this case y will be ignored.
-- y position - it will be ignored since we used `CW_USEDEFAULT` for the x position.
-- width of the window. Weâ€™re using adjusted width (#15).
-- height of the window. Weâ€™re using adjusted height (#15).
-- windowâ€™s parent. Weâ€™re creating a single top level window, so no parent here.
-- menu or some aditional data. Weâ€™re not interested.
-- a handle to the module associated with a window. Optional. We can specify an executable like we did in #7 or we can ignore it.
-- we can associate any data with a window and pass it in this parameter. This can be handy when we need some data in window procedure, which is a static or global function (#4). In this example weâ€™re not need any.
+* extended window style - I'm not using any, so `0`.
+* name of the window class - remember *#12*.
+* the name of the window that will be shown on the window's top bar.
+* window style - same as in *#15*.
+* `x` position. `CW_USEDEFAULT` says the system to use some default position. In this case `y` will be ignored.
+* `y` position - it will be ignored since we used `CW_USEDEFAULT` for the `x` position.
+* width of the window. We're using adjusted width (*#15*).
+* height of the window. We're using adjusted height (*#15*).
+* window's parent. We're creating a single top level window, so no parent here.
+* menu or some aditional data. We're not interested.
+* a handle to the module associated with a window. Optional. We can specify an executable like we did in *#7* or we can ignore it.
+* we can associate any data with a window and pass it in this parameter. This can be handy when we need some data in window procedure, which is a static or global function (*#4*). In this example we're not need any.
 
-The function return a handle to the created window or `NULL` if it canâ€™t be created.
+The function return a handle to the created window or `NULL` if it can't be created.
 
-After we created a window we need to show it #17. Weâ€™re using [`ShowWindow`](https://msdn.microsoft.com/en-us/library/windows/desktop/ms633548%28v=vs.85%29.aspx) with a state [`SW_SHOW`](https://msdn.microsoft.com/en-us/library/windows/desktop/ms633548%28v=vs.85%29.aspx#SW_SHOW) to display it on the screen.
+17. After we created a window we need to show it. We're using https://msdn.microsoft.com/en-us/library/windows/desktop/ms633548%28v=vs.85%29.aspx[`ShowWindow()`] with a state https://msdn.microsoft.com/en-us/library/windows/desktop/ms633548%28v=vs.85%29.aspx#SW_SHOW[`SW_SHOW`] to display it on the screen.
