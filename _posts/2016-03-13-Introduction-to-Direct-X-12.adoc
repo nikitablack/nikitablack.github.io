@@ -1,0 +1,9 @@
+= Introduction to DirectX 12
+:hp-tags: c++, directx12
+
+Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments. In other words the system should be able to call a function:
+
+[source,cpp]
+----
+bool foo(int, float);
+----
