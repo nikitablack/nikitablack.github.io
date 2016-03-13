@@ -178,18 +178,18 @@ To register a window class we need to use a special structure: https://msdn.micr
 16. Finally we're ready to create a window. https://msdn.microsoft.com/en-us/library/windows/desktop/ms632680%28v=vs.85%29.aspx[`CreateWindowEx()`] to the help. The parameters are:
 +
 --
-	* extended window style - I'm not using any, so `0`.
-	* name of the window class - remember *#12*.
-	* the name of the window that will be shown on the window's top bar.
-	* window style - same as in *#15*.
-	* `x` position. `CW_USEDEFAULT` says the system to use some default position. In this case `y` will be ignored.
-	* `y` position - it will be ignored since we used `CW_USEDEFAULT` for the `x` position.
-	* width of the window. We're using adjusted width (*#15*).
-	* height of the window. We're using adjusted height (*#15*).
-	* window's parent. We're creating a single top level window, so no parent here.
-	* menu or some aditional data. We're not interested.
-	* a handle to the module associated with a window. Optional. We can specify an executable like we did in *#7* or we can ignore it.
-	* we can associate any data with a window and pass it in this parameter. This can be handy when we need some data in window procedure, which is a static or global function (*#4*). In this example we're not need any.
+- extended window style - I'm not using any, so `0`.
+- name of the window class - remember *#12*.
+- the name of the window that will be shown on the window's top bar.
+- window style - same as in *#15*.
+- `x` position. `CW_USEDEFAULT` says the system to use some default position. In this case `y` will be ignored.
+- `y` position - it will be ignored since we used `CW_USEDEFAULT` for the `x` position.
+- width of the window. We're using adjusted width (*#15*).
+- height of the window. We're using adjusted height (*#15*).
+- window's parent. We're creating a single top level window, so no parent here.
+- menu or some aditional data. We're not interested.
+- a handle to the module associated with a window. Optional. We can specify an executable like we did in *#7* or we can ignore it.
+- we can associate any data with a window and pass it in this parameter. This can be handy when we need some data in window procedure, which is a static or global function (*#4*). In this example we're not need any.
 
 The function return a handle to the created window or `NULL` if it can't be created.
 --
