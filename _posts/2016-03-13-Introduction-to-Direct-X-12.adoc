@@ -195,3 +195,30 @@ The function return a handle to the created window or `NULL` if it can't be crea
 --
 
 17. After we created a window we need to show it. We're using https://msdn.microsoft.com/en-us/library/windows/desktop/ms633548%28v=vs.85%29.aspx[`ShowWindow()`] with a state https://msdn.microsoft.com/en-us/library/windows/desktop/ms633548%28v=vs.85%29.aspx#SW_SHOW[`SW_SHOW`] to display it on the screen.
+
+*3. Window procedure*
+
+As you remember in *#2.4* we discussed a special function for the window. We even gave it a name `WndProc`. It's a global function that in my example doesn't do too much. The only thing it does right now is exits application on window close.
+
+[source,cpp]
+----
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+switch (message)
+{
+case WM_DESTROY:
+    PostQuitMessage(0); // 3.1
+    break;
+
+default:
+    return DefWindowProc(hWnd, message, wParam, lParam); // 3.2
+}
+return 0;
+};
+----
+
+Here `hWnd` is a window handle we created in *#2.16*, message is a type of message. There tons of different types, but we're listening a message which occurs when a user closes a window. In that case a procedure tells application that it's time to quit and emits a special message (*#3.1*) that we're listening in an event loop (see below). Two other parameters are different for every message and are not used with https://msdn.microsoft.com/en-us/library/windows/desktop/ms632620(v=vs.85).aspx[`WM_DESTROY`].
+
+If a message type was not https://msdn.microsoft.com/en-us/library/windows/desktop/ms632620(v=vs.85).aspx[`WM_DESTROY`] we're using a default message handling (*#3.2*). And that's good - we don't want every time to process window resize messages. minimize, maximize etc.
+
+*4. Application loop*
