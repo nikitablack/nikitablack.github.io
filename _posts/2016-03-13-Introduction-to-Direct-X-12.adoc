@@ -299,3 +299,5 @@ Here https://msdn.microsoft.com/en-us/library/br244983.aspx[`ComPtr`] (*#6.1*) i
 So we can use code `CreateDXGIFactory2(factoryFlags, __uuidof(IDXGIFactory2)`, &dxgiFactory2) but there's a macro https://msdn.microsoft.com/en-us/library/windows/desktop/ee330727%28v=vs.85%29.aspx[`IID_PPV_ARGS`] which can be used to replace last two parameters (*#6.2*) and simplify a bit a function call (thought can confuse a lot).
 
 I told that I prefer to use the most fresh interfaces but if you'll look at the documentation for the factory there's https://msdn.microsoft.com/en-us/library/windows/desktop/mt427785%28v=vs.85%29.aspx[`IDXGIFactory4`]. But there's no `CreateDXGIFactory4()`! In COM world an object can represent several interfaces. In Windows 10 the factory that we created have https://msdn.microsoft.com/en-us/library/windows/desktop/mt427785%28v=vs.85%29.aspx[`IDXGIFactory4`] interface. We can safely query the newest interface with https://msdn.microsoft.com/en-us/library/br230426.aspx[`ComPtr::As()`] method (*#6.3*).
+
+NOTE: Documentation mentions that it's not recommended to mix different factories in one application.
