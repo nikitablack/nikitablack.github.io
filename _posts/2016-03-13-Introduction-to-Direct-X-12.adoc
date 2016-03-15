@@ -241,3 +241,61 @@ while(msg.message != WM_QUIT)
 ----
 
 In this loop we're constantly checking a message with a special https://msdn.microsoft.com/en-us/library/windows/desktop/ms644943(v=vs.85).aspx[`PeekMessage`] function. First parameter is a message we are taking from the message queue and removing it from this queue (PM_REMOVE as last parameter). Second parameter should be `NULL` since in *#3.1* we are posting a thread message. Other parameters are filters and not interesting for us. If the queue had a message https://msdn.microsoft.com/en-us/library/windows/desktop/ms644943(v=vs.85).aspx[`PeekMessage`] returns `TRUE` and we send this message to the window procedure. If one this messages is a https://msdn.microsoft.com/en-us/library/windows/desktop/ms632641(v=vs.85).aspx[`WM_QUIT`] sent in *#3.1* we're done - we finish the loop and the application will exit. Now if you start an application you'll see a fully functional window that shows nothing.
+
+Wow, so many text and still no one word about directX. I'll fix this in a moment since we finished with a necessary initialization part and it's time to talk about graphics.
+
+*5. Initializing directX 12*
+
+DirectX 12 is a very low level API. And we have to handle almost everything by ourselves so don't expect an easy walk. The initialization part will be even longer than window initialization.
+
+Basically every directX 12 application will have the following steps:
+
+- https://msdn.microsoft.com/en-us/library/windows/desktop/mt427785%28v=vs.85%29.aspx)[`IDXGIFactory`] creation (the thing that is responsible for adapters enumeration, swap chain creation and many other useful stuff)
+- Getting of correct adapter (a video card, GPU) - optional
+- Creation of the device (a software representation of the adapter)
+- Command Queue creation (the thing that should submit commands to the GPU)
+- Swap Chain creation (a collection of images that should be presented to the user)
+- Descriptor Heap creation (basically a place where all resources for rendering should be stored)
+- Creation of the Command Allocator (the thing that is used for managing Command Lists)
+- Command Lists creation (the commands for the GPU)
+- Fences creation (as I told - DirectX 12 is a very low level and we need to synchronize everything by ourselves)
+- Optionally different debug interfaces. Absolutely necessary for getting meaningful warnings, tracking live objects.
+
+*6. IDXGIFactory*
+
+We can create one with https://msdn.microsoft.com/en-us/library/windows/desktop/dn268307%28v=vs.85%29.aspx[`CreateDXGIFactory2()`] function. First of all, what this 2 number in the name of the function? It's simply a version (surprise). Usually with a Windows new version or update Microsoft provides new functionality to existing libraries. This function can be used started from Windows 8.1.
+
+[source,cpp]
+----
+ComPtr<IDXGIFactory2> dxgiFactory2; // #6.1
+UINT factoryFlags{ 0 };
+
+#if _DEBUG
+factoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+#endif
+
+HRESULT hr{ CreateDXGIFactory2(factoryFlags, IID_PPV_ARGS(&dxgiFactory2)) }; // #6.2
+if (FAILED(hr))
+{
+    MessageBox(nullptr, "Error creating IDXGIFactory2.", "Error", MB_OK);
+    return 0;
+}
+
+ComPtr<IDXGIFactory4> dxgiFactory;
+hr = dxgiFactory2.As(&dxgiFactory); // #6.3
+if (FAILED(hr))
+{
+    MessageBox(nullptr, "Error creating IDXGIFactory4.", "Error", MB_OK);
+    return 0;
+}
+----
+
+Here https://msdn.microsoft.com/en-us/library/br244983.aspx[`ComPtr`] (*#6.1*) is a smart pointer for COM objects. Basically it's the same as http://en.cppreference.com/w/cpp/memory/shared_ptr[`std::shared_ptr`] with some special logic on object destruction. We can even use http://en.cppreference.com/w/cpp/memory/unique_ptr[`std::unique_ptr`] with supplied deleter where we can release COM object. https://msdn.microsoft.com/en-us/library/windows/desktop/hh404556%28v=vs.85%29.aspx[`IDXGIFactory2`], as you already guessed, is a more recent version of the interface. We can use the old one if we don't need additional functionality but I always prefer to use the latest one. https://msdn.microsoft.com/en-us/library/windows/desktop/dn268307%28v=vs.85%29.aspx[`CreateDXGIFactory2()`] accepts 3 parameters:
+
+- flags. I'm using debug version of the factory if we run a debug build
+- the uid of the COM object we want to create
+- address to the pointer of the object we want to create
+
+So we can use code `CreateDXGIFactory2(factoryFlags, __uuidof(IDXGIFactory2)`, &dxgiFactory2) but there's a macro https://msdn.microsoft.com/en-us/library/windows/desktop/ee330727%28v=vs.85%29.aspx[`IID_PPV_ARGS`] which can be used to replace last two parameters (*#6.2*) and simplify a bit a function call (thought can confuse a lot).
+
+I told that I prefer to use the most fresh interfaces but if you'll look at the documentation for the factory there's https://msdn.microsoft.com/en-us/library/windows/desktop/mt427785%28v=vs.85%29.aspx[`IDXGIFactory4`]. But there's no `CreateDXGIFactory4()`! In COM world an object can represent several interfaces. In Windows 10 the factory that we created have https://msdn.microsoft.com/en-us/library/windows/desktop/mt427785%28v=vs.85%29.aspx[`IDXGIFactory4`] interface. We can safely query the newest interface with https://msdn.microsoft.com/en-us/library/br230426.aspx[`ComPtr::As()`] method (*#6.3*).
