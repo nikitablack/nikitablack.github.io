@@ -222,3 +222,22 @@ Here `hWnd` is a window handle we created in *#2.16*, message is a type of messa
 If a message type was not https://msdn.microsoft.com/en-us/library/windows/desktop/ms632620(v=vs.85).aspx[`WM_DESTROY`] we're using a default message handling (*#3.2*). And that's good - we don't want every time to process window resize messages. minimize, maximize etc.
 
 *4. Application loop*
+
+If we start application right now everything will be fine but after a window creation it will successfully finishes. We need an application loop to make our program work until a user decides to close a window.
+
+[source,cpp]
+----
+MSG msg;
+ZeroMemory(&msg, sizeof(msg));
+
+while(msg.message != WM_QUIT)
+{
+    BOOL r{ PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) };
+    if(r)
+    {
+        DispatchMessage(&msg);
+    }
+}
+----
+
+In this loop we're constantly checking a message with a special https://msdn.microsoft.com/en-us/library/windows/desktop/ms644943(v=vs.85).aspx[`PeekMessage`] function. First parameter is a message we are taking from the message queue and removing it from this queue (PM_REMOVE as last parameter). Second parameter should be `NULL` since in *#3.1* we are posting a thread message. Other parameters are filters and not interesting for us. If the queue had a message https://msdn.microsoft.com/en-us/library/windows/desktop/ms644943(v=vs.85).aspx[`PeekMessage`] returns `TRUE` and we send this message to the window procedure. If one this messages is a https://msdn.microsoft.com/en-us/library/windows/desktop/ms632641(v=vs.85).aspx[`WM_QUIT`] sent in *#3.1* we're done - we finish the loop and the application will exit. Now if you start an application you'll see a fully functional window that shows nothing.
