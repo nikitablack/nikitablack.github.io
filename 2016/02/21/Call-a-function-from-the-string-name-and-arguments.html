@@ -20,15 +20,15 @@
     <meta property="og:site_name" content="Simply about complex" />
     <meta property="og:type" content="article" />
     <meta property="og:title" content="Call a function from the string name and arguments" />
-    <meta property="og:description" content="Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments...." />
+    <meta property="og:description" content="Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments..." />
     <meta property="og:url" content="https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html" />
     <meta property="article:published_time" content="2016-02-20T23:00:00.000Z" />
-    <meta property="article:modified_time" content="2016-04-12T20:22:23.991Z" />
+    <meta property="article:modified_time" content="2016-03-04T11:41:50.188Z" />
     <meta property="article:tag" content="c++" />
     
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Call a function from the string name and arguments" />
-    <meta name="twitter:description" content="Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments...." />
+    <meta name="twitter:description" content="Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments..." />
     <meta name="twitter:url" content="https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html" />
     
     <script type="application/ld+json">
@@ -46,9 +46,9 @@
     "headline": "Call a function from the string name and arguments",
     "url": "https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html",
     "datePublished": "2016-02-20T23:00:00.000Z",
-    "dateModified": "2016-04-12T20:22:23.991Z",
+    "dateModified": "2016-03-04T11:41:50.188Z",
     "keywords": "c++",
-    "description": "Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments...."
+    "description": "Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments..."
 }
     </script>
 
@@ -70,7 +70,7 @@
 
         <div class="text" id="js-post-content">
             <div class="paragraph">
-<p>Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments. In other words the system should be able to call a function:</p>
+<p>Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments with different types. In other words the system should be able to call a function:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -86,7 +86,7 @@
 </div>
 </div>
 <div class="paragraph">
-<p>I&#8217;ll not describe in this post how I&#8217;m receiving this string as well how I&#8217;m parsing it. Let&#8217;s assume that I&#8217;m operating with a vector of strings where the first element - the name of the function and the rest - function parameters. So at some point I have this vector:</p>
+<p>I&#8217;ll not describe how I&#8217;m receiving this string as well how I&#8217;m parsing it. Let&#8217;s assume that we&#8217;re operating with a vector of strings where the first element - the name of the function and the rest - function parameters. So at some point er have this vector:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -94,10 +94,10 @@
 </div>
 </div>
 <div class="paragraph">
-<p>And I need somehow call a correct function and pass a correct number of parameters with a correct type.</p>
+<p>And we need somehow call a correct function and pass a correct number of parameters with a correct type.</p>
 </div>
 <div class="paragraph">
-<p>There&#8217;s no way to call an unknown function just knowing it&#8217;s name in C++. At least I don&#8217;t know such a way. So in order to call something I need first register it. By registration I mean storing of a function pointer together with some string - it&#8217;s name. The <code>std::map</code> is a good candidate for that. But I don&#8217;t store raw pointer. Instead, I have a wrapper class, called <code>Cheat</code>, for my function. Cheat is a templated class with function arguments types as template parameters. It&#8217;s declaration looks like this:</p>
+<p>There&#8217;s no way to call an unknown function just knowing it&#8217;s name in C++. At least I don&#8217;t know such a way. So in order to call something we first need register it. By registration I mean storing of a function pointer together with it&#8217;s name. The <code>std::map</code> is a good candidate for that. But I don&#8217;t store raw pointer. Instead, I have a wrapper class, called <code>Cheat</code>, for my function. Cheat is a templated class with function arguments types as template parameters. It&#8217;s declaration looks like this:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -110,7 +110,7 @@ class Cheat : public CheatBase
 	}
 	// ...
 private:
-	void(* const func)(Args...); <i class="conum" data-value="1"></i><b>(1)</b>
+	void(* const func)(Args...);
 }</code></pre>
 </div>
 </div>
@@ -180,7 +180,7 @@ myMap["foo"] = makeCheat(&amp;foo);</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Thanks to type deduction I don&#8217;t need to type template parameters for the function.</p>
+<p>Thanks to type deduction we don&#8217;t need to type template parameters for the function.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -207,7 +207,7 @@ Here for simplcity I&#8217;m passing arguments by value. The better approach is 
 <div class="content">
 <pre class="highlight"><code class="language-cpp" data-lang="cpp">bool call(const std::vector&lt;std::string&gt;&amp; cheatParams) override
 {
-	if (sizeof...(Args) != cheatParams.size()) <i class="conum" data-value="1"></i><b>(1)</b>
+	if (sizeof...(Args) != cheatParams.size()) // <i class="conum" data-value="1"></i><b>(1)</b>
 	{
 		// if a number of passed arguments is not equal to a number of parameters declared in cheat return false - this is an error.
 		return false;
@@ -223,12 +223,12 @@ Here for simplcity I&#8217;m passing arguments by value. The better approach is 
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td><a href="http://en.cppreference.com/w/cpp/language/sizeof&#8230;&#8203;"><code>sizeof&#8230;&#8203;(Args)</code></a> return a number of arguments of parameter pack that was used during <code>Cheat</code> class instantiation. This operator also can be used during compile-time.</td>
+<td><a href="http://en.cppreference.com/w/cpp/language/sizeof&#8230;&#8203;"><code>sizeof&#8230;&#8203;(Args)</code></a> return a number of arguments of the parameter pack that was used during <code>Cheat</code> class instantiation.</td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>First we check that we passed correct number of arguments. And all the magic happens in <code>callHelper()</code> function. Don&#8217;t think about <code>index_sequence_for&lt;Args&#8230;&#8203;&gt;</code> for now, we&#8217;ll come to this later.</p>
+<p>First we check that we passed correct number of arguments. In the number is wrong simply do nothing and return. And all the magic happens in <code>callHelper()</code> function. Don&#8217;t think about <code>index_sequence_for&lt;Args&#8230;&#8203;&gt;</code> for now, we&#8217;ll come to this later:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -240,7 +240,10 @@ void callHelper(const std::vector&lt;std::string&gt;&amp; strArgs, std::index_se
 </div>
 </div>
 <div class="paragraph">
-<p>Wow! Looks scary. Actually, not. <code>callHelper()</code> is a variadic templated function which accepts a vector with string arguments which should be converted to appropriated types and a <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence">sequence of integers</a>. What are this integers? Why? I can better explain it if we&#8217;ll start from the end. Let&#8217;s stick to <code>foo(int, type)</code> function signature to the rest of this post. In the very end I need to call this function with correct parameters, for example:</p>
+<p>Wow! Looks scary. Actually, not. <code>callHelper()</code> is a variadic templated function which accepts a vector with string arguments (and which should be converted to appropriate types) and a <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence">sequence of integers</a>. What are this integers? Why? I can better explain it if we&#8217;ll start from the end. Let&#8217;s stick to <code>foo(int, type)</code> function signature for the rest of this post.</p>
+</div>
+<div class="paragraph">
+<p>In the very very end I need to call this function with correct parameters, for example:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -248,7 +251,7 @@ void callHelper(const std::vector&lt;std::string&gt;&amp; strArgs, std::index_se
 </div>
 </div>
 <div class="paragraph">
-<p>But I have only vector of strings <code>{"42", "10.5"}</code>. I need some conversion function that will return a correct type from the corresponding string. Moreover I need to call this function several times - once for each parameter:</p>
+<p>But I have only a vector of strings <code>{"42", "10.5"}</code>. I need some conversion function that will return a correct type from the corresponding string. Moreover I need to call this function several times - once for each parameter. Let&#8217;s call this conversion function <code>fromString</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -256,7 +259,7 @@ void callHelper(const std::vector&lt;std::string&gt;&amp; strArgs, std::index_se
 </div>
 </div>
 <div class="paragraph">
-<p>In order to convert to correct type <code>fromString()</code> we&#8217;ll use templated function with overload for <strong>every</strong> type I need. For the case with <code>int</code> the overload is:</p>
+<p>In order to convert to correct type we&#8217;ll use templated function with overload for <strong>every</strong> type I need. For the case with <code>int</code> the overload is (for the <code>float</code> it&#8217;s similar, just replace <code>int</code> to <code>float</code> and <code>std::stoi()</code> to <code>std::stof()</code>):</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -268,7 +271,19 @@ typename std::enable_if&lt;std::is_same&lt;T, int&gt;::value, int&gt;::type from
 </div>
 </div>
 <div class="paragraph">
-<p>For the <code>float</code> it&#8217;s similar. The <a href="http://en.cppreference.com/w/cpp/language/sfinae">SFINAE</a> technique is used here. Good explanation can be found <a href="http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html">in this awesome blog</a>. In shorts - <code>std::is_same&lt;T, int&gt;::value</code> return <code>true</code> if <code>T</code> is <code>int</code> and <code>false</code> overwise. Next, <code>std::enable_if&lt;true, int&gt;::type</code> will return <code>int</code> and <code>std::enable_if&lt;false, int&gt;::type</code> simply will not compile. That mean we&#8217;ll get a <strong>compile time</strong> error if we&#8217;ll use a type for which there&#8217;s no overload exist! Awesome, tis types of errors are much much better than exception during runtime.</p>
+<p>The <a href="http://en.cppreference.com/w/cpp/language/sfinae">SFINAE</a> technique is used here. Good explanation of what it is can be found <a href="http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html">in this awesome blog</a>. In short - <code>std::is_same&lt;T, int&gt;::value</code> will return <code>true</code> if <code>T</code> is <code>int</code> and <code>false</code> overwise. Next, <code>std::enable_if&lt;true, int&gt;::type</code> will return <code>int</code> and <code>std::enable_if&lt;false, int&gt;::type</code> simply will not compile. After substitution we&#8217;ll have:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;int&gt;
+int fromString(const std::string&amp; str)
+{
+	return std::stoi(str);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And additional feature of it is that we&#8217;ll get a <strong>compile time</strong> error if we&#8217;ll use a type for which there&#8217;s no overload exist! Awesome, this type of error is much much better than an exception during runtime.</p>
 </div>
 <div class="paragraph">
 <p>Having all this we can create a first version of our <code>callHelper()</code> function:</p>
@@ -282,7 +297,7 @@ typename std::enable_if&lt;std::is_same&lt;T, int&gt;::value, int&gt;::type from
 </div>
 </div>
 <div class="paragraph">
-<p>As you remember, <code>Args</code> is a parameter pack. And <code>fromString&lt;Args&gt;()&#8230;&#8203;</code> is a parameter pack expansion. There&#8217;re <a href="http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion">strict rules</a> how parameter pack is expanded. For our case with <code>int</code> and <code>float</code> this will become it will be expanded:</p>
+<p>As you remember, <code>Args</code> is a parameter pack. And <code>fromString&lt;Args&gt;()&#8230;&#8203;</code> is a parameter pack expansion. There&#8217;re <a href="http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion">strict rules</a> how parameter pack is expanded. For our case with <code>int</code> and <code>float</code> it will be expanded to:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -293,7 +308,7 @@ typename std::enable_if&lt;std::is_same&lt;T, int&gt;::value, int&gt;::type from
 </div>
 </div>
 <div class="paragraph">
-<p>We already have two <code>fromString()</code> overloads for our types. Now the trick is to pass the correct string to them, i.e. implement <code>getStringFromArray()</code> function. The naive approach would be to remove this function completely and just use <code>strArgs</code> vector together with some counter which will be incremented every time I access vector element:</p>
+<p>We already have two <code>fromString()</code> overloads for our types. Now the trick is to pass the correct string from the vector to them, i.e. implement <code>getStringFromArray()</code> function. The naive approach would be to remove <code>getStringFromArray()</code> completely and just use <code>strArgs</code> vector together with some counter which will be incremented every time we access a vector element:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -305,15 +320,15 @@ typename std::enable_if&lt;std::is_same&lt;T, int&gt;::value, int&gt;::type from
 </div>
 </div>
 <div class="paragraph">
-<p>Unfortunately this will not work. The C++ standard does not specify the <a href="http://en.cppreference.com/w/cpp/language/eval_order">order of function arguments eveluation</a>. That means it can differ from compiler to compiler. And it&#8217;s absolutelly possible to have this setup:</p>
+<p>Unfortunately this will not work. The C++ standard does not specify the <a href="http://en.cppreference.com/w/cpp/language/eval_order">order of function arguments eveluation</a>. That means it can differ from compiler to compiler. And it&#8217;s absolutelly possible to have this setup (remember - we have <code>{ "42", "10.5" }</code> in our vector):</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-cpp" data-lang="cpp">foo(fromString&lt;int&gt;(strArgs[1]), fromString&lt;float&gt;(strArgs[0])); // notice how we pass wrong arguments</code></pre>
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">foo(fromString&lt;int&gt;(strArgs[1]), fromString&lt;float&gt;(strArgs[0])); // notice how we're passing wrong arguments</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>We need instead a robust solution that will work with across compilers. Imagine if we’ll rewrite <code>callHelper</code> slightly:</p>
+<p>We need instead a robust solution that will work across compilers. Let&#8217;s rewrite <code>callHelper</code> slightly:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -324,7 +339,7 @@ typename std::enable_if&lt;std::is_same&lt;T, int&gt;::value, int&gt;::type from
 </div>
 </div>
 <div class="paragraph">
-<p>Notice the extra template parameters <code>&lt;0&gt;</code> and <code>&lt;1&gt;</code>. And the definition of <code>getStringFromArray()</code> function:</p>
+<p>Notice the extra template parameters <code>&lt;0&gt;</code> and <code>&lt;1&gt;</code>. And here the definition of <code>getStringFromArray()</code> function:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -336,7 +351,7 @@ std::string getStringFromArray(const std::vector&lt;std::string&gt;&amp; strArgs
 </div>
 </div>
 <div class="paragraph">
-<p>Now no matter what was the evaluation order our function will return correct string, since <code>&lt;0&gt;</code> and <code>&lt;1&gt;</code> are template parameters and will always be in right sequence. And this order is guaranteed by <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence">sequence of integers</a> that we will use. For the moment let&#8217;s not think how we create one but see what happens when the function receives it:</p>
+<p>Now no matter what is the evaluation order our function will return correct string, since <code>&lt;0&gt;</code> and <code>&lt;1&gt;</code> are template parameters and will always be in right sequence. And this order is guaranteed by <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence">sequence of integers</a> that we will use. For the moment let&#8217;s not think how we create one but see what happens when the function receives it:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -348,7 +363,7 @@ void callHelper(const std::vector&lt;std::string&gt;&amp; strArgs, std::index_se
 </div>
 </div>
 <div class="paragraph">
-<p>The function itself now templated with <a href="http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter">non-type</a> parameter pack, in simple words the template parameters are integers and their number is equal to the number of <code>Args</code> (<code>Cheat</code> class parameter pack). This <code>Idx</code> sequence will be deduced from the function&#8217;s second unnamed argument <code>std::index_sequence&lt;Idx&#8230;&#8203;&gt;</code>. Do you see, we even don&#8217;t have the name for it! The sole reason for this second argument is to provide compile-time integers <code>&#8230;&#8203;Idx</code>. In the function&#8217;s body the two parameter packs - <code>Args</code> and <code>Idx</code> will be expanded together simultaneously according to <a href="http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion">aforementioned rules</a>. In our case everything will be expanded to:</p>
+<p>The function itself templated with <a href="http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter">non-type</a> parameter pack, in simple words the template parameters are integers and their number is equal to the number of <code>Args</code> (<code>Cheat</code> class parameter pack). This <code>Idx</code> sequence will be deduced from the function&#8217;s second unnamed argument <code>std::index_sequence&lt;Idx&#8230;&#8203;&gt;</code>. Do you see, we even don&#8217;t have the name for it, because we don&#8217;t use this parameter in the function&#8217;s body! The sole reason for this argument is to provide compile-time integers <code>&#8230;&#8203;Idx</code>. In the function&#8217;s body the two parameter packs - <code>Args</code> and <code>Idx</code> will be expanded together simultaneously according to <a href="http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion">aforementioned rules</a>. In our case everything will be expanded to:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -374,7 +389,10 @@ A helper alias template std::index_sequence_for is defined to convert any type p
 </em></p>
 </div>
 <div class="paragraph">
-<p>Putting this all together we can call our helper like this:</p>
+<p>In other words, <code>&lt;&#8230;&#8203;Args&gt;`which, for example, can be `&lt;int, float, std::string, double&gt;</code> will be converted to <code>std::index_sequence&lt;0, 1, 2, 3&gt;</code>.</p>
+</div>
+<div class="paragraph">
+<p>Putting it all together we can call our helper like this:</p>
 </div>
 <div class="listingblock">
 <div class="content">
