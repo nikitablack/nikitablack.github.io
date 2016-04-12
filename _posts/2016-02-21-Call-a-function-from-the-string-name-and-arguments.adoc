@@ -1,7 +1,7 @@
 = Call a function from the string name and arguments
 :hp-tags: c++
 
-Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments. In other words the system should be able to call a function:
+Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments with different types. In other words the system should be able to call a function:
 
 [source,cpp]
 ----
@@ -14,16 +14,16 @@ with a console command:
 foo 42 10.5
 ----
 
-I'll not describe in this post how I'm receiving this string as well how I'm parsing it. Let's assume that I'm operating with a vector of strings where the first element - the name of the function and the rest - function parameters. So at some point I have this vector:
+I'll not describe how I'm receiving this string as well how I'm parsing it. Let's assume that we're operating with a vector of strings where the first element - the name of the function and the rest - function parameters. So at some point er have this vector:
 
 [source,cpp]
 ----
 { "foo", "42", "10.5" }
 ----
 
-And I need somehow call a correct function and pass a correct number of parameters with a correct type.
+And we need somehow call a correct function and pass a correct number of parameters with a correct type.
 
-There's no way to call an unknown function just knowing it's name in C++. At least I don't know such a way. So in order to call something I need first register it. By registration I mean storing of a function pointer together with some string - it's name. The `std::map` is a good candidate for that. But I don't store raw pointer. Instead, I have a wrapper class, called `Cheat`, for my function. Cheat is a templated class with function arguments types as template parameters. It's declaration looks like this:
+There's no way to call an unknown function just knowing it's name in C++. At least I don't know such a way. So in order to call something we first need register it. By registration I mean storing of a function pointer together with it's name. The `std::map` is a good candidate for that. But I don't store raw pointer. Instead, I have a wrapper class, called `Cheat`, for my function. Cheat is a templated class with function arguments types as template parameters. It's declaration looks like this:
 
 [source,cpp]
 ----
@@ -36,7 +36,7 @@ class Cheat : public CheatBase
 	}
 	// ...
 private:
-	void(* const func)(Args...); # <1>
+	void(* const func)(Args...);
 }
 ----
 
@@ -81,7 +81,7 @@ std::shared_ptr<CheatBase> makeCheat(void(*funcPtr)(Args... arguments))
 myMap["foo"] = makeCheat(&foo);
 ----
 
-Thanks to type deduction I don't need to type template parameters for the function.
+Thanks to type deduction we don't need to type template parameters for the function.
 
 NOTE: Here for simplcity I'm passing arguments by value. The better approach is to use http://en.cppreference.com/w/cpp/utility/forward[perfect forwarding].
 
@@ -95,7 +95,7 @@ The heart of the `Cheat` class is a `call()` function override:
 ----
 bool call(const std::vector<std::string>& cheatParams) override
 {
-	if (sizeof...(Args) != cheatParams.size()) # <1>
+	if (sizeof...(Args) != cheatParams.size()) // # <1>
 	{
 		// if a number of passed arguments is not equal to a number of parameters declared in cheat return false - this is an error.
 		return false;
@@ -106,9 +106,9 @@ bool call(const std::vector<std::string>& cheatParams) override
 	return true;
 }
 ----
-<1> http://en.cppreference.com/w/cpp/language/sizeof...[`sizeof...(Args)`] return a number of arguments of parameter pack that was used during `Cheat` class instantiation. This operator also can be used during compile-time.
+<1> http://en.cppreference.com/w/cpp/language/sizeof...[`sizeof...(Args)`] return a number of arguments of the parameter pack that was used during `Cheat` class instantiation.
 
-First we check that we passed correct number of arguments. And all the magic happens in `callHelper()` function. Don't think about `index_sequence_for<Args...>` for now, we'll come to this later.
+First we check that we passed correct number of arguments. In the number is wrong simply do nothing and return. And all the magic happens in `callHelper()` function. Don't think about `index_sequence_for<Args...>` for now, we'll come to this later:
 
 [source,cpp]
 ----
@@ -119,21 +119,23 @@ void callHelper(const std::vector<std::string>& strArgs, std::index_sequence<Idx
 }
 ----
 
-Wow! Looks scary. Actually, not. `callHelper()` is a variadic templated function which accepts a vector with string arguments which should be converted to appropriated types and a http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. What are this integers? Why? I can better explain it if we'll start from the end. Let's stick to `foo(int, type)` function signature to the rest of this post. In the very end I need to call this function with correct parameters, for example:
+Wow! Looks scary. Actually, not. `callHelper()` is a variadic templated function which accepts a vector with string arguments (and which should be converted to appropriate types) and a http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers]. What are this integers? Why? I can better explain it if we'll start from the end. Let's stick to `foo(int, type)` function signature for the rest of this post.
+
+In the very very end I need to call this function with correct parameters, for example:
 
 [source,cpp]
 ----
 foo(42, 10.5);
 ----
 
-But I have only vector of strings `{"42", "10.5"}`. I need some conversion function that will return a correct type from the corresponding string. Moreover I need to call this function several times - once for each parameter:
+But I have only a vector of strings `{"42", "10.5"}`. I need some conversion function that will return a correct type from the corresponding string. Moreover I need to call this function several times - once for each parameter. Let's call this conversion function `fromString`:
 
 [source,cpp]
 ----
 foo(fromString("42"), fromString("10.5"));
 ----
 
-In order to convert to correct type `fromString()` we'll use templated function with overload for *every* type I need. For the case with `int` the overload is:
+In order to convert to correct type we'll use templated function with overload for *every* type I need. For the case with `int` the overload is (for the `float` it's similar, just replace `int` to `float` and `std::stoi()` to `std::stof()`):
 
 [source,cpp]
 ----
@@ -144,7 +146,18 @@ typename std::enable_if<std::is_same<T, int>::value, int>::type fromString(const
 }
 ----
 
-For the `float` it's similar. The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good explanation can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog]. In shorts - `std::is_same<T, int>::value` return `true` if `T` is `int` and `false` overwise. Next, `std::enable_if<true, int>::type` will return `int` and `std::enable_if<false, int>::type` simply will not compile. That mean we'll get a *compile time* error if we'll use a type for which there's no overload exist! Awesome, tis types of errors are much much better than exception during runtime.
+The http://en.cppreference.com/w/cpp/language/sfinae[SFINAE] technique is used here. Good explanation of what it is can be found http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html[in this awesome blog]. In short - `std::is_same<T, int>::value` will return `true` if `T` is `int` and `false` overwise. Next, `std::enable_if<true, int>::type` will return `int` and `std::enable_if<false, int>::type` simply will not compile. After substitution we'll have:
+
+[source,cpp]
+----
+template<int>
+int fromString(const std::string& str)
+{
+	return std::stoi(str);
+}
+----
+
+And additional feature of it is that we'll get a *compile time* error if we'll use a type for which there's no overload exist! Awesome, this type of error is much much better than an exception during runtime.
 
 Having all this we can create a first version of our `callHelper()` function:
 
@@ -156,7 +169,7 @@ void callHelper(const std::vector<std::string>& strArgs)
 }
 ----
 
-As you remember, `Args` is a parameter pack. And `fromString<Args>()...` is a parameter pack expansion. There're http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion[strict rules] how parameter pack is expanded. For our case with `int` and `float` this will become it will be expanded:
+As you remember, `Args` is a parameter pack. And `fromString<Args>()...` is a parameter pack expansion. There're http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion[strict rules] how parameter pack is expanded. For our case with `int` and `float` it will be expanded to:
 
 [source,cpp]
 ----
@@ -166,7 +179,7 @@ void callHelper(const std::vector<std::string>& strArgs)
 }
 ----
 
-We already have two `fromString()` overloads for our types. Now the trick is to pass the correct string to them, i.e. implement `getStringFromArray()` function. The naive approach would be to remove this function completely and just use `strArgs` vector together with some counter which will be incremented every time I access vector element:
+We already have two `fromString()` overloads for our types. Now the trick is to pass the correct string from the vector to them, i.e. implement `getStringFromArray()` function. The naive approach would be to remove `getStringFromArray()` completely and just use `strArgs` vector together with some counter which will be incremented every time we access a vector element:
 
 [source,cpp]
 ----
@@ -177,14 +190,14 @@ void callHelper(const std::vector<std::string>& strArgs)
 }
 ----
 
-Unfortunately this will not work. The C++ standard does not specify the http://en.cppreference.com/w/cpp/language/eval_order[order of function arguments eveluation]. That means it can differ from compiler to compiler. And it's absolutelly possible to have this setup:
+Unfortunately this will not work. The C++ standard does not specify the http://en.cppreference.com/w/cpp/language/eval_order[order of function arguments eveluation]. That means it can differ from compiler to compiler. And it's absolutelly possible to have this setup (remember - we have `{ "42", "10.5" }` in our vector):
 
 [source,cpp]
 ----
-foo(fromString<int>(strArgs[1]), fromString<float>(strArgs[0])); // notice how we pass wrong arguments
+foo(fromString<int>(strArgs[1]), fromString<float>(strArgs[0])); // notice how we're passing wrong arguments
 ----
 
-We need instead a robust solution that will work with across compilers. Imagine if we’ll rewrite `callHelper` slightly:
+We need instead a robust solution that will work across compilers. Let's rewrite `callHelper` slightly:
 
 [source,cpp]
 ----
@@ -194,7 +207,7 @@ void callHelper(const std::vector<std::string>& strArgs)
 }
 ----
 
-Notice the extra template parameters `<0>` and `<1>`. And the definition of `getStringFromArray()` function:
+Notice the extra template parameters `<0>` and `<1>`. And here the definition of `getStringFromArray()` function:
 
 [source,cpp]
 ----
@@ -205,7 +218,7 @@ std::string getStringFromArray(const std::vector<std::string>& strArgs)
 }
 ----
 
-Now no matter what was the evaluation order our function will return correct string, since `<0>` and `<1>` are template parameters and will always be in right sequence. And this order is guaranteed by http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers] that we will use. For the moment let's not think how we create one but see what happens when the function receives it:
+Now no matter what is the evaluation order our function will return correct string, since `<0>` and `<1>` are template parameters and will always be in right sequence. And this order is guaranteed by http://en.cppreference.com/w/cpp/utility/integer_sequence[sequence of integers] that we will use. For the moment let's not think how we create one but see what happens when the function receives it:
 
 [source,cpp]
 ----
@@ -216,7 +229,7 @@ void callHelper(const std::vector<std::string>& strArgs, std::index_sequence<Idx
 }
 ----
 
-The function itself now templated with http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter[non-type] parameter pack, in simple words the template parameters are integers and their number is equal to the number of `Args` (`Cheat` class parameter pack). This `Idx` sequence will be deduced from the function's second unnamed argument `std::index_sequence<Idx...>`. Do you see, we even don't have the name for it! The sole reason for this second argument is to provide compile-time integers `...Idx`. In the function's body the two parameter packs - `Args` and `Idx` will be expanded together simultaneously according to http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion[aforementioned rules]. In our case everything will be expanded to:
+The function itself templated with http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter[non-type] parameter pack, in simple words the template parameters are integers and their number is equal to the number of `Args` (`Cheat` class parameter pack). This `Idx` sequence will be deduced from the function's second unnamed argument `std::index_sequence<Idx...>`. Do you see, we even don't have the name for it, because we don't use this parameter in the function's body! The sole reason for this argument is to provide compile-time integers `...Idx`. In the function's body the two parameter packs - `Args` and `Idx` will be expanded together simultaneously according to http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion[aforementioned rules]. In our case everything will be expanded to:
 
 [source,cpp]
 ----
@@ -239,7 +252,9 @@ __
 A helper alias template std::index_sequence_for is defined to convert any type parameter pack into an index sequence of the same length.
 __
 
-Putting this all together we can call our helper like this:
+In other words, `<...Args>`which, for example, can be `<int, float, std::string, double>` will be converted to `std::index_sequence<0, 1, 2, 3>`.
+
+Putting it all together we can call our helper like this:
 
 [source,cpp]
 ----
