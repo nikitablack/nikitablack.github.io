@@ -1,4 +1,4 @@
-= Generic delegates (one more implementation)
+= Generic c++ delegates
 :hp-tags: c++
 
 blah blah blah
@@ -6,46 +6,15 @@ blah blah blah
 [source,cpp]
 ----
 #include <iostream>
-#include <string>
-#include <memory>
-#include <type_traits>
-#include <typeinfo>
 #include <functional>
 
 using namespace std;
 
-int global(int a, float b)
-{
-	cout << "in global" << endl;
-	return a + static_cast<int>(b);
-}
+template<typename T>
+class Delegate;
 
-struct Functor
-{
-	int operator()(int a, float b)
-	{
-		cout << "in functor" << endl;
-		return a + static_cast<int>(b);
-	}
-};
-
-struct UserStruct
-{
-	int member(int a, float b)
-	{
-		cout << "in member" << endl;
-		return a + static_cast<int>(b);
-	}
-
-	static int staticMember(int a, float b)
-	{
-		cout << "in static" << endl;
-		return a + static_cast<int>(b);
-	}
-};
-
-template<typename Ret, typename... Args>
-class Delegate
+template<typename Ret, typename ...Args>
+class Delegate<Ret(Args...)>
 {
 	using CallerType = Ret(*)(void*, Args&&...);
 
@@ -107,7 +76,35 @@ private:
 	}
 };
 
+int global(int a, float b)
+{
+	cout << "in global" << endl;
+	return a + static_cast<int>(b);
+}
 
+struct Functor
+{
+	int operator()(int a, float b)
+	{
+		cout << "in functor" << endl;
+		return a + static_cast<int>(b);
+	}
+};
+
+struct UserStruct
+{
+	int member(int a, float b)
+	{
+		cout << "in member" << endl;
+		return a + static_cast<int>(b);
+	}
+
+	static int staticMember(int a, float b)
+	{
+		cout << "in static" << endl;
+		return a + static_cast<int>(b);
+	}
+};
 
 int main()
 {
