@@ -12,6 +12,8 @@ Here `ptr` is an actual pointer and `SomeClass` is the name of the class - owner
 
 The problem can be solved if instead of passing function pointers we'll pass some generic wrapper - a delegate. Later this wrapper can be called and a call will be delegated to the actual function which delegate wraps. Sounds easy, right? And it is easy and there many many solutions. My favorite are http://www.codeproject.com/Articles/11015/The-Impossibly-Fast-C-Delegates[The Impossibly Fast Delegates], https://blog.molecular-matters.com/2011/09/19/generic-type-safe-delegates-and-events-in-c[Generic, type-safe delegates] and http://blog.coldflake.com/posts/C++-delegates-on-steroids/[Delegates On Steroids]. And basically my implementation is a mix of aforementioned code with small additions. So, let's start.
 
+
+
 [source,cpp]
 ----
 #include <iostream>
