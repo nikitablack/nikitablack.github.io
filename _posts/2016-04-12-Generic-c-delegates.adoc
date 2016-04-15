@@ -46,6 +46,11 @@ public:
 	{
 		return callback(callee, forward<Args>(args)...);
 	}
+    
+    bool operator==(const Delegate& other)
+	{
+		return callee == other.callee && callback == other.callback;
+	}
 
 private:
 	void* callee{ nullptr };
