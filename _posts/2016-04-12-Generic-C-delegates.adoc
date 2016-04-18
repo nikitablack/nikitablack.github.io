@@ -158,11 +158,20 @@ Here we created an incomplete base template class and a specialization. This is 
 
 [source,cpp]
 ----
-template<Ret(*funcPtr)(Args...)>
-static Delegate create()
-{
-	return Delegate{ nullptr, &globalCaller<funcPtr> };
-}
+public:
+	template<Ret(*funcPtr)(Args...)>
+	static Delegate create()
+	{
+		return Delegate{ nullptr, &globalCaller<funcPtr> };
+	}
+    
+private:
+	template<Ret(*funcPtr)(Args...)>
+	static Ret globalCaller(void* callee, Args&&... args)
+	{
+		(void)callee;
+		return funcPtr(forward<Args>(args)...);
+	}
 ----
 
 
