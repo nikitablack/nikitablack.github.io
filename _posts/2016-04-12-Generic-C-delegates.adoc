@@ -250,7 +250,20 @@ private:
 	}
 ----
 
-We have the same *verloaded* create function. We can go wild here and add different compile time checks, like check that passed parameter is a pointer and is a callable object and add readable error message if requirement violated. But the 
+We have the same *verloaded* create function. We can go wild here and add different compile time checks, like check that passed parameter is a pointer and is a callable object and add readable error message if requirement violated. But this signature will report about the problems anyway, maybe not in a friendly manner. And as in a case with member function we cast our functor to correct type in a `functorCaller()` wrapper, so no type problems here.
+
+And now we can use functors with a delegate:
+
+[source,cpp]
+----
+auto lambda = [](int a, float b)->int
+{
+	return a + static_cast<int>(b);
+};
+
+Delegate<int(int, float)> d{ Delegate<int(int, float)>::create(&lambda) };
+----
+
 
 
 
