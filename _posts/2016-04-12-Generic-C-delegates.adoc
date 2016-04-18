@@ -167,9 +167,8 @@ public:
     
 private:
 	template<Ret(*funcPtr)(Args...)>
-	static Ret globalCaller(void* callee, Args&&... args)
+	static Ret globalCaller(void*, Args&&... args)
 	{
-		(void)callee;
 		return funcPtr(forward<Args>(args)...);
 	}
 ----
