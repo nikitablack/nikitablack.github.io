@@ -162,7 +162,7 @@ public:
 	template<Ret(*funcPtr)(Args...)>
 	static Delegate create()
 	{
-		return Delegate{ nullptr, &globalCaller<funcPtr> };
+		return Delegate{ nullptr, &globalCaller<funcPtr> }; // nullptr as first parameter because static/global functions can be called directly
 	}
     
 private:
@@ -172,6 +172,9 @@ private:
 		return funcPtr(forward<Args>(args)...);
 	}
 ----
+
+Nothing really complicated here - we just defined a static `create` function (which calls the private constructor) and a wrapper for the callback.  
+
 
 
 [source,cpp]
