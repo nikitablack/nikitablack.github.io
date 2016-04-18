@@ -112,6 +112,13 @@ main:
 
 You don't need to know an assembly to find the interesting thing - the call to `call2()` was completely optimized out. In other words - using the template wrapper will be replaced by the compiler to the actual callback invokation! It's hard to tell will the compiler optimize the same way in real big project but at least it gives some sort of hope that it will.
 
+Knowing this we can start to implement our delegate. In c++ we have a bunch of callable objects and we can split them in three categories:
+
+* global functions - the functions declared globally and static functions. This pointers which we will pass directly to our delegate. For example `&globalFunction` will return the address of a function (`&` is optional). And we can be sure we will not have problems, because this functions always exist during program lifetime.
+
+* member functions - the members of class or struct. The pointer to this function should be called on valid object
+
+
 
 
 
