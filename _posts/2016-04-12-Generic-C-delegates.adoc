@@ -191,22 +191,25 @@ d(10, 5.0f);
 ----
 
 Member function case is slightly more different:
+
 [source,cpp]
 ----
 public:
-	template<Ret(*funcPtr)(Args...)>
-	static Delegate create()
+	template<typename T, Ret(T::*funcPtr)(Args...)>
+	static Delegate create(T* obj)
 	{
-		return Delegate{ nullptr, &globalCaller<funcPtr> }; // nullptr as first parameter because static/global functions can be called directly
+		return Delegate{ obj, &memberCaller<T, funcPtr> };
 	}
     
 private:
-	template<Ret(*funcPtr)(Args...)>
-	static Ret globalCaller(void*, Args&&... args)
+	template<typename T, Ret(T::*funcPtr)(Args...)>
+	static Ret memberCaller(void* callee, Args&&... args)
 	{
-		return funcPtr(forward<Args>(args)...);
+		return (static_cast<T*>(callee)->*funcPtr)(forward<Args>(args)...);
 	}
 ----
+
+
 
 
 
