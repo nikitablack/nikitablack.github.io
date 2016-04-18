@@ -120,16 +120,46 @@ Knowing this we can start to implement our delegate. In c++ we have a bunch of c
 
 * different callable objects that are not fitting to previous categories. This can be functors, lambdas, std::function objects. Thought lambda can be casted to function pointer and treated as global function this pointer can't be used as template argument. Moreover, only lambdas without capture can be casted. This is why I put lambdas in this category.
 
+All that means that we should manage 3 cases in our code. So let's do it.
+
+[source,cpp]
+----
+template<typename T>
+class Delegate;
+
+template<typename Ret, typename ...Args>
+class Delegate<Ret(Args...)>
+{
+	using CallbackType = Ret(*)(void*, Args&&...);
+    
+public:
+	Ret operator()(Args&&... args)
+	{
+		return callback(callee, forward<Args>(args)...);
+	}
+    
+    bool operator==(const Delegate& other)
+	{
+		return callee == other.callee && callback == other.callback;
+	}
+    
+private:
+	void* callee{ nullptr };
+	CallbackType callback{ nullptr };
+    
+private:
+	Delegate(void* obj, CallbackType funcPtr) : callee{ obj }, callback{ funcPtr }
+	{
+	}
+}
+----
+
+Here we created an incomplete base template class and a specialization. This is simply a cosmetic stuff - I like more `Delegate<int(int, float)>` signature than `Delegate<int, int, float>`. Next we declared a callback type `Ret(*)(void*, Args&&...)` - the function that accepts arguments that should be forwarded to supplied callback and an object - the `callee` that we'll use to call supplied callback on. This `callee` will be a pointer to class/struct instance or a pointer to a lambda/functor and null for global/static functions. Let `void*` type scare you not - it will be casted to correct type in elegant manner. 
 
 
 
 [source,cpp]
 ----
-#include <iostream>
-#include <functional>
-
-using namespace std;
-
 template<typename T>
 class Delegate;
 
