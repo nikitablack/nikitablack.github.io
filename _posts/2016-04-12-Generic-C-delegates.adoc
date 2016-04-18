@@ -116,9 +116,9 @@ Knowing this we can start to implement our delegate. In c++ we have a bunch of c
 
 * global functions - the functions declared globally and static functions. This pointers which we will pass directly to our delegate. For example `&globalFunction` will return the address of a function (`&` is optional). And we can be sure we will not have problems, because this functions always exist during program lifetime.
 
-* member functions - the members of class or struct. The pointer to this function should be called on valid object
+* member functions - the members of class or struct. The pointer to this function should be called on valid object but it's developer's  responsibility to keep an object alive. The member function pointer can be written, for example, `int(SomeObj::*funcPtr)(int)` and called `obj->*funcPtr(42)`.
 
-
+* different callable objects that are not fitting to previous categories. This can be functors, lambdas, std::function objects. Thought lambda can be casted to function pointer and treated as global function this pointer can't be used as template argument. Moreover, only lambdas without capture can be casted. This is why I put lambdas in this category.
 
 
 
