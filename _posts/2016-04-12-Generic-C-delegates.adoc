@@ -173,7 +173,9 @@ private:
 	}
 ----
 
-Nothing really complicated here - we just defined a static `create` function (which calls the private constructor) and a wrapper for the callback.  
+Nothing really complicated here - we just defined a static `create` function (which calls the private constructor) and a wrapper for the callback.
+
+!WARNING! The downside of template here is that we need to manually type template argument - it can't be deduced.
 
 
 
