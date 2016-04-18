@@ -211,8 +211,46 @@ private:
 
 Here we have *overloaded* `create()` function. And here we need to pass a pointer to existing object which will be stored for later use as well as a wrapper. This `memberCaller()` wrapper casts the `void*` pointer to the provided type so we can say we have some sort of type safety here.
 
+And it's created and called:
 
+[source,cpp]
+----
+struct UserStruct
+{
+	int member(int a, float b)
+	{
+		return a + static_cast<int>(b);
+	}
+};
 
+UserStruct us;
+
+Delegate<int(int, float)> d{ Delegate<int(int, float)>::create<UserStruct, &UserStruct::member>(&us) };
+d(10, 5.0f);
+----
+
+And the final case is a functor case. Here we don't have a function pointer but only the callable object.
+
+Member function case is slightly more different:
+
+[source,cpp]
+----
+public:
+	template<typename T>
+	static Delegate create(T&& t)
+	{
+		return Delegate{ t, &functorCaller<T> };
+	}
+    
+private:
+	template<typename T>
+	static Ret functorCaller(void* functor, Args&&... args)
+	{
+		return (*static_cast<T>(functor))(forward<Args>(args)...);
+	}
+----
+
+We have the same *verloaded* create function. We can go wild here and add different compile time checks, like check that passed parameter is a pointer and is a callable object and add readable error message if requirement violated. But the 
 
 
 
