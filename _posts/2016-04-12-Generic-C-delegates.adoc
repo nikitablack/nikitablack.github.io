@@ -81,6 +81,36 @@ int main()
 
 I used https://gcc.godbolt.org/[https://gcc.godbolt.org/] to compile it. Thought it's hard to get correct output - compilers are damn smart and produces optimized code - with *gcc* compiler and *O1* optimization I got the following assembly output.
 
+[source,cpp]
+test(int):
+        mov     eax, edi
+        ret
+call1(int (*)(int)):
+        sub     rsp, 8
+        mov     rax, rdi
+        mov     edi, 10
+        call    rax
+        add     rsp, 8
+        ret
+main:
+        sub     rsp, 8
+        mov     edi, OFFSET FLAT:test(int)
+        call    call1(int (*)(int))
+        add     eax, 15
+        add     rsp, 8
+        ret
+        sub     rsp, 8
+        mov     edi, OFFSET FLAT:std::__ioinit
+        call    std::ios_base::Init::Init()
+        mov     edx, OFFSET FLAT:__dso_handle
+        mov     esi, OFFSET FLAT:std::__ioinit
+        mov     edi, OFFSET FLAT:std::ios_base::Init::~Init()
+        call    __cxa_atexit
+        add     rsp, 8
+        ret
+----
+
+You don't need to know an assembly to find the interesting thing - the call to `call2()` was completely optimized out. In other words - using the template wrapper will be replaced by the compiler to the actual callback invokation! It's hard to tell will the compiler optimize the same way in real big project but at least it gives some sort of hope that it will.
 
 
 
