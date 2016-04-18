@@ -110,7 +110,7 @@ main:
         ret
 ----
 
-You don't need to know an assembly to find the interesting thing - the call to `call2()` was completely optimized out. In other words - using the template wrapper will be replaced by the compiler to the actual callback invokation! It's hard to tell will the compiler optimize the same way in real big project but at least it gives some sort of hope that it will.
+You don't need to know an assembly to find the interesting thing - the call to `call2()` was completely optimized out. And the only call here is a call to `call1()` function which calls the supplied callback. In other words - using the template wrapper will be replaced by the compiler to the actual callback invokation (here it also optimized out)! It's hard to tell will the compiler optimize the same way in real big project but at least it gives some sort of hope that it will.
 
 Knowing this we can start to implement our delegate. In c++ we have a bunch of callable objects and we can split them in three categories:
 
