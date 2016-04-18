@@ -29,7 +29,7 @@ int test(int a)
 foo(&test);
 ----
 
-Another option is to pass function pointer as http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter[non-type template parameter]:
+Another option is to pass function pointer as http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter[non-type template parameter]. In this case we don't need to keep a pointer - the whole function was created around specified pointer:
 
 [source,cpp]
 ----
@@ -46,6 +46,43 @@ int test(int a)
 
 foo<&test>();
 ----
+
+But which us better. What to choose? Of cource there's no answer. It depends. If you don't know before which function we need to use as a callback, then passing a function ponter as a function argument is the only option. But if we know, then passing it as template argument can be a good choice. Consider this example:
+
+[source,cpp]
+----
+int call1(int(*funcPtr)(int))
+{
+  return funcPtr(10);
+}
+
+template<int(*F)(int)>
+int call2()
+{
+  return (F)(10);
+}
+
+int test(int a)
+{
+  return a;
+}
+
+int main()
+{
+  int i{0};
+  
+  i += test(5);
+  i += call1(&test);
+  i += call2<&test>();
+  
+  return i;
+}
+----
+
+I used https://gcc.godbolt.org/[https://gcc.godbolt.org/] to compile it. Thought it's hard to get correct output - compilers are damn smart and produces optimized code - with *gcc* compiler and *O1* optimization I got the following assembly output.
+
+
+
 
 
 
