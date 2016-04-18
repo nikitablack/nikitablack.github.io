@@ -175,7 +175,46 @@ private:
 
 Nothing really complicated here - we just defined a static `create` function (which calls the private constructor) and a wrapper for the callback.
 
-!WARNING! The downside of template here is that we need to manually type template argument - it can't be deduced.
+NOTE: The downside of template here is that we need to manually type template argument - it can't be deduced.
+
+Now we can create and call our first delegate:
+
+[source,cpp]
+----
+int global(int a, float b)
+{
+	return a + static_cast<int>(b);
+}
+
+Delegate<int(int, float)> d{ Delegate<int(int, float)>::create<&global>() };
+d(10, 5.0f);
+----
+
+Member function case is slightly more different:
+[source,cpp]
+----
+public:
+	template<Ret(*funcPtr)(Args...)>
+	static Delegate create()
+	{
+		return Delegate{ nullptr, &globalCaller<funcPtr> }; // nullptr as first parameter because static/global functions can be called directly
+	}
+    
+private:
+	template<Ret(*funcPtr)(Args...)>
+	static Ret globalCaller(void*, Args&&... args)
+	{
+		return funcPtr(forward<Args>(args)...);
+	}
+----
+
+
+
+
+
+
+
+
 
 
 
