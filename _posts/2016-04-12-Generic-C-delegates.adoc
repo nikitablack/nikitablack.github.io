@@ -164,7 +164,6 @@ public:
     template<Ret(*funcPtr)(Args...)>
 	static Delegate create()
 	{
-		cout << "create global" << endl;
 		return Delegate{ nullptr, &globalCaller<funcPtr> }; // nullptr as first parameter because static/global functions can be called directly
 	}
     
