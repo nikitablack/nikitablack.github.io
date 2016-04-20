@@ -238,16 +238,16 @@ Member function case is slightly more different:
 ----
 public:
 	template<typename T>
-	static Delegate create(T&& t)
+	static Delegate create(shared_ptr<T> t)
 	{
 		return Delegate{ t, &functorCaller<T> };
 	}
     
 private:
 	template<typename T>
-	static Ret functorCaller(void* functor, Args&&... args)
+	static Ret functorCaller(shared_ptr<void> functor, Args... args)
 	{
-		return (*static_cast<T>(functor))(forward<Args>(args)...);
+		return (*static_cast<T*>(functor.get()))(args...);
 	}
 ----
 
