@@ -275,7 +275,7 @@ auto ptr = make_shared_lambda([](int a, float b)->int
 Delegate<int(int, float)> d{ Delegate<int(int, float)>::create(ptr) };
 ----
 
-
+NOTE: The main point of a delegate - call underlying function later. And we want to be sure that callable object exist. That's why we need to track the object's lifetime.
 
 
 
