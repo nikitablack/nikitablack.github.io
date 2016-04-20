@@ -256,7 +256,7 @@ The tricky part is to create a lambda shared pointer. As you may know there's no
 [source,cpp]
 ----
 template <typename T, typename L = typename std::decay<T>::type>
-std::shared_ptr<L> make_shared_lambda(T&& t)
+shared_ptr<L> make_shared_lambda(T&& t)
 {
 	return make_shared<L>(forward<T>(t));
 }
