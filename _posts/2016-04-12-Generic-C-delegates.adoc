@@ -159,17 +159,18 @@ Here we created an incomplete base template class and a specialization. This is 
 [source,cpp]
 ----
 public:
-	template<Ret(*funcPtr)(Args...)>
+    template<Ret(*funcPtr)(Args...)>
 	static Delegate create()
 	{
+		cout << "create global" << endl;
 		return Delegate{ nullptr, &globalCaller<funcPtr> }; // nullptr as first parameter because static/global functions can be called directly
 	}
     
 private:
 	template<Ret(*funcPtr)(Args...)>
-	static Ret globalCaller(void*, Args... args)
+	static Ret globalCaller(shared_ptr<void>, Args... args)
 	{
-		return funcPtr(forward<Args>(args)...);
+		return funcPtr(args...);
 	}
 ----
 
@@ -196,16 +197,16 @@ Member function case is slightly more different:
 ----
 public:
 	template<typename T, Ret(T::*funcPtr)(Args...)>
-	static Delegate create(T* obj)
+	static Delegate create(shared_ptr<T> obj)
 	{
 		return Delegate{ obj, &memberCaller<T, funcPtr> };
 	}
     
 private:
 	template<typename T, Ret(T::*funcPtr)(Args...)>
-	static Ret memberCaller(void* callee, Args... args)
+	static Ret memberCaller(shared_ptr<void> callee, Args... args)
 	{
-		return (static_cast<T*>(callee)->*funcPtr)(forward<Args>(args)...);
+		return (static_cast<T*>(callee.get())->*funcPtr)(args...);
 	}
 ----
 
