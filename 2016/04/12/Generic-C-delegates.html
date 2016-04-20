@@ -23,7 +23,7 @@
     <meta property="og:description" content="I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..." />
     <meta property="og:url" content="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" />
     <meta property="article:published_time" content="2016-04-11T22:00:00.000Z" />
-    <meta property="article:modified_time" content="2016-04-20T13:09:20.130Z" />
+    <meta property="article:modified_time" content="2016-04-20T13:10:41.846Z" />
     <meta property="article:tag" content="c++" />
     
     <meta name="twitter:card" content="summary" />
@@ -46,7 +46,7 @@
     "headline": "Generic C++ delegates",
     "url": "https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html",
     "datePublished": "2016-04-11T22:00:00.000Z",
-    "dateModified": "2016-04-20T13:09:20.130Z",
+    "dateModified": "2016-04-20T13:10:41.846Z",
     "keywords": "c++",
     "description": "I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..."
 }
@@ -196,7 +196,7 @@ main:
 <div class="ulist">
 <ul>
 <li>
-<p>global functions - functions declared globally and static functions. The pointer to such a function will be passed to our delegate. For example <code>&amp;globalFunction</code> will return the address of a function (<code>&amp;</code> is optional). We can be sure we will not have problems calling it later, because this functions always exist during program lifetime.</p>
+<p>global functions - functions declared globally and static functions. The pointer to such a function will be passed to our delegate. For example <code>&amp;globalFunction</code> will return the address of a function (<code>&amp;</code> is optional). We can be sure we will not have problems calling it later, because this functions are always exist during program lifetime.</p>
 </li>
 <li>
 <p>member functions - members of a class or a struct. The pointer to this function should be called on valid object and it&#8217;s developer&#8217;s  responsibility to keep an object alive. The member function pointer can be written, for example, <code>int(SomeObj::*funcPtr)(int)</code> and called <code>obj&#8594;*funcPtr(42)</code>, where <code>obj</code> is a pointer.</p>
