@@ -214,7 +214,7 @@ private:
 
 Here we have *overloaded* `create()` function. And here we need to pass a pointer to existing object which will be stored for later use as well as a wrapper. I decided to use `shared_ptr` because I want to be sure that object is valid when I call a delegate. With `shared_ptr` I have this guarantee. The `memberCaller()` wrapper casts the `void*` pointer to the provided type so we can say we have some sort of type safety here.
 
-And it's created and called:
+And that's how it can be created and called:
 
 [source,cpp]
 ----
@@ -226,15 +226,12 @@ struct UserStruct
 	}
 };
 
-UserStruct us;
-
-Delegate<int(int, float)> d{ Delegate<int(int, float)>::create<UserStruct, &UserStruct::member>(&us) };
+Delegate<int(int, float)> d{ Delegate<int(int, float)>::create<UserStruct, &UserStruct::member>(make_shared<UserStruct>()) };
 d(10, 5.0f);
 ----
 
-And the final case is a functor case. Here we don't have a function pointer but only the callable object.
+The final case is a functor case. Here we don't have a function pointer but only the callable object.
 
-Member function case is slightly more different:
 
 [source,cpp]
 ----
@@ -253,18 +250,29 @@ private:
 	}
 ----
 
-We have the same *verloaded* create function. We can go wild here and add different compile time checks, like check that passed parameter is a pointer and is a callable object and add readable error message if requirement violated. But this signature will report about the problems anyway, maybe not in a friendly manner. And as in a case with member function we cast our functor to correct type in a `functorCaller()` wrapper, so no type problems here.
+We have another *overloaded* `create` function. We can go wild here and add different compile time checks (for example the check that passed parameter is a pointer and is a callable object) and add readable error message if requirements are violated. But this signature will report about the problems anyway, maybe not in a friendly manner. As in the case with a member function we cast our functor to right type in a `functorCaller()` wrapper, so no type problems here.
 
-And now we can use functors with a delegate:
+The tricky part is to create a lambda shared pointer. As you may know there's no strict type for lambda. Instead, on every lambda creation new type will be introduced. And this code `typeid([](){}).name() == typeid([](){}).name()` will return `false`. In order to create a necessary `shared_ptr` I created this function:
 
 [source,cpp]
 ----
-auto lambda = [](int a, float b)->int
+template <typename T, typename L = typename std::decay<T>::type>
+std::shared_ptr<L> make_shared_lambda(T&& t)
+{
+	return make_shared<L>(forward<T>(t));
+}
+----
+
+It's not ideal - the underlying lambda will be copied/moved. Anyway, now we can use functors with a delegate:
+
+[source,cpp]
+----
+auto ptr = make_shared_lambda([](int a, float b)->int
 {
 	return a + static_cast<int>(b);
-};
+});
 
-Delegate<int(int, float)> d{ Delegate<int(int, float)>::create(&lambda) };
+Delegate<int(int, float)> d{ Delegate<int(int, float)>::create(ptr) };
 ----
 
 
