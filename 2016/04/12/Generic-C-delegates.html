@@ -23,7 +23,7 @@
     <meta property="og:description" content="I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..." />
     <meta property="og:url" content="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" />
     <meta property="article:published_time" content="2016-04-11T22:00:00.000Z" />
-    <meta property="article:modified_time" content="2016-04-20T13:22:07.433Z" />
+    <meta property="article:modified_time" content="2016-04-20T13:24:55.659Z" />
     <meta property="article:tag" content="c++" />
     
     <meta name="twitter:card" content="summary" />
@@ -46,7 +46,7 @@
     "headline": "Generic C++ delegates",
     "url": "https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html",
     "datePublished": "2016-04-11T22:00:00.000Z",
-    "dateModified": "2016-04-20T13:22:07.433Z",
+    "dateModified": "2016-04-20T13:24:55.659Z",
     "keywords": "c++",
     "description": "I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..."
 }
@@ -354,7 +354,7 @@ private:
 </div>
 </div>
 <div class="paragraph">
-<p>We have another <strong>overloaded</strong> <code>create</code> function. We can go wild here and add different compile time checks (for example the check that passed parameter is a pointer and is a callable object) and add readable error message if requirements are violated. But this signature will report about the problems anyway, maybe not in a friendly manner. As in the case with a member function we cast our functor to right type in a <code>functorCaller()</code> wrapper, so no type problems here.</p>
+<p>We have another <strong>overloaded</strong> <code>create</code> function. We can go wild here and add different compile time checks (for example the check that passed parameter is a callable object) and add readable error message if requirements are violated. But this signature will report about the problems anyway, maybe not in a friendly manner. As in the case with a member function we cast our functor to right type in a <code>functorCaller()</code> wrapper, so no type problems here.</p>
 </div>
 <div class="paragraph">
 <p>The tricky part is to create a lambda shared pointer. As you may know there&#8217;s no strict type for lambda. Instead, on every lambda creation new type will be introduced. And this code <code>typeid([](){}).name() == typeid([](){}).name()</code> will return <code>false</code>. In order to create a necessary <code>shared_ptr</code> I created this function:</p>
