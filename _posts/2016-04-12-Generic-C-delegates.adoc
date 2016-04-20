@@ -249,7 +249,7 @@ private:
 	}
 ----
 
-We have another *overloaded* `create` function. We can go wild here and add different compile time checks (for example the check that passed parameter is a pointer and is a callable object) and add readable error message if requirements are violated. But this signature will report about the problems anyway, maybe not in a friendly manner. As in the case with a member function we cast our functor to right type in a `functorCaller()` wrapper, so no type problems here.
+We have another *overloaded* `create` function. We can go wild here and add different compile time checks (for example the check that passed parameter is a callable object) and add readable error message if requirements are violated. But this signature will report about the problems anyway, maybe not in a friendly manner. As in the case with a member function we cast our functor to right type in a `functorCaller()` wrapper, so no type problems here.
 
 The tricky part is to create a lambda shared pointer. As you may know there's no strict type for lambda. Instead, on every lambda creation new type will be introduced. And this code `typeid([](){}).name() == typeid([](){}).name()` will return `false`. In order to create a necessary `shared_ptr` I created this function:
 
