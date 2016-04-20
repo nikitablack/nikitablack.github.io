@@ -277,9 +277,90 @@ Delegate<int(int, float)> d{ Delegate<int(int, float)>::create(ptr) };
 
 NOTE: The main point of a delegate - call underlying function later. And we want to be sure that callable object exist. That's why we need to track the object's lifetime.
 
+As you probably noticed - the declaration of the delegate is pretty long. Can it be simplified? I beleive it can with macros and template magic, but I prefer to have a helper class. This class will handle adding and removing of delegates. I call it - `Dispatcher`. Imagine some abstract `Button` class. It can have a `Dispatcher` for some event - a `click`, for example. Noe every entity that want to listen for this `click` event can add a delegate to this `Dispatcher`. And when the real event triggers this `Dispatcher` will invoke all callbacks that was added to it. I'm gonna to provide implementation - I think it's pretty straightforward and doesn't require explanations.
 
+[source,cpp]
+----
+template<typename T>
+class Dispatcher;
 
+template<typename Ret, typename ...Args>
+class Dispatcher<Ret(Args...)>
+{
+public:
+	template<Ret(*funcPtr)(Args...)>
+	bool add()
+	{
+		return add(Delegate<Ret(Args...)>::create<funcPtr>());
+	}
 
+	template<Ret(*funcPtr)(Args...)>
+	bool remove()
+	{
+		return remove(Delegate<Ret(Args...)>::create<funcPtr>());
+	}
+
+	template<typename T, Ret(T::*funcPtr)(Args...)>
+	bool add(shared_ptr<T> obj)
+	{
+		return add(Delegate<Ret(Args...)>::create<T, funcPtr>(obj));
+	}
+
+	template<typename T, Ret(T::*funcPtr)(Args...)>
+	bool remove(shared_ptr<T> obj)
+	{
+		return remove(Delegate<Ret(Args...)>::create<T, funcPtr>(obj));
+	}
+
+	template<typename T>
+	bool add(shared_ptr<T> t)
+	{
+		return add(Delegate<Ret(Args...)>::create(t));
+	}
+
+	template<typename T>
+	bool remove(shared_ptr<T> t)
+	{
+		return remove(Delegate<Ret(Args...)>::create(t));
+	}
+
+	void operator()(Args... args)
+	{
+		for (auto& delegate : delegates)
+		{
+			delegate(args...);
+		};
+	}
+
+	bool add(Delegate<Ret(Args...)> delegate)
+	{
+		if (find(delegates.begin(), delegates.end(), delegate) != delegates.end())
+		{
+			return false;
+		}
+
+		delegates.push_back(delegate);
+
+		return true;
+	}
+
+	bool remove(Delegate<Ret(Args...)> delegate)
+	{
+		auto it = find(delegates.begin(), delegates.end(), delegate);
+
+		if (it == delegates.end())
+		{
+			return false;
+		}
+
+		delegates.erase(it);
+
+		return true;
+	}
+private:
+	vector<Delegate<Ret(Args...)>> delegates;
+};
+----
 
 
 
