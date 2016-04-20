@@ -277,7 +277,7 @@ d(10, 5.0f);
 
 NOTE: The main point of a delegate - call underlying function later. And we want to be sure that callable object exist. That's why we need to track the object's lifetime.
 
-As you probably noticed - the declaration of the delegate is pretty long. Can it be simplified? I beleive it can with macros and template magic, but I prefer to have a helper class. This class will handle adding and removing of delegates. I call it - `Dispatcher`. Imagine some abstract `Button` class. It can have a `Dispatcher` for some event - a `click`, for example. Noe every entity that want to listen for this `click` event can add a delegate to this `Dispatcher`. And when the real event triggers this `Dispatcher` will invoke all callbacks that was added to it. Here's a simple implementation.
+As you probably noticed - the declaration of the delegate is pretty verbose. Can it be simplified? I beleive it can with macros and template magic, but I prefer to have a helper class. This class will handle adding and removing of delegates. I call it - `Dispatcher`. Imagine some abstract `Button` class. It can have a `Dispatcher` for some event - a `click`, for example. Noe every entity that want to listen for this `click` event can add a delegate to this `Dispatcher`. And when the real event triggers this `Dispatcher` will invoke all callbacks that was added to it. Here's a simple implementation.
 
 [source,cpp]
 ----
