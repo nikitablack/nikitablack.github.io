@@ -130,12 +130,12 @@ class Delegate;
 template<typename Ret, typename ...Args>
 class Delegate<Ret(Args...)>
 {
-	using CallbackType = Ret(*)(void*, Args&&...);
+	using CallbackType = Ret(*)(shared_ptr<void>, Args...);
     
 public:
-	Ret operator()(Args&&... args)
+	Ret operator()(Args... args)
 	{
-		return callback(callee, forward<Args>(args)...);
+		return callback(callee, args...);
 	}
     
     bool operator==(const Delegate& other)
@@ -144,17 +144,17 @@ public:
 	}
     
 private:
-	void* callee{ nullptr };
+	shared_ptr<void> callee{ nullptr };
 	CallbackType callback{ nullptr };
     
 private:
-	Delegate(void* obj, CallbackType funcPtr) : callee{ obj }, callback{ funcPtr }
+	Delegate(shared_ptr<void> obj, CallbackType funcPtr) : callee{ obj }, callback{ funcPtr }
 	{
 	}
 }
 ----
 
-Here we created an incomplete base template class and a specialization. This is simply a cosmetic stuff - I like more `Delegate<int(int, float)>` signature than `Delegate<int, int, float>`. Next we declared a callback type `Ret(\*)(void*, Args&&...)` - the function that accepts arguments that should be forwarded to supplied callback and an object - the `callee` that we'll use to call supplied callback on. This `callee` will be a pointer to class/struct instance or a pointer to a lambda/functor and null for global/static functions. Let `void*` type scare you not - it will be casted to correct type in elegant manner. Also there're a private constructor, comparison operator and a call operator, so our delegate can be called as a functor or even be passed to another delegate! Next we'll start to add some real functionality. The simplest case is a static/global function case:
+Here we created an incomplete base template class and a specialization. This is simply a cosmetic stuff - I like more `Delegate<int(int, float)>` signature than `Delegate<int, int, float>`. Next we declared a callback type `Ret(\*)(void*, Args...)` - the function that accepts arguments that should be passed to supplied callback and an object - the `callee` that we'll use to call supplied callback on. This `callee` will be a pointer to class/struct instance or a pointer to a lambda/functor and null for global/static functions. Let `void*` type scare you not - it will be casted to correct type in elegant manner. Also there're a private constructor, comparison operator and a call operator, so our delegate can be called as a functor or even be passed to another delegate! Next we'll start to add some real functionality. The simplest case is a static/global function case:
 
 [source,cpp]
 ----
@@ -167,7 +167,7 @@ public:
     
 private:
 	template<Ret(*funcPtr)(Args...)>
-	static Ret globalCaller(void*, Args&&... args)
+	static Ret globalCaller(void*, Args... args)
 	{
 		return funcPtr(forward<Args>(args)...);
 	}
@@ -203,7 +203,7 @@ public:
     
 private:
 	template<typename T, Ret(T::*funcPtr)(Args...)>
-	static Ret memberCaller(void* callee, Args&&... args)
+	static Ret memberCaller(void* callee, Args... args)
 	{
 		return (static_cast<T*>(callee)->*funcPtr)(forward<Args>(args)...);
 	}
