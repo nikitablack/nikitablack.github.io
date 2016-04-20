@@ -23,7 +23,7 @@
     <meta property="og:description" content="I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..." />
     <meta property="og:url" content="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" />
     <meta property="article:published_time" content="2016-04-11T22:00:00.000Z" />
-    <meta property="article:modified_time" content="2016-04-20T13:04:15.643Z" />
+    <meta property="article:modified_time" content="2016-04-20T13:06:28.259Z" />
     <meta property="article:tag" content="c++" />
     
     <meta name="twitter:card" content="summary" />
@@ -46,7 +46,7 @@
     "headline": "Generic C++ delegates",
     "url": "https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html",
     "datePublished": "2016-04-11T22:00:00.000Z",
-    "dateModified": "2016-04-20T13:04:15.643Z",
+    "dateModified": "2016-04-20T13:06:28.259Z",
     "keywords": "c++",
     "description": "I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..."
 }
@@ -81,7 +81,7 @@
 <p>Here <code>ptr</code> is an actual pointer and <code>SomeClass</code> is the name of the class - owner of this function. As you can imagine, if some class needs to accept a function pointer to another class, then using raw function pointers creates a coupling between them. We can use global or static functions - in that case we don&#8217;t need to specify a class name (because there&#8217;s no one). But using this types of functions will complicate the code.</p>
 </div>
 <div class="paragraph">
-<p>The problem can be solved if instead of passing function pointers we&#8217;ll pass some generic wrapper - a delegate. Later this wrapper can be called and a call will be delegated to the actual function which delegate wraps. Sounds easy, right? And it is easy and there many many solutions. My favorite are <a href="http://www.codeproject.com/Articles/11015/The-Impossibly-Fast-C-Delegates">The Impossibly Fast Delegates</a>, <a href="https://blog.molecular-matters.com/2011/09/19/generic-type-safe-delegates-and-events-in-c">Generic, type-safe delegates</a> and <a href="http://blog.coldflake.com/posts/C++-delegates-on-steroids/">Delegates On Steroids</a>. And basically my implementation is a mix of aforementioned code with small additions. So, let&#8217;s start.</p>
+<p>The problem can be solved if instead of passing function pointers we&#8217;ll pass some generic wrapper - a delegate. Later this wrapper can be called and a call will be delegated to the actual function which delegate wraps. Sounds easy, right? And in fact it&#8217;s easy and there many many ready solutions. My favorites are <a href="http://www.codeproject.com/Articles/11015/The-Impossibly-Fast-C-Delegates">The Impossibly Fast Delegates</a>, <a href="https://blog.molecular-matters.com/2011/09/19/generic-type-safe-delegates-and-events-in-c">Generic, type-safe delegates</a> and <a href="http://blog.coldflake.com/posts/C++-delegates-on-steroids/">Delegates On Steroids</a>. And basically my implementation is a mix of aforementioned code with small additions. So, let&#8217;s start.</p>
 </div>
 <div class="paragraph">
 <p>First, let&#8217;s found how can we pass a function and call it later. One way is to pass a function pointer as a function argument, store this pointer and call it later. In following example I&#8217;m not storing it but call immediately:</p>
