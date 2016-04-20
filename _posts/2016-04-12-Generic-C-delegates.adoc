@@ -47,7 +47,7 @@ int test(int a)
 foo<&test>();
 ----
 
-But which us better. What to choose? Of cource there's no answer. It depends. If you don't know before which function we need to use as a callback, then passing a function ponter as a function argument is the only option. But if we know, then passing it as template argument can be a good choice. Consider this example:
+But which us better? What to use? Of cource there's no answer. It depends. If you don't know before which function you need to use as a callback, then passing a function ponter is the only option. But if you know, then passing it as template argument can be a good choice. Check this example:
 
 [source,cpp]
 ----
@@ -79,7 +79,7 @@ int main()
 }
 ----
 
-I used https://gcc.godbolt.org/[https://gcc.godbolt.org/] to compile it. Thought it's hard to get correct output - compilers are damn smart and produces optimized code - with *gcc* compiler and *O1* optimization I got the following assembly output.
+I used https://gcc.godbolt.org/[https://gcc.godbolt.org/] to compile it. Thought it's hard to get useful output - compilers are damn smart and produces optimized code - with *gcc* compiler and *O1* optimization I got the following assembly output.
 
 [source,cpp]
 test(int):
@@ -110,7 +110,7 @@ main:
         ret
 ----
 
-You don't need to know an assembly to find the interesting thing - the call to `call2()` was completely optimized out. And the only call here is a call to `call1()` function which calls the supplied callback. In other words - using the template wrapper will be replaced by the compiler to the actual callback invokation (here it also optimized out)! It's hard to tell will the compiler optimize the same way in real big project but at least it gives some sort of hope that it will.
+You don't need to know an assembly to find one interesting thing - the call to `call2()` was *completely* optimized out. And the only call here is a call to `call1()` function which calls the supplied callback. In other words - the template wrapper was replaced by the compiler to the actual callback invokation (here it also optimized out)! It's hard to tell will the compiler optimize in the same way in real big project but at least this output gives some hope that it will.
 
 Knowing this we can start to implement our delegate. In c++ we have a bunch of callable objects and we can split them in three categories:
 
