@@ -161,7 +161,7 @@ Now let's add some meat to our skeleton. The simplest case is a static/global fu
 [source,cpp]
 ----
 public:
-    template<Ret(*funcPtr)(Args...)>
+	template<Ret(*funcPtr)(Args...)>
 	static Delegate create()
 	{
 		return Delegate{ nullptr, &globalCaller<funcPtr> }; // nullptr as first parameter because static/global functions can be called directly
