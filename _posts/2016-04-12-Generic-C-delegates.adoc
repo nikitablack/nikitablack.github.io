@@ -277,7 +277,7 @@ Delegate<int(int, float)> d{ Delegate<int(int, float)>::create(ptr) };
 
 NOTE: The main point of a delegate - call underlying function later. And we want to be sure that callable object exist. That's why we need to track the object's lifetime.
 
-As you probably noticed - the declaration of the delegate is pretty long. Can it be simplified? I beleive it can with macros and template magic, but I prefer to have a helper class. This class will handle adding and removing of delegates. I call it - `Dispatcher`. Imagine some abstract `Button` class. It can have a `Dispatcher` for some event - a `click`, for example. Noe every entity that want to listen for this `click` event can add a delegate to this `Dispatcher`. And when the real event triggers this `Dispatcher` will invoke all callbacks that was added to it. I'm gonna to provide implementation - I think it's pretty straightforward and doesn't require explanations.
+As you probably noticed - the declaration of the delegate is pretty long. Can it be simplified? I beleive it can with macros and template magic, but I prefer to have a helper class. This class will handle adding and removing of delegates. I call it - `Dispatcher`. Imagine some abstract `Button` class. It can have a `Dispatcher` for some event - a `click`, for example. Noe every entity that want to listen for this `click` event can add a delegate to this `Dispatcher`. And when the real event triggers this `Dispatcher` will invoke all callbacks that was added to it. Here's an implementation.
 
 [source,cpp]
 ----
@@ -334,6 +334,7 @@ public:
 
 	bool add(Delegate<Ret(Args...)> delegate)
 	{
+    	// if we already added same delegate - don't add it again
 		if (find(delegates.begin(), delegates.end(), delegate) != delegates.end())
 		{
 			return false;
@@ -346,6 +347,7 @@ public:
 
 	bool remove(Delegate<Ret(Args...)> delegate)
 	{
+    	// remove delegate only if it exist
 		auto it = find(delegates.begin(), delegates.end(), delegate);
 
 		if (it == delegates.end())
