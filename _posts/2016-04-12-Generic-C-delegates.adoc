@@ -277,7 +277,7 @@ Delegate<int(int, float)> d{ Delegate<int(int, float)>::create(ptr) };
 
 NOTE: The main point of a delegate - call underlying function later. And we want to be sure that callable object exist. That's why we need to track the object's lifetime.
 
-As you probably noticed - the declaration of the delegate is pretty long. Can it be simplified? I beleive it can with macros and template magic, but I prefer to have a helper class. This class will handle adding and removing of delegates. I call it - `Dispatcher`. Imagine some abstract `Button` class. It can have a `Dispatcher` for some event - a `click`, for example. Noe every entity that want to listen for this `click` event can add a delegate to this `Dispatcher`. And when the real event triggers this `Dispatcher` will invoke all callbacks that was added to it. Here's an implementation.
+As you probably noticed - the declaration of the delegate is pretty long. Can it be simplified? I beleive it can with macros and template magic, but I prefer to have a helper class. This class will handle adding and removing of delegates. I call it - `Dispatcher`. Imagine some abstract `Button` class. It can have a `Dispatcher` for some event - a `click`, for example. Noe every entity that want to listen for this `click` event can add a delegate to this `Dispatcher`. And when the real event triggers this `Dispatcher` will invoke all callbacks that was added to it. Here's a simple implementation.
 
 [source,cpp]
 ----
@@ -334,7 +334,7 @@ public:
 
 	bool add(Delegate<Ret(Args...)> delegate)
 	{
-    	// if we already added same delegate - don't add it again
+    		// if we already added same delegate - don't add it again
 		if (find(delegates.begin(), delegates.end(), delegate) != delegates.end())
 		{
 			return false;
@@ -347,7 +347,7 @@ public:
 
 	bool remove(Delegate<Ret(Args...)> delegate)
 	{
-    	// remove delegate only if it exist
+    		// remove delegate only if it exist
 		auto it = find(delegates.begin(), delegates.end(), delegate);
 
 		if (it == delegates.end())
@@ -364,200 +364,4 @@ private:
 };
 ----
 
-
-
-[source,cpp]
-----
-template<typename T>
-class Delegate;
-
-template<typename Ret, typename ...Args>
-class Delegate<Ret(Args...)>
-{
-	using CallerType = Ret(*)(void*, Args&&...);
-
-public:
-	template<typename T, Ret(T::*funcPtr)(Args...)>
-	static Delegate create(T* obj)
-	{
-		cout << "create member" << endl;
-		return Delegate{ obj, &memberCaller<T, funcPtr> };
-	}
-
-	template<Ret(*funcPtr)(Args...)>
-	static Delegate create()
-	{
-		cout << "create global" << endl;
-		return Delegate{ nullptr, &globalCaller<funcPtr> };
-	}
-
-	template<typename T,
-		//typename = typename enable_if<is_same<Ret, typename result_of<remove_pointer<T>::type(Args&&...)>::type>::value>::type,
-		typename = typename enable_if<is_pointer<T>::value>::type>
-	static Delegate create(T&& t)
-	{
-		cout << "create functor" <<  endl;
-		return Delegate{ t, &functorCaller<T> };
-	}
-	
-	Ret operator()(Args&&... args)
-	{
-		return callback(callee, forward<Args>(args)...);
-	}
-    
-    bool operator==(const Delegate& other)
-	{
-		return callee == other.callee && callback == other.callback;
-	}
-
-private:
-	void* callee{ nullptr };
-	CallerType callback{ nullptr };
-
-private:
-	Delegate(void* obj, CallerType funcPtr) : callee{ obj }, callback{ funcPtr }
-	{
-	}
-
-	template<typename T, Ret(T::*funcPtr)(Args...)>
-	static Ret memberCaller(void* callee, Args&&... args)
-	{
-		return (static_cast<T*>(callee)->*funcPtr)(forward<Args>(args)...);
-	}
-
-	template<Ret(*funcPtr)(Args...)>
-	static Ret globalCaller(void* callee, Args&&... args)
-	{
-		(void)callee;
-		return funcPtr(forward<Args>(args)...);
-	}
-
-	template<typename T>
-	static Ret functorCaller(void* functor, Args&&... args)
-	{
-		return (*static_cast<T>(functor))(forward<Args>(args)...);
-	}
-};
-
-int global(int a, float b)
-{
-	cout << "in global" << endl;
-	return a + static_cast<int>(b);
-}
-
-struct Functor
-{
-	int operator()(int a, float b)
-	{
-		cout << "in functor" << endl;
-		return a + static_cast<int>(b);
-	}
-};
-
-struct UserStruct
-{
-	int member(int a, float b)
-	{
-		cout << "in member" << endl;
-		return a + static_cast<int>(b);
-	}
-
-	static int staticMember(int a, float b)
-	{
-		cout << "in static" << endl;
-		return a + static_cast<int>(b);
-	}
-};
-
-int main()
-{
-	{
-		cout << "lambda test" << endl;
-
-		auto lambda = [](int a, float b)->int
-		{
-			cout << "in lambda" << endl;
-			return a + static_cast<int>(b);
-		};
-
-		Delegate<int, int, float> d{ Delegate<int, int, float>::create(&lambda) };
-		cout << d(10, 5.0f) << endl;
-
-		cout << endl;
-	}
-	
-	{
-		cout << "lambda with capture test" << endl;
-
-		int toCapture{ 42 };
-		auto lambdaWithCapture = [toCapture](int a, float b)->int
-		{
-			cout << "in lambda with capture" << endl;
-			return toCapture + a + static_cast<int>(b);
-		};
-
-		Delegate<int, int, float> d{ Delegate<int, int, float>::create(&lambdaWithCapture) };
-		cout << d(10, 5.0f) << endl;
-
-		cout << endl;
-	}
-	
-	{
-		cout << "global test" << endl;
-
-		Delegate<int, int, float> d{ Delegate<int, int, float>::create<&global>() };
-		cout << d(10, 5.0f) << endl;
-
-		cout << endl;
-	}
-	
-	{
-		cout << "functor test" << endl;
-
-		Functor functor;
-
-		Delegate<int, int, float> d{ Delegate<int, int, float>::create(&functor) };
-		cout << d(10, 5.0f) << endl;
-
-		cout << endl;
-	}
-	
-	{
-		cout << "member test" << endl;
-
-		UserStruct us;
-
-		Delegate<int, int, float> d{ Delegate<int, int, float>::create<UserStruct, &UserStruct::member>(&us) };
-		cout << d(10, 5.0f) << endl;
-
-		cout << endl;
-	}
-	
-	// user struct static member test
-	{
-		cout << "static test" << endl;
-
-		Delegate<int, int, float> d{ Delegate<int, int, float>::create<&UserStruct::staticMember>() };
-		cout << d(10, 5.0f) << endl;
-
-		cout << endl;
-	}
-	
-	// function
-	{
-		cout << "std::funciton test" << endl;
-
-		function<int(int, float)> f{ &global };
-
-		Delegate<int, int, float> d{ Delegate<int, int, float>::create(&f) };
-		cout << d(10, 5.0f) << endl;
-
-		cout << endl;
-
-	}
-
-	cin.get();
-
-	return 0;
-}
-----
+Couple of notes here. When we want to add a delegate - the new one will be created. If we want to remove it - we also need to create it before comparing. But that's the price we need to pay in order to have compact delegates, without storing callback pointer and different comparing logic.
