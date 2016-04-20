@@ -23,7 +23,7 @@
     <meta property="og:description" content="I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..." />
     <meta property="og:url" content="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" />
     <meta property="article:published_time" content="2016-04-11T22:00:00.000Z" />
-    <meta property="article:modified_time" content="2016-04-20T13:31:47.225Z" />
+    <meta property="article:modified_time" content="2016-04-20T13:32:51.701Z" />
     <meta property="article:tag" content="c++" />
     
     <meta name="twitter:card" content="summary" />
@@ -46,7 +46,7 @@
     "headline": "Generic C++ delegates",
     "url": "https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html",
     "datePublished": "2016-04-11T22:00:00.000Z",
-    "dateModified": "2016-04-20T13:31:47.225Z",
+    "dateModified": "2016-04-20T13:32:51.701Z",
     "keywords": "c++",
     "description": "I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..."
 }
@@ -522,7 +522,7 @@ dispatcher.remove&lt;UserStruct, &amp;UserStruct::member&gt;(ptr);</code></pre>
 <p>Maybe it would be better to return some delegate handle after adding the delegate to the dispatcher. Keeping this handle will act the same as keeping <code>Delegate</code> instance, but it&#8217;s more compact and simple. Later we can use the handle to remove a delegate and there will be no need to create a new <code>Delegate</code> instance for comparison.</p>
 </li>
 <li>
-<p>The parameters passed to <code>Dispatcher::operator()</code> and <code>Delegate::operator()</code> are passed by copy. It would better to use perfect forwarding. But the proble is that we have <code>typename &#8230;&#8203;Args</code> parameter pack in class definition but usage of it - <code>Args&#8230;&#8203; args</code> in the function. In other words we have a templated class but not a function. And <a href="http://en.cppreference.com/w/cpp/utility/forward#Example">perfect forwarding</a> with <a href="http://en.cppreference.com/w/cpp/language/reference">reference collapsing rules</a> applies only to function templates. I believe we can fix this templating a function with another parameter pack and comparing this pack with one declared in class template.</p>
+<p>The parameters passed to <code>Dispatcher::operator()</code> and <code>Delegate::operator()</code> are passed by copy. It would better to use perfect forwarding. But the problem is that we have <code>typename &#8230;&#8203;Args</code> parameter pack in class definition but usage of it - <code>Args&#8230;&#8203; args</code> in the function. In other words we have a templated class but not a function. And <a href="http://en.cppreference.com/w/cpp/utility/forward#Example">perfect forwarding</a> with <a href="http://en.cppreference.com/w/cpp/language/reference">reference collapsing rules</a> applies only to function templates. I believe we can fix this templating a function with another parameter pack and comparing this pack with one declared in class template.</p>
 </li>
 </ul>
 </div>
