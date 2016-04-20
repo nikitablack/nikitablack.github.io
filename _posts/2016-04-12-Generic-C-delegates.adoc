@@ -1,7 +1,7 @@
 = Generic C++ delegates
 :hp-tags: c++
 
-I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that case we can create dependencies - for example, a pointer to member function in C++ looks like this:
+I like modular programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that case we can create dependencies - for example, a pointer to member function in C++ looks like this:
 
 [source,cpp]
 ----
