@@ -273,6 +273,7 @@ auto ptr = make_shared_lambda([](int a, float b)->int
 });
 
 Delegate<int(int, float)> d{ Delegate<int(int, float)>::create(ptr) };
+d(10, 5.0f);
 ----
 
 NOTE: The main point of a delegate - call underlying function later. And we want to be sure that callable object exist. That's why we need to track the object's lifetime.
@@ -364,4 +365,28 @@ private:
 };
 ----
 
-Couple of notes here. When we want to add a delegate - the new one will be created. If we want to remove it - we also need to create it before comparing. But that's the price we need to pay in order to have compact delegates, without storing callback pointer and different comparing logic. During call of `operator()` the callback function will be called. And if in this callback we remove the delegate from the dispatcher - bad things can happen. In other words in this implementation it's possible to remove an item from the vector whhile iterating over this vector. This will lead to crash/corruption and additional logic needed here to avoid this situation.
+Couple of notes here.
+
+* When we want to add a delegate - the new one will be created. If we want to remove it - we also need to create it before comparing. But that's the price we need to pay in order to have compact delegates, without storing callback pointer and different comparing logic.
+* During call of `operator()` the callback function will be called. And if in this callback we remove the delegate from the dispatcher - bad things can happen. In other words in this implementation it's possible to remove an item from the vector whhile iterating over this vector. This will lead to crash/corruption and additional logic needed here to avoid this situation.
+
+And we can use it like this:
+
+[source,cpp]
+----
+Dispatcher<int(int, float)> dispatcher;
+dispatcher.add<&global>();
+
+auto ptr = make_shared<UserStruct>();
+dispatcher.add<UserStruct, &UserStruct::member>(ptr);
+
+dispatcher(10, 5.0f);
+
+dispatcher.remove<&global>();
+dispatcher.remove<UserStruct, &UserStruct::member>(ptr);
+----
+
+Things that can be improved:
+
+* Maybe it would be better to return some delegate handle after adding the delegate to the dispatcher. Keeping this handle will act the same as keeping `Delegate` instance, but it's more compact and simple. Later we can use the handle to remove a delegate and there will be no need to create a new `Delegate` instance for comparison.
+* The parameters passed to `Dispatcher::operator()` and `Delegate::operator()` are passed by copy. It would better to use perfect forwarding. But the proble is that we have `typename ...Args` parameter pack in class definition but usage of it - `Args... args` in the function. In other words we have a templated class but not a function. And http://en.cppreference.com/w/cpp/utility/forward#Example[perfect forwarding] with http://en.cppreference.com/w/cpp/language/reference[reference collapsing rules] applies only to function templates. I believe we can fix this templating a function with another parameter pack and comparing this pack with one declared in class template.
