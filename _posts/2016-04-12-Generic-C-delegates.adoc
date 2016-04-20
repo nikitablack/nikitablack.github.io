@@ -114,7 +114,7 @@ You don't need to know an assembly to find one interesting thing - the call to `
 
 Knowing this we can start to implement our delegate. In c++ we have a bunch of callable objects and we can split them in three categories:
 
-* global functions - functions declared globally and static functions. The pointer to such a function will be passed to our delegate. For example `&globalFunction` will return the address of a function (`&` is optional). We can be sure we will not have problems calling it later, because this functions always exist during program lifetime.
+* global functions - functions declared globally and static functions. The pointer to such a function will be passed to our delegate. For example `&globalFunction` will return the address of a function (`&` is optional). We can be sure we will not have problems calling it later, because this functions are always exist during program lifetime.
 
 * member functions - members of a class or a struct. The pointer to this function should be called on valid object and it's developer's  responsibility to keep an object alive. The member function pointer can be written, for example, `int(SomeObj::*funcPtr)(int)` and called `obj->*funcPtr(42)`, where `obj` is a pointer.
 
