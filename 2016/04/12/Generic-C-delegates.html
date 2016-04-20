@@ -23,7 +23,7 @@
     <meta property="og:description" content="I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..." />
     <meta property="og:url" content="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" />
     <meta property="article:published_time" content="2016-04-11T22:00:00.000Z" />
-    <meta property="article:modified_time" content="2016-04-20T13:10:41.846Z" />
+    <meta property="article:modified_time" content="2016-04-20T13:19:06.133Z" />
     <meta property="article:tag" content="c++" />
     
     <meta name="twitter:card" content="summary" />
@@ -46,7 +46,7 @@
     "headline": "Generic C++ delegates",
     "url": "https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html",
     "datePublished": "2016-04-11T22:00:00.000Z",
-    "dateModified": "2016-04-20T13:10:41.846Z",
+    "dateModified": "2016-04-20T13:19:06.133Z",
     "keywords": "c++",
     "description": "I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..."
 }
@@ -242,7 +242,7 @@ private:
 </div>
 </div>
 <div class="paragraph">
-<p>Here we created an incomplete base template class and a specialization. This is simply a cosmetic stuff - I like more <code>Delegate&lt;int(int, float)&gt;</code> signature than <code>Delegate&lt;int, int, float&gt;</code>. Next we declared a callback type <code>Ret(\*)(shared_ptr&lt;void&gt;, Args&#8230;&#8203;)</code> - the function that accepts arguments that should be passed to supplied callback and an object - the <code>callee</code> - which we&#8217;ll use to call supplied callback on. This <code>callee</code> will be a pointer to a class/struct instance or a pointer to a lambda/functor and <code>nullptr</code> for global/static functions. Let <code>shared_ptr&lt;void&gt;</code> type scare you not - it will be casted to correct type in elegant manner. Also there&#8217;re a private constructor - mainly because constructors in c++ can&#8217;t be called with explicit template parameters and for ceation we&#8217;ll use a factory function, comparison operator - for having only single callback of the same time and for removing of a callback, and a call operator, so our delegate can be called as a functor or even be passed to another delegate!</p>
+<p>Here we created an incomplete base template class and a specialization. This is simply a cosmetic stuff - I like more <code>Delegate&lt;int(int, float)&gt;</code> signature than <code>Delegate&lt;int, int, float&gt;</code>. Next we declared a callback type <code>Ret(*)(shared_ptr&lt;void&gt;, Args&#8230;&#8203;)</code> - the function that accepts arguments that should be passed to supplied callback and an object - the <code>callee</code> - which we&#8217;ll use to call supplied callback on. This <code>callee</code> will be a pointer to a class/struct instance or a pointer to a lambda/functor and <code>nullptr</code> for global/static functions. Let <code>shared_ptr&lt;void&gt;</code> type scare you not - it will be casted to correct type in elegant manner. Also there&#8217;re a private constructor - mainly because constructors in c++ can&#8217;t be called with explicit template parameters and for ceation we&#8217;ll use a factory function, comparison operator - for having only single callback of the same time and for removing of a callback, and a call operator, so our delegate can be called as a functor or even be passed to another delegate!</p>
 </div>
 <div class="paragraph">
 <p>Now let&#8217;s add some meat to our skeleton. The simplest case is a static/global function case:</p>
