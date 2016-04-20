@@ -23,7 +23,7 @@
     <meta property="og:description" content="I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..." />
     <meta property="og:url" content="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" />
     <meta property="article:published_time" content="2016-04-11T22:00:00.000Z" />
-    <meta property="article:modified_time" content="2016-04-20T13:28:27.852Z" />
+    <meta property="article:modified_time" content="2016-04-20T13:29:27.160Z" />
     <meta property="article:tag" content="c++" />
     
     <meta name="twitter:card" content="summary" />
@@ -46,7 +46,7 @@
     "headline": "Generic C++ delegates",
     "url": "https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html",
     "datePublished": "2016-04-11T22:00:00.000Z",
-    "dateModified": "2016-04-20T13:28:27.852Z",
+    "dateModified": "2016-04-20T13:29:27.160Z",
     "keywords": "c++",
     "description": "I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..."
 }
@@ -488,7 +488,7 @@ private:
 <div class="ulist">
 <ul>
 <li>
-<p>When we want to add a delegate - the new one will be created. If we want to remove it - we also need to create it before comparing. But that&#8217;s the price we need to pay in order to have compact delegates, without storing callback pointer and different comparing logic.</p>
+<p>When we want to add a delegate - the new one will be created. If we want to remove it - we also need to create it to be able to compare. But that&#8217;s the price we need to pay in order to have compact delegates, without storing callback pointer and different comparing logic.</p>
 </li>
 <li>
 <p>During call of <code>operator()</code> the callback function will be called. And if in this callback we remove the delegate from the dispatcher - bad things can happen. In other words in this implementation it&#8217;s possible to remove an item from the vector whhile iterating over this vector. This will lead to crash/corruption and additional logic needed here to avoid this situation.</p>
