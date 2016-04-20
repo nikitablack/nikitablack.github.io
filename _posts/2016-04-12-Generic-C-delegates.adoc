@@ -154,7 +154,9 @@ private:
 }
 ----
 
-Here we created an incomplete base template class and a specialization. This is simply a cosmetic stuff - I like more `Delegate<int(int, float)>` signature than `Delegate<int, int, float>`. Next we declared a callback type `Ret(\*)(shared_ptr<void>, Args...)` - the function that accepts arguments that should be passed to supplied callback and an object - the `callee` - which we'll use to call supplied callback on. This `callee` will be a pointer to a class/struct instance or a pointer to a lambda/functor and `nullptr` for global/static functions. Let `shared_ptr<void>` type scare you not - it will be casted to correct type in elegant manner. Also there're a private constructor, comparison operator and a call operator, so our delegate can be called as a functor or even be passed to another delegate! Now let's add some meat to our skeleton. The simplest case is a static/global function case:
+Here we created an incomplete base template class and a specialization. This is simply a cosmetic stuff - I like more `Delegate<int(int, float)>` signature than `Delegate<int, int, float>`. Next we declared a callback type `Ret(\*)(shared_ptr<void>, Args...)` - the function that accepts arguments that should be passed to supplied callback and an object - the `callee` - which we'll use to call supplied callback on. This `callee` will be a pointer to a class/struct instance or a pointer to a lambda/functor and `nullptr` for global/static functions. Let `shared_ptr<void>` type scare you not - it will be casted to correct type in elegant manner. Also there're a private constructor - mainly because constructors in c++ can't be called with explicit template parameters and for ceation we'll use a factory function, comparison operator - for having only single callback of the same time and for removing of a callback, and a call operator, so our delegate can be called as a functor or even be passed to another delegate!
+
+Now let's add some meat to our skeleton. The simplest case is a static/global function case:
 
 [source,cpp]
 ----
@@ -174,7 +176,7 @@ private:
 	}
 ----
 
-Nothing really complicated here - we just defined a static `create` function (which calls the private constructor) and a wrapper for the callback. This wrapper is stored for the later use. Why can't we get rid of the `globalCaller()` function and just have a constructor templated with function pointer? Afaik, the standard doesn't allow to call a constructor with explicit template arguments so we use a workaround here.
+Nothing really complicated here - we just defined a static `create` function (which calls the private constructor) and a wrapper for the callback. This wrapper is stored for later use. I'll repeat it here - the standard doesn't allow to call a constructor with explicit template arguments. That's why we need `create` factory function.
 
 NOTE: The downside of template here is that we need to manually type template argument - it can't be deduced.
 
@@ -191,7 +193,7 @@ Delegate<int(int, float)> d{ Delegate<int(int, float)>::create<&global>() };
 d(10, 5.0f);
 ----
 
-Member function case is slightly more different:
+Member function case is slightly more difficult:
 
 [source,cpp]
 ----
@@ -210,7 +212,7 @@ private:
 	}
 ----
 
-Here we have *overloaded* `create()` function. And here we need to pass a pointer to existing object which will be stored for later use as well as a wrapper. This `memberCaller()` wrapper casts the `void*` pointer to the provided type so we can say we have some sort of type safety here.
+Here we have *overloaded* `create()` function. And here we need to pass a pointer to existing object which will be stored for later use as well as a wrapper. I decided to use `shared_ptr` because I want to be sure that object is valid when I call a delegate. With `shared_ptr` I have this guarantee. The `memberCaller()` wrapper casts the `void*` pointer to the provided type so we can say we have some sort of type safety here.
 
 And it's created and called:
 
