@@ -118,7 +118,7 @@ Knowing this we can start to implement our delegate. In c++ we have a bunch of c
 
 * member functions - members of a class or a struct. The pointer to this function should be called on valid object and it's developer's  responsibility to keep an object alive. The member function pointer can be written, for example, `int(SomeObj::*funcPtr)(int)` and called `obj->*funcPtr(42)`, where `obj` is a pointer.
 
-* different callable objects that are not fitting to previous categories. This can be functors, lambdas, std::function objects. Thought lambda can be casted to function pointer and treated as global function this pointer can't be used as template argument. Moreover, only lambdas without capture can be casted. This is why I put lambdas in this category.
+* different callable objects that are not fitting in previous categories. This can be functors, lambdas, `std::function` objects. Thought lambda can be casted to a function pointer and treated as global/static function such a pointer can't be used as template argument. Moreover, only lambdas without capture can be casted. This is why I put lambdas in this category.
 
 All that means that we should manage 3 cases in our code. So let's do it.
 
