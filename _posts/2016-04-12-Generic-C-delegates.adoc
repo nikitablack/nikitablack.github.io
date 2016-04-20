@@ -120,7 +120,7 @@ Knowing this we can start to implement our delegate. In c++ we have a bunch of c
 
 * different callable objects that are not fitting in previous categories. This can be functors, lambdas, `std::function` objects. Thought lambda can be casted to a function pointer and treated as global/static function such a pointer can't be used as template argument. Moreover, only lambdas without capture can be casted. This is why I put lambdas in this category.
 
-All that means that we should manage 3 cases in our code. So let's do it.
+All that means that we should manage 3 cases in our delegate implementation. So let's do it.
 
 [source,cpp]
 ----
