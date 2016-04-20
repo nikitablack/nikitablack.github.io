@@ -374,6 +374,7 @@ We can use new `Dispatcher` class like this:
 [source,cpp]
 ----
 Dispatcher<int(int, float)> dispatcher;
+
 dispatcher.add<&global>();
 
 auto ptr = make_shared<UserStruct>();
