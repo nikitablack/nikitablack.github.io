@@ -23,7 +23,7 @@
     <meta property="og:description" content="I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..." />
     <meta property="og:url" content="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" />
     <meta property="article:published_time" content="2016-04-11T22:00:00.000Z" />
-    <meta property="article:modified_time" content="2016-04-20T13:31:19.878Z" />
+    <meta property="article:modified_time" content="2016-04-20T13:31:47.225Z" />
     <meta property="article:tag" content="c++" />
     
     <meta name="twitter:card" content="summary" />
@@ -46,7 +46,7 @@
     "headline": "Generic C++ delegates",
     "url": "https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html",
     "datePublished": "2016-04-11T22:00:00.000Z",
-    "dateModified": "2016-04-20T13:31:19.878Z",
+    "dateModified": "2016-04-20T13:31:47.225Z",
     "keywords": "c++",
     "description": "I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..."
 }
@@ -501,6 +501,7 @@ private:
 <div class="listingblock">
 <div class="content">
 <pre class="highlight"><code class="language-cpp" data-lang="cpp">Dispatcher&lt;int(int, float)&gt; dispatcher;
+
 dispatcher.add&lt;&amp;global&gt;();
 
 auto ptr = make_shared&lt;UserStruct&gt;();
