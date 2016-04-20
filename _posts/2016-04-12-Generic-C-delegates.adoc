@@ -79,7 +79,7 @@ int main()
 }
 ----
 
-I used https://gcc.godbolt.org/[https://gcc.godbolt.org/] to compile it. Thought it's hard to get useful output - compilers are damn smart and produces optimized code - with *gcc* compiler and *O1* optimization I got the following assembly output.
+I used https://gcc.godbolt.org/[https://gcc.godbolt.org/] to compile it. Thought it's hard to get useful output - compilers are damn smart and produce optimized code - with *gcc* compiler and *O1* optimization I got the following assembly output.
 
 [source,cpp]
 test(int):
