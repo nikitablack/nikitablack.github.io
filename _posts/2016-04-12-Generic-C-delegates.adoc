@@ -47,7 +47,7 @@ int test(int a)
 foo<&test>();
 ----
 
-But which us better? What to use? Of cource there's no answer. It depends. If you don't know before which function you need to use as a callback, then passing a function ponter is the only option. But if you know, then passing it as template argument can be a good choice. Check this example:
+But which us better? What to use? Of cource there's no answer. It depends. If you don't know before which function you need to use as a callback, then passing a function pointer is the only option. But if you know, then passing it as template argument can be a good choice. Check this example:
 
 [source,cpp]
 ----
