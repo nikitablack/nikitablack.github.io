@@ -366,7 +366,7 @@ private:
 
 Mostly it's a wrappers around delegate creation functions. Couple of notes here.
 
-* When we want to add a delegate - the new one will be created. If we want to remove it - we also need to create it before comparing. But that's the price we need to pay in order to have compact delegates, without storing callback pointer and different comparing logic.
+* When we want to add a delegate - the new one will be created. If we want to remove it - we also need to create it to be able to compare. But that's the price we need to pay in order to have compact delegates, without storing callback pointer and different comparing logic.
 * During call of `operator()` the callback function will be called. And if in this callback we remove the delegate from the dispatcher - bad things can happen. In other words in this implementation it's possible to remove an item from the vector whhile iterating over this vector. This will lead to crash/corruption and additional logic needed here to avoid this situation.
 
 And we can use it like this:
