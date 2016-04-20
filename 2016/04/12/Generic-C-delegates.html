@@ -23,7 +23,7 @@
     <meta property="og:description" content="I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..." />
     <meta property="og:url" content="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" />
     <meta property="article:published_time" content="2016-04-11T22:00:00.000Z" />
-    <meta property="article:modified_time" content="2016-04-20T13:19:06.133Z" />
+    <meta property="article:modified_time" content="2016-04-20T13:21:30.566Z" />
     <meta property="article:tag" content="c++" />
     
     <meta name="twitter:card" content="summary" />
@@ -46,7 +46,7 @@
     "headline": "Generic C++ delegates",
     "url": "https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html",
     "datePublished": "2016-04-11T22:00:00.000Z",
-    "dateModified": "2016-04-20T13:19:06.133Z",
+    "dateModified": "2016-04-20T13:21:30.566Z",
     "keywords": "c++",
     "description": "I like module programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that..."
 }
@@ -253,7 +253,6 @@ private:
     template&lt;Ret(*funcPtr)(Args...)&gt;
 	static Delegate create()
 	{
-		cout &lt;&lt; "create global" &lt;&lt; endl;
 		return Delegate{ nullptr, &amp;globalCaller&lt;funcPtr&gt; }; // nullptr as first parameter because static/global functions can be called directly
 	}
 
