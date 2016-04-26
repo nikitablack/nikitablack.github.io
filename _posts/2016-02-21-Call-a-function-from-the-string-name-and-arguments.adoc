@@ -252,7 +252,7 @@ __
 A helper alias template std::index_sequence_for is defined to convert any type parameter pack into an index sequence of the same length.
 __
 
-In other words, `<...Args>`which, for example, can be `<int, float, std::string, double>` will be converted to `std::index_sequence<0, 1, 2, 3>`.
+In other words, `<...Args>` which, for example, can be `<int, float, std::string, double>` will be converted to `std::index_sequence<0, 1, 2, 3>`.
 
 Putting it all together we can call our helper like this:
 
