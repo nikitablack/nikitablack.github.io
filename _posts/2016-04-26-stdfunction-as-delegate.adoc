@@ -91,7 +91,7 @@ void add(const string& tag)
 }
 ----
 
-It's not elegant and it adds some complexity to the code but at least it's robust, haha.
+It's not elegant and it adds some complexity to the code but at least it's robust, haha. Now I can start to implement the `Dispatcher` class (remember https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previous post]) with `std::function`.
 
 
 
