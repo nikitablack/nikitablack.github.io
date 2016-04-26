@@ -42,4 +42,19 @@ void add()
 }
 ----
 
-I take the pointer to function and convert it to string - now I have unique key which I can compare.
+I take the pointer to function and convert it to string - now I have unique key which I can compare. The http://en.cppreference.com/w/cpp/language/reinterpret_cast[documentation] says:
+
+> "Any pointer can be converted to any integral type large enough to hold the value of the pointer (e.g. to std::uintptr_t)".
+
+But cplusplus wouldn't be cplusplus if it was so easy. The pointer to member is not usual pointer and `reinterpret_cast` doesn't work for it. I.e. the following code is incorrect:
+
+
+[source,cpp]
+----
+template<void(*funcPtr)()>
+void add()
+{
+	uintptr_t ptr{ reinterpret_cast<uintptr_t>(funcPtr) };
+	string hash{ to_string(ptr) };
+}
+----
