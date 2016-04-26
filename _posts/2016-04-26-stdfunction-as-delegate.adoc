@@ -333,7 +333,30 @@ See my https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previou
 
 Now when we have 2 implemenations we can compair their performance. We'll bind different callable objects to dispatchers and measure the time it takes to run some number of times.
 
+[source,cpp]
+----
+const int NUM_TESTS{ 10 };
+const int NUM_ITERATIONS{ 100'000'00 };
 
+lambda test raw
+21
+lambda test dispatcher
+235
+lambda test function dispatcher
+31
+global test raw
+21
+global test dispatcher
+85
+global test function dispatcher
+38
+member test raw
+22
+member test dispatcher
+233
+member test function dispatcher
+38
+----
 
 [source,cpp]
 ----
