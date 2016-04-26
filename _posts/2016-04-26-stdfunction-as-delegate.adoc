@@ -51,10 +51,10 @@ But cplusplus wouldn't be cplusplus if it was so easy. The pointer to member is 
 
 [source,cpp]
 ----
-template<void(*funcPtr)()>
+template<typename T, void(T::*funcPtr)()>
 void add()
 {
-	uintptr_t ptr{ reinterpret_cast<uintptr_t>(funcPtr) };
+	uintptr_t ptr{ reinterpret_cast<uintptr_t>(funcPtr) }; // cannot convert to 'uintptr_t'
 	string hash{ to_string(ptr) };
 }
 ----
