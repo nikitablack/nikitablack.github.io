@@ -306,6 +306,33 @@ private:
 }
 ----
 
+And we can use it this way:
+
+[source,cpp]
+----
+Dispatcher<int(int, float)> dispatcher;
+
+auto ptr = make_shared_lambda([](int a, float b)->int
+{
+	return a + static_cast<int>(b);
+});
+
+dispatcher.add("lambda", ptr);
+dispatcher.add("lambda", ptr); // will not add because wrapper with this name already binded
+
+auto ptr2 = make_shared<UserStruct>();
+dispatcher.add<UserStruct, &UserStruct::member>("member", ptr2);
+
+dispatcher(5, 10.0f);
+
+dispatcher.remove("lambda");
+dispatcher.remove("member");
+----
+
+See my https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previous] post for `make_shared_lambda()` implementation.
+
+Now when we have 2 implemenations we can compair their performance. We'll bind different callable objects to dispatchers and measure the time it takes to run some number of times.
+
 
 
 [source,cpp]
