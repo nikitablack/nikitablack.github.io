@@ -93,9 +93,74 @@ void add(const string& tag)
 
 It's not elegant and it adds some complexity to the code but at least it's robust, haha. Now I can start to implement the `Dispatcher` class (remember https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previous post]) with `std::function`.
 
+[source,cpp]
+----
+template<typename T>
+class Dispatcher;
 
+template<typename Ret, typename ...Args>
+class Dispatcher<Ret(Args...)>
+{
+public:
+	template<Ret(*funcPtr)(Args...)>
+	bool add(const string& tag)
+	{
+		addImpl(tag, funcPtr);
+		return true;
+	}
 
+	template<typename T>
+	bool add(const string& tag, shared_ptr<T> t)
+	{
+		addImpl(tag, *t.get());
+		return true;
+	}
 
+	bool remove(const string& tag)
+	{
+        auto it = find(tags.begin(), tags.end(), tag);
+        if (it == tags.end())
+		{
+			return false;
+		}
+        
+        auto index{ distance(tags.begin(), it) };
+        tags.erase(it);
+        
+        delegates.erase(delegates.begin() + index);
+        
+		return true;
+	}
+
+	void operator()(Args... args)
+	{
+		for (auto& delegate : delegates)
+		{
+			delegate(args...);
+		};
+	}
+
+private:
+	bool addImpl(const string& tag, function<Ret(Args...)> delegate)
+	{
+		if (find(tags.begin(), tags.end(), tag) != tags.end())
+		{
+			return false;
+		}
+
+		delegates.push_back(delegate);
+		tags.push_back(tag);
+
+		return true;
+	}
+    
+private:
+	vector<function<Ret(Args...)>> delegates;
+    vector<string> tags;
+};
+----
+
+The `addImpl()` function accepts a `std::function` as a second parameter. In different `add()` functions I call it and pass a callable object which will be converted to `std::function` implicitly.
 
 
 
