@@ -160,9 +160,75 @@ private:
 };
 ----
 
-The `addImpl()` function accepts a `std::function` as a second parameter. In different `add()` functions I call it and pass a callable object which will be converted to `std::function` implicitly.
+The `addImpl()` function accepts a `std::function` as a second parameter. In different `add()` functions I call it and pass a callable object which will be converted to `std::function` implicitly. Curious reader already noticed that I didn't provide an implementation for a member function. Why? Because it's not trivial. Let's find out.
 
+[source,cpp]
+----
+struct UserStruct
+{
+	int member(int a, float b)
+	{
+		return a + static_cast<int>(b);
+	}
+};
 
+UserStruct us;
+function<int(int, float)> f{ bind(&UserStruct::member, us, placeholders::_1, placeholders::_2) };
+f(5, 10.0f);
+----
+
+That's how we bind and call a member function. Have you noticed `std::placeholders`? If we don't know what parameters we'll pass to wrapper - we have to use this stubs. Since we're trying to build "generic" system we choosed to use variadic parameter pack for arguments. Because of this we don't know the number of this placeholder beforehand. And as you maybe guessed we need to generate them!
+
+After some search we can get to this http://en.cppreference.com/w/cpp/utility/functional/is_placeholder[documentation]. it looks like what we need. And even with an example. It says that we can use our own custom placeholder if we'll follow certain rules. Let's try:
+
+[source,cpp]
+----
+template<size_t>
+struct MyPlaceholder{};
+
+namespace std
+{
+	template<>
+	struct is_placeholder<MyPlaceholder<1>> : public integral_constant<size_t, 1>{};
+    
+    template<>
+	struct is_placeholder<MyPlaceholder<2>> : public integral_constant<size_t, 2>{};
+}
+
+function<int(int, float)> f{ bind(&UserStruct::member, us, MyPlaceholder<1>{}, MyPlaceholder<2>{}) };
+f(5, 10.0f)
+---
+
+Wow, it works! But we don't like this enumeration in `std` namespace, do we?
+
+[source,cpp]
+----
+template<size_t>
+struct MyPlaceholder{};
+
+namespace std
+{
+	template<size_t N>
+	struct is_placeholder<MyPlaceholder<N>> : public integral_constant<size_t, N>{};
+}
+
+function<int(int, float)> f{ bind(&UserStruct::member, us, MyPlaceholder<1>{}, MyPlaceholder<2>{}) };
+f(5, 10.0f)
+---
+
+Much better, but now we need to remove placeholder's manual instantiation in `bind()` function. In one of my https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html[previous] posts I wrote about http://en.cppreference.com/w/cpp/utility/integer_sequence[integer sequence] and it seems we can use it here too. Let's replace our placeholders with some function-generator:
+
+[source,cpp]
+----
+template <typename T, typename Ret, size_t... Idx, typename... Args>
+auto bindImpl(T* obj, Ret(T::*funcPtr)(Args...), index_sequence<Idx...>)
+{
+    return bind(funcPtr, obj, getPlaceholder<Idx>()...);
+}
+
+function<int(int, float)> f{ bindImpl(&us, &UserStruct::member, index_sequence_for<int, float>{}) };
+f(5, 10.0f)
+---
 
 
 
