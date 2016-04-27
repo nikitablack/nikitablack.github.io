@@ -8,6 +8,14 @@
     <atom:link href="https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/rss/feed.rss" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>std::function as delegate</title>
+      <link>https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html</link>
+      <pubDate>Wed, 27 Apr 2016 12:00:00 +0100</pubDate>
+      <guid isPermaLink="true">https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html</guid>
+      <description>After my previous post some people asked why did I invent what was invented already? Why did I try to write another std::function?</description>
+    </item>
+    
+    <item>
       <title>Generic C++ delegates</title>
       <link>https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html</link>
       <pubDate>Tue, 12 Apr 2016 10:00:00 +0100</pubDate>
