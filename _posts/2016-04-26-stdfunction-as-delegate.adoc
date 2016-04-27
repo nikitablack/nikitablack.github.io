@@ -236,7 +236,7 @@ function<int(int, float)> f{ bindImpl(&us, &UserStruct::member, index_sequence_f
 f(5, 10.0f)
 ----
 
-The `getPlaceholder()` will receive an integer as template argument and will be called the number of times equal to number of callback's arguments starting from `0`. Exactly as in my https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html[previous] post. Since placeholders should start from `1` we're adding `+1` in the argument - `MyPlaceholder<N + 1>`. In our case this code will be generated:
+The `getPlaceholder()` will receive an integer (starting from `0`) as template argument and will be called the number of times equal to the number of callback's arguments. Exactly as in my https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html[previous] post. Since placeholders should start from `1` we're adding `+1` in the argument - `MyPlaceholder<N + 1>`. In our case this code will be generated:
 
 [source,cpp]
 ----
@@ -306,7 +306,7 @@ private:
 }
 ----
 
-And we can use it this way:
+Noe we can use our dispatcher this way:
 
 [source,cpp]
 ----
@@ -331,7 +331,7 @@ dispatcher.remove("member");
 
 See my https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previous] post for `make_shared_lambda()` implementation.
 
-Now when we have two implemenations we can compair their performance. I binded a lambda, global function and a member function to both dispatchers and call them `10'000'000` times while measuring the time needed to make this amount of calls. Also I add "raw" function call, i.e. without any wrappers. I ran this test `10` times and averaged the result. This is what I got with Visual Studio 2015 (release mode, optimizations):
+Now when we have two implemenations we can compare their performance. I binded a lambda, global function and a member function to both dispatchers and call them `10'000'000` times while measuring the time needed to make this amount of calls. Also I add "raw" function call (direct call without any wrappers). I ran this test `10` times and averaged the result. This is what I got with Visual Studio 2015 (release mode, optimizations):
 
 [source,cpp]
 ----
@@ -348,6 +348,6 @@ member dispatcher: 233
 member function dispatcher: 38
 ----
 
-The results are interesting and unexpected for me. Delegate version I wrote is incredibly slow but `std::function` is pretty fast though 50% slower than the raw function call. For me the choice is obvious - I can live with managing of unique identifiers for `std::function`, the speed for me (as a game developer) is much more important.
+Sorry, no fancy charts today. The results are interesting and unexpected for me. Delegate version I wrote is incredibly slow but `std::function` is pretty fast though 50% slower than the raw function call. For me the choice is obvious - I can live with managing unique identifiers for `std::function`, the speed for me (as a game developer) is much more important.
 
-The source code for both implementations as well as tests can be found https://github.com/nikitablack/cpp-tests/tree/master/Delegate[here].
+The source code for both implementations and tests can be found https://github.com/nikitablack/cpp-tests/tree/master/Delegate[here].
