@@ -10,7 +10,7 @@
     <item>
       <title>Generic C++ delegates</title>
       <link>https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html</link>
-      <pubDate>Tue, 12 Apr 2016 10:00:00 UT +0100</pubDate>
+      <pubDate>Tue, 12 Apr 2016 10:00:00 +0100</pubDate>
       <guid isPermaLink="true">https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html</guid>
       <description>I like modular programming - the style where each separate part of the functionality knows nothing about any other part.</description>
     </item>
@@ -18,7 +18,7 @@
     <item>
       <title>Call a function from the string name and arguments</title>
       <link>https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html</link>
-      <pubDate>Sun, 21 Feb 2016 10:00:00 UT +0100</pubDate>
+      <pubDate>Sun, 21 Feb 2016 10:00:00 +0100</pubDate>
       <guid isPermaLink="true">https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html</guid>
       <description/>
     </item>
