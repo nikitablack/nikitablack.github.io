@@ -331,123 +331,23 @@ dispatcher.remove("member");
 
 See my https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previous] post for `make_shared_lambda()` implementation.
 
-Now when we have 2 implemenations we can compair their performance. We'll bind different callable objects to dispatchers and measure the time it takes to run some number of times.
+Now when we have two implemenations we can compair their performance. I binded a lambda, global function and a member function to both dispatchers and call them `10'000'000` times while measuring the time needed to make this amount of calls. Also I add "raw" function call, i.e. without any wrappers. I ran this test `10` times and averaged the result. This is what I got with Visual Studio 2015 (release mode, optimizations):
 
 [source,cpp]
 ----
-const int NUM_TESTS{ 10 };
-const int NUM_ITERATIONS{ 100'000'00 };
+lambda raw: 21
+lambda dispatcher: 235
+lambda function dispatcher: 31
 
-lambda test raw
-21
-lambda test dispatcher
-235
-lambda test function dispatcher
-31
-global test raw
-21
-global test dispatcher
-85
-global test function dispatcher
-38
-member test raw
-22
-member test dispatcher
-233
-member test function dispatcher
-38
+global raw: 21
+global dispatcher: 85
+global function dispatcher: 38
+
+member raw: 22
+member dispatcher: 233
+member function dispatcher: 38
 ----
 
-[source,cpp]
-----
-template<size_t>
-struct MyPlaceholder{};
+The results are interesting and unexpected for me. Delegate version I wrote is incredibly slow but `std::function` is pretty fast though 50% slower than the raw function call. For me the choice is obvious - I can live with managing of unique identifiers for `std::function`, the speed for me (as a game developer) is much more important.
 
-namespace std
-{
-	template<size_t N>
-	struct is_placeholder<MyPlaceholder<N>> : public integral_constant<size_t, N>{};
-}
-
-template<typename T>
-class Dispatcher;
-
-template<typename Ret, typename ...Args>
-class Dispatcher<Ret(Args...)>
-{
-public:
-	template<Ret(*funcPtr)(Args...)>
-	bool add(const string& tag)
-	{
-		addImpl(tag, funcPtr);
-		return true;
-	}
-
-	template<typename T, Ret(T::*funcPtr)(Args...)>
-	bool add(const string& tag, shared_ptr<T> obj)
-	{
-		addImpl(tag, bindImpl(obj.get(), funcPtr, index_sequence_for<Args...>{}));
-		return true;
-	}
-
-	template<typename T>
-	bool add(const string& tag, shared_ptr<T> t)
-	{
-		addImpl(tag, *t.get());
-		return true;
-	}
-
-	bool remove(const string& tag)
-	{
-        auto it = find(tags.begin(), tags.end(), tag);
-        if (it == tags.end())
-		{
-			return false;
-		}
-        
-        auto index{ distance(tags.begin(), it) };
-        tags.erase(it);
-        
-        delegates.erase(delegates.begin() + index);
-        
-		return true;
-	}
-
-	void operator()(Args... args)
-	{
-		for (auto& delegate : delegates)
-		{
-			delegate(args...);
-		};
-	}
-
-private:
-	bool addImpl(const string& tag, function<Ret(Args...)> delegate)
-	{
-		if (find(tags.begin(), tags.end(), tag) != tags.end())
-		{
-			return false;
-		}
-
-		delegates.push_back(delegate);
-		tags.push_back(tag);
-
-		return true;
-	}
-
-	template <typename T, size_t... Idx>
-	function<Ret(Args...)> bindImpl(T* obj, Ret(T::*funcPtr)(Args...), index_sequence<Idx...>)
-	{
-		return bind(funcPtr, obj, getPlaceholder<Idx>()...);
-	}
-
-	template <size_t N>
-	MyPlaceholder<N + 1> getPlaceholder()
-	{
-		return {};
-	}
-private:
-	vector<function<Ret(Args...)>> delegates;
-    vector<string> tags;
-};
-----
+The source code for both implementations as well as tests can be found https://github.com/nikitablack/cpp-tests/tree/master/Delegate[here].
