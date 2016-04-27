@@ -1,7 +1,9 @@
 = std::function as delegate
 :hp-tags: c++
 
-After my https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previous] post some people asked why I invented what was invented already? Why did I try to write another http://en.cppreference.com/w/cpp/utility/functional/function[`std::function`]? Thought `stl` provides a great way to store functions and call them later it simply not fulfils my requirement - function callbacks should be added and removed runtime. Also the same function shouldn't be added twice. `std::function` doesn't have a comparison operator. Yes, there's http://en.cppreference.com/w/cpp/utility/functional/function/target[`std::function::target()`] method that should return a pointer to the callable type. But I don't know how to use it with member functions. Recall that in order to create a wrapper around a member function we need to bind it with http://en.cppreference.com/w/cpp/utility/functional/bind[`std::bind()`]:
+After my https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previous] post some people asked why did I invent what was invented already? Why did I try to write another http://en.cppreference.com/w/cpp/utility/functional/function[`std::function`]? Well, from the begining I planed to compare custom and standard approach. So here we are.
+
+Thought `stl` provides a great way to store functions and call them later it simply not fulfils my requirement - function callbacks should be added and removed runtime. Also the same function shouldn't be added twice. `std::function` doesn't have a comparison operator. You can say that there's the http://en.cppreference.com/w/cpp/utility/functional/function/target[`std::function::target()`] method that returns a pointer to a callable type. But can we use it with member functions? Recall that in order to create a wrapper around a member function we need to bind it with http://en.cppreference.com/w/cpp/utility/functional/bind[`std::bind()`]:
 
 
 [source,cpp]
@@ -9,7 +11,7 @@ After my https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previ
 function<void()> f{ bind(&SomeStruct::someMemberFunc) };
 ----
 
-And `std::bind()` returns an *unspecified type*. The standard doesn't say it should be comparable. That means that each compiler will have different implementation for this type. Take a look at the following code:
+And `std::bind()` returns an *unspecified type*. That means that each compiler will have different implementation for this type. Also the standard doesn't say that instances of this type should be comparable.  Take a look at the following code:
 
 [source,cpp]
 ----
@@ -28,9 +30,9 @@ auto b = f2.target<T>();
 bool b{ a == b }; // false
 ----
 
-Here I binded the same function of the same object to different wrappers. Obviously this two wrappers should be equal. I can't compare them directly, but I can get the callable objects. With Visual Studio I can compare this objects but the fact that they are different!
+Here I binded the same function of the same object to different wrappers. Though can't compare `std::function` objects directly, but I can get the underlying callable objects. With Visual Studio I can compare this objects but anyway they are not equal!
 
-Since I can't compare `std::function` objects I decided to use some sort of hashing. Let's look at the example:
+Since I can't compare `std::function` objects directly I decided to use some sort of hashing. Let's look at the example:
 
 [source,cpp]
 ----
@@ -42,11 +44,11 @@ void add()
 }
 ----
 
-I take the pointer to function and convert it to string - now I have unique key which I can compare. The http://en.cppreference.com/w/cpp/language/reinterpret_cast[documentation] says:
+I took a pointer to a function and converted it to the string - now I have unique key which I can compare. The http://en.cppreference.com/w/cpp/language/reinterpret_cast[documentation] says:
 
 > "Any pointer can be converted to any integral type large enough to hold the value of the pointer (e.g. to std::uintptr_t)".
 
-But cplusplus wouldn't be cplusplus if it was so easy. The pointer to member is not usual pointer and `reinterpret_cast` doesn't work for it. I.e. the following code is incorrect:
+Sounds easy, right? But cplusplus wouldn't be cplusplus if it was so easy. The pointer to member is not an usual pointer and `reinterpret_cast` doesn't work with it, i.e. the following code is incorrect:
 
 
 [source,cpp]
@@ -59,7 +61,7 @@ void add()
 }
 ----
 
-In other words - it's so simple to get a pointer to member as `int` or any other representation, even `void*`. We can do some hack:
+In other words - there's no simple way to get a pointer to member as `uintptr_t` and even `void*`. But we can do some hack:
 
 [source,cpp]
 ----
@@ -74,9 +76,7 @@ void add()
 }
 ----
 
-It *can* work. But it's not http://stackoverflow.com/a/36837375/1341942[guaranteed]. It looks I should forget about hash string. At least at that moment I don't know how to get string representation of member function robustly.
-
-While I'm searching for the way to hash pointer to member I decided to take the dumbest approach - pass a tag together with data:
+It *can* work. But it's not http://stackoverflow.com/a/36837375/1341942[guaranteed]. All this looks like I should forget about hash string. At least at that moment I don't know how to get string representation of member function robustly. While I'm searching for the way to do it I decided to take the dumbest approach - pass a string tag together with data:
 
 [source,cpp]
 ----
@@ -91,7 +91,7 @@ void add(const string& tag)
 }
 ----
 
-It's not elegant and it adds some complexity to the code but at least it's robust, haha. Now I can start to implement the `Dispatcher` class (remember https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previous post]) with `std::function`.
+It's not elegant and it adds some complexity to a code but at least it's robust, haha. Now I can start to implement the `Dispatcher` class (remember https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previous post]) with `std::function`.
 
 [source,cpp]
 ----
@@ -160,7 +160,7 @@ private:
 };
 ----
 
-The `addImpl()` function accepts a `std::function` as a second parameter. In different `add()` functions I call it and pass a callable object which will be converted to `std::function` implicitly. Curious reader already noticed that I didn't provide an implementation for a member function. Why? Because it's not trivial. Let's find out.
+The `addImpl()` function accepts a `std::function` as a second parameter. In different `add()` functions we're passing a callable object to it which will be converted to `std::function` implicitly. Curious reader already noticed that I didn't provide an implementation for a member function. Why? Because it's not trivial. Let's find out why:
 
 [source,cpp]
 ----
@@ -177,7 +177,7 @@ function<int(int, float)> f{ bind(&UserStruct::member, us, placeholders::_1, pla
 f(5, 10.0f);
 ----
 
-That's how we bind and call a member function. Have you noticed `std::placeholders`? If we don't know what parameters we'll pass to wrapper - we have to use this stubs. Since we're trying to build "generic" system we choosed to use variadic parameter pack for arguments. Because of this we don't know the number of this placeholder beforehand. And as you maybe guessed we need to generate them!
+That's how we bind and call a member function. Have you noticed `std::placeholders`? If we don't know what parameters we're going to pass to a wrapper - we have to use this stubs. Remember that we're trying to build "generic" system and we chose to use variadic parameter pack for arguments. Because of this we don't know the number of placeholders beforehand. And as you maybe guessed we need to generate them!
 
 After some search we can get to this http://en.cppreference.com/w/cpp/utility/functional/is_placeholder[documentation]. it looks like what we need. And even with an example. It says that we can use our own custom placeholder if we'll follow certain rules. Let's try:
 
