@@ -229,7 +229,7 @@ MyPlaceholder<N + 1> getPlaceholder()
 template <typename T, typename Ret, size_t... Idx, typename... Args>
 auto bindImpl(T* obj, Ret(T::*funcPtr)(Args...), index_sequence<Idx...>)
 {
-    return bind(funcPtr, obj, getPlaceholder<Idx>()...);
+    return bind(funcPtr, obj, getPlaceholder<Idx>()...); // getPlaceholder() will be expanded
 }
 
 function<int(int, float)> f{ bindImpl(&us, &UserStruct::member, index_sequence_for<int, float>{}) };
