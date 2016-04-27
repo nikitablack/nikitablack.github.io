@@ -236,7 +236,7 @@ function<int(int, float)> f{ bindImpl(&us, &UserStruct::member, index_sequence_f
 f(5, 10.0f)
 ----
 
-The `getPlaceholder()` will receive an integer and will be called the number of times equal to number of callback's arguments starting from `0`. Exactly as in my https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html[previous] post. Since placeholders should start from `1` we're adding `+1` in the argument - `MyPlaceholder<N + 1>`. In our case this code will be generated:
+The `getPlaceholder()` will receive an integer as template argument and will be called the number of times equal to number of callback's arguments starting from `0`. Exactly as in my https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html[previous] post. Since placeholders should start from `1` we're adding `+1` in the argument - `MyPlaceholder<N + 1>`. In our case this code will be generated:
 
 [source,cpp]
 ----
