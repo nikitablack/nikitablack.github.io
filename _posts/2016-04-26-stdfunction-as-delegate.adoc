@@ -177,9 +177,9 @@ function<int(int, float)> f{ bind(&UserStruct::member, us, placeholders::_1, pla
 f(5, 10.0f);
 ----
 
-That's how we bind and call a member function. Have you noticed `std::placeholders`? If we don't know what parameters we're going to pass to a wrapper - we have to use this stubs. Remember that we're trying to build "generic" system and we chose to use variadic parameter pack for arguments. Because of this we don't know the number of placeholders beforehand. And as you maybe guessed we need to generate them!
+That's how we bind and call a member function. Have you noticed `std::placeholders`? If we don't know what parameters we're going to pass to a wrapper - we have to use this stubs. Remember that we're trying to build "generic" system and we chose to use variadic parameter pack for arguments. Because of this we don't know the number of placeholders beforehand. And as you have guessed we need to generate them!
 
-After some search we can get to this http://en.cppreference.com/w/cpp/utility/functional/is_placeholder[documentation]. it looks like what we need. And even with an example. It says that we can use our own custom placeholder if we'll follow certain rules. Let's try:
+After some search we can end up in this http://en.cppreference.com/w/cpp/utility/functional/is_placeholder[documentation] and it looks like what we need. And even with an example! It states that we can use our own custom placeholder if we'll follow certain rules. Let's try:
 
 [source,cpp]
 ----
@@ -216,7 +216,7 @@ function<int(int, float)> f{ bind(&UserStruct::member, us, MyPlaceholder<1>{}, M
 f(5, 10.0f)
 ----
 
-Much better, but now we need to remove placeholder's manual instantiation in `bind()` function. In one of my https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html[previous] posts I wrote about http://en.cppreference.com/w/cpp/utility/integer_sequence[integer sequence] and it seems we can use it here too. Let's wrap `std::bind` and replace our placeholders with some function-generator:
+Much better. Now we need to remove placeholder's manual instantiation in `std::bind()` function. In one of my https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html[previous] posts I wrote about http://en.cppreference.com/w/cpp/utility/integer_sequence[integer sequence] and it seems we can use it here too. Let's wrap `std::bind()` and replace our placeholders with a function-generator:
 
 [source,cpp]
 ----
