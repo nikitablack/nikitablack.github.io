@@ -331,7 +331,7 @@ dispatcher.remove("member");
 
 See my https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previous] post for `make_shared_lambda()` implementation.
 
-Now when we have two implemenations we can compare their performance. I binded a lambda, global function and a member function to both dispatchers and call them `10'000'000` times while measuring the time needed to make this amount of calls. Also I add "raw" function call (direct call without any wrappers). I ran this test `10` times and averaged the result. This is what I got with Visual Studio 2015 (release mode, optimizations):
+Now when we have two implemenations we can compare their performance. I binded a lambda, global function and a member function to both dispatchers and call them `10'000'000` times while measuring the time needed to make this amount of calls. Also I added "raw" function call (direct call without any wrappers). I ran this test `10` times and averaged the result. This is what I got with Visual Studio 2015 (release mode, optimizations):
 
 [source,cpp]
 ----
