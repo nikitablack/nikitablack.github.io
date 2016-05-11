@@ -23,7 +23,7 @@
     <meta property="og:description" content="The more I work with c++ and template programming in particular, the more I love it. No, seriously - we have a language inside another language which allows us to create beautiful constructs. One of my recent problems was the..." />
     <meta property="og:url" content="https://nikitablack.github.io/2016/05/11/Get-sizes-of-arbitrary-types.html" />
     <meta property="article:published_time" content="2016-05-10T22:00:00.000Z" />
-    <meta property="article:modified_time" content="2016-05-11T19:49:14.586Z" />
+    <meta property="article:modified_time" content="2016-05-11T22:15:43.872Z" />
     <meta property="article:tag" content="c++" />
     
     <meta name="twitter:card" content="summary" />
@@ -46,7 +46,7 @@
     "headline": "Get sizes of arbitrary types",
     "url": "https://nikitablack.github.io/2016/05/11/Get-sizes-of-arbitrary-types.html",
     "datePublished": "2016-05-10T22:00:00.000Z",
-    "dateModified": "2016-05-11T19:49:14.586Z",
+    "dateModified": "2016-05-11T22:15:43.872Z",
     "keywords": "c++",
     "description": "The more I work with c++ and template programming in particular, the more I love it. No, seriously - we have a language inside another language which allows us to create beautiful constructs. One of my recent problems was the..."
 }
@@ -69,7 +69,9 @@
         </header>
 
         <div class="text" id="js-post-content">
-            <div class="paragraph">
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
 <p>The more I work with c++ and template programming in particular, the more I love it. No, seriously - we have a language inside another language which allows us to create beautiful constructs. One of my recent problems was the finding of types sizes. I.e. I have a number of types, say <code>char, float, double</code> and I need to get their sizes and place them in a vector. The number of types can be different and in any combination. That sounds like a work for <a href="http://en.cppreference.com/w/cpp/language/parameter_pack">variadic templates</a>. Using templates allow us to write generic code that will work the same on all platforms.</p>
 </div>
 <div class="paragraph">
@@ -151,6 +153,35 @@ for(int i{0}; i &lt; v.size(); ++i)
 </div>
 <div class="paragraph">
 <p>As you can see nothing really difficult here. But it&#8217;s extremely interesting to get familar with c++ tiny details. After all that makes us better programmers.</p>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_update">UPDATE:</h5>
+<div class="paragraph">
+<p>After I posted an article I reseived a very constructive feedback and fixes to my post. In simple words - all I wrote is a bullshit. The same can be achieved much easier. For example funcion <code>assign()</code> can be rewriten as:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename... Args&gt;
+void assign(vector&lt;int&gt;&amp; v)
+{
+    (void)vector&lt;int&gt;{ (v.push_back(sizeof(Args)),0)... };
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Moreover we don&#8217;t even need this. All the code can be done in a single function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename... Args&gt;
+vector&lt;size_t&gt; calcSizes()
+{
+    return { sizeof( Args )... };
+}</code></pre>
+</div>
+</div>
 </div>
         </div>
 
