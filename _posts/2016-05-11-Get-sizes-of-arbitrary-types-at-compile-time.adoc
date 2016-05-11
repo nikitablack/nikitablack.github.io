@@ -1,11 +1,20 @@
 = Get sizes of arbitrary types at compile time
 :hp-tags: c++
 
-The more I work with c++ and template programming in particular, the more I love it. No, seriously - we have a language inside another language which allows us to create beautiful constructs. One of my recent problems was the finding of types sizes. I.e. I have a number of types, say `char, float, double` and I need to get their sizes and place them in a vector. The number of types can be different and in any combination. That sounds like a work for http://en.cppreference.com/w/cpp/language/parameter_pack[variadic templates].
+The more I work with c++ and template programming in particular, the more I love it. No, seriously - we have a language inside another language which allows us to create beautiful constructs. One of my recent problems was the finding of types sizes. I.e. I have a number of types, say `char, float, double` and I need to get their sizes and place them in a vector. The number of types can be different and in any combination. That sounds like a work for http://en.cppreference.com/w/cpp/language/parameter_pack[variadic templates]. Using templates allow us to write generic code that will work the same on all platforms.
 
-After my https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html[previous] post some people asked why did I invent what was invented already? Why did I try to write another http://en.cppreference.com/w/cpp/utility/functional/function[`std::function`]? Well, from the begining I planed to compare custom and standard approach. So here we are.
+I like to write code that requires several steps in back order or from outside. Let me show this on example. Since in the end I need to query the size and put the value into the container the last function will look this:
 
-Thought `stl` provides a great way to store functions and call them later it simply not fulfils my requirement - function callbacks should be added and removed runtime. Also the same function shouldn't be added twice. `std::function` doesn't have a comparison operator. You can say that there's the http://en.cppreference.com/w/cpp/utility/functional/function/target[`std::function::target()`] method that returns a pointer to a callable type. But can we use it with member functions? Recall that in order to create a wrapper around a member function we need to bind it with http://en.cppreference.com/w/cpp/utility/functional/bind[`std::bind()`]:
+[source,cpp]
+----
+template<typename T>
+void assignImpl(vector<int>& v)
+{
+	v.push_back(sizeof(T));
+}
+----
+
+Very simple and straightforward.
 
 
 [source,cpp]
