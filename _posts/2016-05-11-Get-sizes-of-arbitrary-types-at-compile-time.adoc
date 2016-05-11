@@ -31,7 +31,7 @@ Here `(assignImpl<Args>(v), 0)` http://en.cppreference.com/w/cpp/language/operat
 
 [source,cpp]
 ----
-assignImpl<char>(v), 0), assignImpl<float>(v), 0), assignImpl<double>(v), 0)
+(assignImpl<char>(v), 0), (assignImpl<float>(v), 0), (assignImpl<double>(v), 0)
 ----
 
 Also by the http://en.cppreference.com/w/cpp/language/eval_order#Rules[rules] functions calls inside initializer list will be *sequenced in order* from left to right (rule #10). That's why we chose `std::vector` - because of it's initializer list. Of course we are free to use something different. Again - the key here is initializer list. `(void)temp` simply tells the compiler to not report a warning because of unused object. So, after the expansion for `char, float, double` the entire function will turn into:
@@ -41,17 +41,19 @@ Also by the http://en.cppreference.com/w/cpp/language/eval_order#Rules[rules] fu
 template<typename char, typename float, typename double>
 void assign(vector<int>& v)
 {
-	vector<int> temp{assignImpl<char>(v), 0), assignImpl<float>(v), 0), assignImpl<double>(v), 0)};
+	vector<int> temp{(assignImpl<char>(v), 0), (assignImpl<float>(v), 0), (assignImpl<double>(v), 0)};
 	(void)temp;
 }
 ----
 
 The vector `temp`, as you already guessed, will hold three zeroes.
 
+Having all this we can write the `calcSizes()` function which is an entry point for our code:
+
 [source,cpp]
 ----
 template<typename... Args>
-vector<int> calcSize()
+vector<int> calcSizes()
 {
 	vector<int> v;
 	assign<Args...>(v);
@@ -59,3 +61,17 @@ vector<int> calcSize()
 	return v;
 }
 ----
+
+We can check it's work:
+
+[source,cpp]
+----
+vector<int> v{calcSize<char, float, double>()};
+
+for(int i{0}; i < v.size(); ++i)
+{
+	cout << v[i] << "\n"; // 1 4 8
+}
+----
+
+As you can see nothing really difficult here. But it's extremely interesting to get familar with c++ tiny details. After all that makes us better programmers. 
