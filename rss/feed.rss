@@ -8,6 +8,14 @@
     <atom:link href="https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/rss/feed.rss" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Small template trick - getting sizes of arbitrary numbers of types.</title>
+      <link>https://nikitablack.github.io/2016/05/11/Get-sizes-of-arbitrary-types.html</link>
+      <pubDate>Wed, 11 May 2016 22:00:00 +0100</pubDate>
+      <guid isPermaLink="true">https://nikitablack.github.io/2016/05/11/Get-sizes-of-arbitrary-types.html</guid>
+      <description>The more I work with c++ and template programming in particular, the more I love it. No, seriously - we have a language inside another language which allows us to create beautiful constructs.</description>
+    </item>
+    
+    <item>
       <title>std::function as delegate</title>
       <link>https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html</link>
       <pubDate>Wed, 27 Apr 2016 12:00:00 +0100</pubDate>
