@@ -1,0 +1,77 @@
+= Get sizes of arbitrary types
+:hp-tags: c++
+
+The more I work with c++ and template programming in particular, the more I love it. No, seriously - we have a language inside another language which allows us to create beautiful constructs. One of my recent problems was the finding of types sizes. I.e. I have a number of types, say `char, float, double` and I need to get their sizes and place them in a vector. The number of types can be different and in any combination. That sounds like a work for http://en.cppreference.com/w/cpp/language/parameter_pack[variadic templates]. Using templates allow us to write generic code that will work the same on all platforms.
+
+I like to write template code that requires several steps in back order or from outside. Let me show this on example. Since in the end I need to query the size of a type and put the value into the container the last function is:
+
+[source,cpp]
+----
+template<typename T>
+void assignImpl(vector<int>& v)
+{
+	v.push_back(sizeof(T));
+}
+----
+
+Very simple and straightforward. We have a type as a template argument, we take it's size and put it in a vector. Since we have `N` number of types this function should be called `N` times. We can't directly call some function several times during http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion[variadic parameter pack expansion] but we can use a trick:
+
+
+[source,cpp]
+----
+template <typename... Args>
+void assign(vector<int>& v)
+{
+	vector<int> temp{(assignImpl<Args>(v), 0)...};
+	(void)temp;
+}
+----
+
+Here `(assignImpl<Args>(v), 0)` http://en.cppreference.com/w/cpp/language/operator_other#Built-in_comma_operator[will return] `0` and the `assignImpl()` function call result will be discarded. But the function will be called anyway! And `...` expands this statement to the number of `Args`. For example, for `char, float, double` it will be expanded to:
+
+[source,cpp]
+----
+(assignImpl<char>(v), 0), (assignImpl<float>(v), 0), (assignImpl<double>(v), 0)
+----
+
+Also by the http://en.cppreference.com/w/cpp/language/eval_order#Rules[rules] functions calls inside initializer list will be *sequenced in order* from left to right (rule #10). That's why we chose `std::vector` - because of it's initializer list. Of course we are free to use something different. Again - the key here is initializer list. `(void)temp` simply tells the compiler to not report a warning because of unused object. So, after the expansion for `char, float, double` the entire function will turn into:
+
+[source,cpp]
+----
+template<typename char, typename float, typename double>
+void assign(vector<int>& v)
+{
+	vector<int> temp{(assignImpl<char>(v), 0), (assignImpl<float>(v), 0), (assignImpl<double>(v), 0)};
+	(void)temp;
+}
+----
+
+The vector `temp`, as you already guessed, will hold three zeroes.
+
+Having all this we can write the `calcSizes()` function which is an entry point for our code:
+
+[source,cpp]
+----
+template<typename... Args>
+vector<int> calcSizes()
+{
+	vector<int> v;
+	assign<Args...>(v);
+
+	return v;
+}
+----
+
+We can check it's work:
+
+[source,cpp]
+----
+vector<int> v{calcSize<char, float, double>()};
+
+for(int i{0}; i < v.size(); ++i)
+{
+	cout << v[i] << "\n"; // 1 4 8
+}
+----
+
+As you can see nothing really difficult here. But it's extremely interesting to get familar with c++ tiny details. After all that makes us better programmers. 
