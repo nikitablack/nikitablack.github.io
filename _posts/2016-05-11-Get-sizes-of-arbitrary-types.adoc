@@ -74,4 +74,28 @@ for(int i{0}; i < v.size(); ++i)
 }
 ----
 
-As you can see nothing really difficult here. But it's extremely interesting to get familar with c++ tiny details. After all that makes us better programmers. 
+As you can see nothing really difficult here. But it's extremely interesting to get familar with c++ tiny details. After all that makes us better programmers.
+
+===== UPDATE:
+
+After I posted an article I reseived a very constructive feedback and fixes to my post. In simple words - all I wrote is a bullshit. The same can be achieved much easier. For example funcion `assign()` can be rewriten as:
+
+[source,cpp]
+----
+template<typename... Args>
+void assign(vector<int>& v)
+{
+    (void)vector<int>{ (v.push_back(sizeof(Args)),0)... };
+}
+----
+
+Moreover we don't even need this. All the code can be done in a single function:
+
+[source,cpp]
+----
+template<typename... Args>
+vector<size_t> calcSizes()
+{
+    return { sizeof( Args )... };
+}
+----
