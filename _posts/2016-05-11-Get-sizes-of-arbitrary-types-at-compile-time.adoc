@@ -14,24 +14,42 @@ void assignImpl(vector<int>& v)
 }
 ----
 
-Very simple and straightforward.
+Very simple and straightforward. Since we have `N` number of types this function should be called `N` times. We can't directly call some function several times during http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion[variadic parameter pack expansion] but we can use a trick:
 
 
 [source,cpp]
 ----
-template<typename T>
-void assignImpl(vector<int>& v)
-{
-	v.push_back(sizeof(T));
-}
-
 template <typename... Args>
 void assign(vector<int>& v)
 {
 	vector<int> temp{(assignImpl<Args>(v), 0)...};
 	(void)temp;
 }
+----
 
+Here `(assignImpl<Args>(v), 0)` http://en.cppreference.com/w/cpp/language/operator_other#Built-in_comma_operator[will return] `0` and the function call result will be discarded. But the function will be called anyway! And `...` expands this statement to the number of `Args`. For example, for `char, float, double` it will be expanded to:
+
+[source,cpp]
+----
+assignImpl<char>(v), 0), assignImpl<float>(v), 0), assignImpl<double>(v), 0)
+----
+
+Also by the http://en.cppreference.com/w/cpp/language/eval_order#Rules[rules] functions calls inside initializer list will be *sequenced in order* from left to right (rule #10). That's why we chose `std::vector` - because of it's initializer list. Of course we are free to use something different. Again - the key here is initializer list. `(void)temp` simply tells the compiler to not report a warning because of unused object. So, after the expansion for `char, float, double` the entire function will turn into:
+
+[source,cpp]
+----
+template<typename char, typename float, typename double>
+void assign(vector<int>& v)
+{
+	vector<int> temp{assignImpl<char>(v), 0), assignImpl<float>(v), 0), assignImpl<double>(v), 0)};
+	(void)temp;
+}
+----
+
+The vector `temp`, as you already guessed, will hold three zeroes.
+
+[source,cpp]
+----
 template<typename... Args>
 vector<int> calcSize()
 {
