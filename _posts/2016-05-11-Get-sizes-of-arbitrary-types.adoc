@@ -78,7 +78,7 @@ As you can see nothing really difficult here. But it's extremely interesting to 
 
 ===== UPDATE:
 
-After I posted an article I reseived a very constructive feedback and fixes to my post. In simple words - all I wrote is a bullshit. The same can be achieved much easier. For example funcion `assign()` can be rewriten as:
+After I posted an article I received a very constructive feedback and fixes to my post. In simple words - all I wrote is bullshit. The same can be achieved much easier. For example funcion `assign()` can be rewritten as:
 
 [source,cpp]
 ----
