@@ -81,4 +81,4 @@ int main()
 }
 ----
 
-On my machine I have around `400ms` for *both* `std::bind()` and lambda. Not bad, my previous code can be simplified dramatically now.
+On my machine I have around `400ms` for *both* `std::bind()` and lambda. Not bad. My previous code can be simplified dramatically now -there's no need in `std::bind()` and accompanying template tricks.
