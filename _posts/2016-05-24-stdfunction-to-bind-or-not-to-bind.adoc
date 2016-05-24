@@ -1,7 +1,7 @@
 = std::function - to bind or not to bind?
 :hp-tags: c++
 
-In my https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html[previous post] about delegates I wrote how to bind a member function to `std::function`. There was a lot of template magic involved in order to pass the correct number of http://en.cppreference.com/w/cpp/utility/functional/placeholders[placeholders]. Shortly after I published I received a lot of feedback and I'm very grateful for this. One advice was not to use http://en.cppreference.com/w/cpp/utility/functional/bind[`std::bind()`] at all. I'll past the code I received in one of the comments and try to make some time measures:
+In my https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html[previous post] about delegates I wrote how to bind a member function to `std::function`. There was a lot of template magic involved in order to pass the correct number of http://en.cppreference.com/w/cpp/utility/functional/placeholders[placeholders]. Shortly after I published I received a lot of feedback and I'm very grateful for this. One advice was not to use http://en.cppreference.com/w/cpp/utility/functional/bind[`std::bind()`] at all. I'll paste directly the code from one of the comments and will make some time measurements:
 
 [source,cpp]
 ----
@@ -12,57 +12,73 @@ auto make_function(T t, R(T::*mem_fn)(Args...))
 }
 ----
 
+As you can see - it's usual lambda that can be converted to http://en.cppreference.com/w/cpp/utility/functional/function[`std::function`].
 
-The more I work with c++ and template programming in particular, the more I love it. No, seriously - we have a language inside another language which allows us to create beautiful constructs. One of my recent problems was the finding of types sizes. I.e. I have a number of types, say `char, float, double` and I need to get their sizes and place them in a vector. The number of types can be different and in any combination. That sounds like a work for http://en.cppreference.com/w/cpp/language/parameter_pack[variadic templates]. Using templates allow us to write generic code that will work the same on all platforms.
-
-I like to write template code that requires several steps in back order or from outside. Let me show this on example. Since in the end I need to query the size of a type and put the value into the container the last function is:
+My first thoughts were that lambda should be slower - we have a function call and a lambda call over it. To be honest, I don't know how `std::bind` works, maybe it also creates some wrappers? Anyway, let's benchmark:
 
 [source,cpp]
 ----
-const uint32_t NUM_TESTS{ 10 };
-const uint32_t NUM_ITERATIONS{ 100000000 };
-
-volatile int res{ 0 };
-
-S s;
-function<int(int, int)> f{ bind(&S::foo, s, placeholders::_1, placeholders::_2) };
-
+struct S
 {
-	uint64_t t{ 0 };
-	for (int i{ 0 }; i < NUM_TESTS; ++i)
+	int foo(int a, int b)
 	{
-		auto start = chrono::high_resolution_clock::now();
-		for (int j{ 0 }; j < NUM_ITERATIONS; ++j)
+		return a + b;
+	}
+};
+
+int main()
+{
+	const uint32_t NUM_TESTS{ 10 };
+	const uint32_t NUM_ITERATIONS{ 100000000 };
+
+	volatile int res{ 0 };
+
+	S s;
+	function<int(int, int)> f{ bind(&S::foo, &s, placeholders::_1, placeholders::_2) }; // passing an object's pointer as I did in previous article
+
+	{
+		uint64_t t{ 0 };
+		for (int i{ 0 }; i < NUM_TESTS; ++i)
 		{
-			res += f(5, 10);
+			auto start = chrono::high_resolution_clock::now();
+			for (int j{ 0 }; j < NUM_ITERATIONS; ++j)
+			{
+				res += f(5, 10);
+			}
+			auto end = chrono::high_resolution_clock::now();
+			auto time = chrono::duration_cast<chrono::milliseconds>(end - start);
+			t += time.count();
 		}
-		auto end = chrono::high_resolution_clock::now();
-		auto time = chrono::duration_cast<chrono::milliseconds>(end - start);
-		t += time.count();
+
+		cout << t / NUM_TESTS << "\n";
 	}
 
-	cout << t / NUM_TESTS << "\n";
-}
-
-auto* ptr = &s;
-auto fPtr = &S::foo;
-function<int(int, int)> f2 = [ptr, fPtr](int a, int b){ return ((ptr)->*(fPtr))(a, b); };
-
-res = 0;
-{
-	uint64_t t{ 0 };
-	for (int i{ 0 }; i < NUM_TESTS; ++i)
+	auto* ptr = &s;
+	auto fPtr = &S::foo;
+	function<int(int, int)> f2 = [ptr, fPtr](int a, int b){ return ((ptr)->*(fPtr))(a, b); }; // capture pointers by copy
+	
+	res = 0;
 	{
-		auto start = chrono::high_resolution_clock::now();
-		for (int j{ 0 }; j < NUM_ITERATIONS; ++j)
+		uint64_t t{ 0 };
+		for (int i{ 0 }; i < NUM_TESTS; ++i)
 		{
-			res += f2(5, 10);
+			auto start = chrono::high_resolution_clock::now();
+			for (int j{ 0 }; j < NUM_ITERATIONS; ++j)
+			{
+				res += f2(5, 10);
+			}
+			auto end = chrono::high_resolution_clock::now();
+			auto time = chrono::duration_cast<chrono::milliseconds>(end - start);
+			t += time.count();
 		}
-		auto end = chrono::high_resolution_clock::now();
-		auto time = chrono::duration_cast<chrono::milliseconds>(end - start);
-		t += time.count();
+
+		cout << t / NUM_TESTS << "\n";
 	}
-    
-	cout << t / NUM_TESTS << "\n";
+
+	cin.get();
+
+	return 0;
 }
 ----
+
+On my machine I have around `400ms` for *both* `std::bind()` and lambda. Not bad, my previous code can be simplified dramatically now.
