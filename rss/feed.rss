@@ -8,6 +8,14 @@
     <atom:link href="https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/rss/feed.rss" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>std::function - to bind or not to bind?</title>
+      <link>https://nikitablack.github.io/2016/05/24/stdfunction-to-bind-or-not-to-bind.html</link>
+      <pubDate>Wed, 24 May 2016 22:00:00 +0000</pubDate>
+      <guid isPermaLink="true">https://nikitablack.github.io/2016/05/24/stdfunction-to-bind-or-not-to-bind.html</guid>
+      <description>In my previous post about delegates I wrote how to bind a member function to std::function. There was a lot of template magic involved in order to pass the correct number of placeholders.</description>
+    </item>
+    
+    <item>
       <title>Small template trick - getting sizes of arbitrary numbers of types.</title>
       <link>https://nikitablack.github.io/2016/05/11/Get-sizes-of-arbitrary-types.html</link>
       <pubDate>Wed, 11 May 2016 22:00:00 +0100</pubDate>
