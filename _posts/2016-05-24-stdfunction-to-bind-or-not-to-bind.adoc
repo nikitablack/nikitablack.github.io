@@ -1,0 +1,56 @@
+= std::function - to bind or not to bind?
+:hp-tags: c++
+
+The more I work with c++ and template programming in particular, the more I love it. No, seriously - we have a language inside another language which allows us to create beautiful constructs. One of my recent problems was the finding of types sizes. I.e. I have a number of types, say `char, float, double` and I need to get their sizes and place them in a vector. The number of types can be different and in any combination. That sounds like a work for http://en.cppreference.com/w/cpp/language/parameter_pack[variadic templates]. Using templates allow us to write generic code that will work the same on all platforms.
+
+I like to write template code that requires several steps in back order or from outside. Let me show this on example. Since in the end I need to query the size of a type and put the value into the container the last function is:
+
+[source,cpp]
+----
+const uint32_t NUM_TESTS{ 10 };
+const uint32_t NUM_ITERATIONS{ 100000000 };
+
+volatile int res{ 0 };
+
+S s;
+function<int(int, int)> f{ bind(&S::foo, s, placeholders::_1, placeholders::_2) };
+
+{
+	uint64_t t{ 0 };
+	for (int i{ 0 }; i < NUM_TESTS; ++i)
+	{
+		auto start = chrono::high_resolution_clock::now();
+		for (int j{ 0 }; j < NUM_ITERATIONS; ++j)
+		{
+			res += f(5, 10);
+		}
+		auto end = chrono::high_resolution_clock::now();
+		auto time = chrono::duration_cast<chrono::milliseconds>(end - start);
+		t += time.count();
+	}
+
+	cout << t / NUM_TESTS << "\n";
+}
+
+auto* ptr = &s;
+auto fPtr = &S::foo;
+function<int(int, int)> f2 = [ptr, fPtr](int a, int b){ return ((ptr)->*(fPtr))(a, b); };
+
+res = 0;
+{
+	uint64_t t{ 0 };
+	for (int i{ 0 }; i < NUM_TESTS; ++i)
+	{
+		auto start = chrono::high_resolution_clock::now();
+		for (int j{ 0 }; j < NUM_ITERATIONS; ++j)
+		{
+			res += f2(5, 10);
+		}
+		auto end = chrono::high_resolution_clock::now();
+		auto time = chrono::duration_cast<chrono::milliseconds>(end - start);
+		t += time.count();
+	}
+    
+	cout << t / NUM_TESTS << "\n";
+}
+----
