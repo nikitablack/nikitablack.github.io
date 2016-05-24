@@ -1,6 +1,18 @@
 = std::function - to bind or not to bind?
 :hp-tags: c++
 
+In my https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html[previous post] about delegates I wrote how to bind a member function to `std::function`. There was a lot of template magic involved in order to pass the correct number of http://en.cppreference.com/w/cpp/utility/functional/placeholders[placeholders]. Shortly after I published I received a lot of feedback and I'm very grateful for this. One advice was not to use http://en.cppreference.com/w/cpp/utility/functional/bind[`std::bind()`] at all. I'll past the code I received in one of the comments and try to make some time measures:
+
+[source,cpp]
+----
+template <class T, class R, class ... Args>
+auto make_function(T t, R(T::*mem_fn)(Args...))
+{
+  return [t, mem_fn] (Args ... args) mutable -> R { return ((t).*(mem_fn))(args...); };
+}
+----
+
+
 The more I work with c++ and template programming in particular, the more I love it. No, seriously - we have a language inside another language which allows us to create beautiful constructs. One of my recent problems was the finding of types sizes. I.e. I have a number of types, say `char, float, double` and I need to get their sizes and place them in a vector. The number of types can be different and in any combination. That sounds like a work for http://en.cppreference.com/w/cpp/language/parameter_pack[variadic templates]. Using templates allow us to write generic code that will work the same on all platforms.
 
 I like to write template code that requires several steps in back order or from outside. Let me show this on example. Since in the end I need to query the size of a type and put the value into the container the last function is:
