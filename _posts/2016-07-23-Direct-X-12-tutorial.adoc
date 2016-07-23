@@ -1,0 +1,80 @@
+= DirectX 12 tutorial
+:hp-tags: c++, directx12
+
+===== Disclaimer!
+I'm not an expert. When I started to learn directx 12 I already was quite comfortable with directx 11. Nevertheless it was very difficult for me to switch. And even after several months of learning I still have a feeling that I just scratched a surface. So I'm still learning and this post is a syncronization of my thoughts so far and it will contain questions. Thought I hope somebody will find it useful.
+
+Directx 12 is low level, it have many concepts and in order to make your code work well you need to take into account a lot of things. You need to profile a lot. And you need to know hardware. For example you need to know that changing descriptor heaps is a heavy operation. I have no idea what happening in hardware and why it's expensive. I'm just following guidelines and trying to remember.
+
+Also I assume that the reader have an experience with previous directx versions because I'll not explain in this post what is swapchain or backbuffer. Also you need to know basic windows programming because we need to create a window and I'll not explain how to do it. So let's jump directly into the stove.
+
+In this tutorial we're going to render a teapot. But not just a static mesh, no. We'll render a tesselated teapot. Why did I chose to go this way? Well, because you can find in the web different _HelloWorld_ examples. I wanted to create somethig that covers different areas of api and at the same time is simple. So our final picture will look like this:
+
+[picture]
+
+Usually directx tutorials follows the same pattern - d3d initialization, resource creation, rendering. I decided to go different way - first we'll create the most important part of the code and later will add different components one after another as required. And the most important part, by my opinion, is *shaders*. After all this is what we want the gpu to execute and later we'll create a code to serve our shaders. Let's start.
+
+===== Shaders
+In our example we'll use `vertex`, `hull`, `domain` and `pixel` shaders.
+
+*Vertex shader*
+
+The first shader in our pipeline is the `vertex` shader. All it's do is accepts vertex data from the application and passes it to the `hull` shader.
+
+[source,cpp]
+----
+struct VertexData
+{
+	float3 pos : POSITION;
+};
+
+struct VertexToHull
+{
+	float3 pos : POSITION;
+};
+
+VertexToHull main(VertexData input)
+{
+	VertexToHull output;
+	output.pos = input.pos;
+
+	return output;
+}
+----
+
+*Hull shader*
+
+This shader, as you already know, accepts data from the `vertex` shader and also from the application in the form of constants
+
+[source,cpp]
+----
+struct VertexData
+{
+	float3 pos : POSITION;
+};
+
+struct VertexToHull
+{
+	float3 pos : POSITION;
+};
+
+VertexToHull main(VertexData input)
+{
+	VertexToHull output;
+	output.pos = input.pos;
+
+	return output;
+}
+----
+
+
+In my https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html[previous post] about delegates I wrote how to bind a member function to `std::function`. There was a lot of template magic involved in order to pass the correct number of http://en.cppreference.com/w/cpp/utility/functional/placeholders[placeholders]. Shortly after I published I received a lot of feedback and I'm very grateful for this. One advice was not to use http://en.cppreference.com/w/cpp/utility/functional/bind[`std::bind()`] at all. I'll paste directly the code from one of the comments and will make some time measurements:
+
+[source,cpp]
+----
+template <class T, class R, class ... Args>
+auto make_function(T t, R(T::*mem_fn)(Args...))
+{
+  return [t, mem_fn] (Args ... args) mutable -> R { return ((t).*(mem_fn))(args...); };
+}
+----
