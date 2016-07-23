@@ -6,7 +6,7 @@ I'm not an expert. When I started to learn directx 12 I already was quite comfor
 
 Directx 12 is low level, it have many concepts and in order to make your code work well you need to take into account a lot of things. You need to profile a lot. And you need to know hardware. For example you need to know that changing descriptor heaps is a heavy operation. I have no idea what happening in hardware and why it's expensive. I'm just following guidelines and trying to remember.
 
-Also I assume that the reader have an experience with previous directx versions because I'll not explain in this post what is swapchain or backbuffer. Also you need to know basic windows programming because we need to create a window and I'll not explain how to do it. So let's jump directly into the stove.
+Also I assume that the reader have an experience with previous directx versions because I'll not explain in this post what is swapchain or backbuffer. You should be familar with tesselation - what are tesselation factors, what is a constant function, why do you need `hull` and `domain` shaders. Also you need to know basic windows programming because we need to create a window and I'll not explain how to do it. So let's jump directly into the stove.
 
 In this tutorial we're going to render a teapot. But not just a static mesh, no. We'll render a tesselated teapot. Why did I chose to go this way? Well, because you can find in the web different _HelloWorld_ examples. I wanted to create somethig that covers different areas of api and at the same time is simple. So our final picture will look like this:
 
@@ -19,7 +19,7 @@ In our example we'll use `vertex`, `hull`, `domain` and `pixel` shaders.
 
 *Vertex shader*
 
-The first shader in our pipeline is the `vertex` shader. All it's do is accepts vertex data from the application and passes it to the `hull` shader.
+The first shader in our pipeline is the `vertex` shader. All it's do is accepts control point position from the application and passes it to the `hull` shader.
 
 [source,cpp]
 ----
@@ -44,24 +44,58 @@ VertexToHull main(VertexData input)
 
 *Hull shader*
 
-This shader, as you already know, accepts data from the `vertex` shader and also from the application in the form of constants
+This shader, as you already know, accepts control point position from the `vertex` shader and also some data from the application in the form of constants which we'll use as tesseltion factors for the edge and inside of the patch.
 
 [source,cpp]
 ----
-struct VertexData
+#define NUM_CONTROL_POINTS 16
+
+struct PatchTesselationFactors
 {
-	float3 pos : POSITION;
+	int edge;
+	int inside;
 };
+ConstantBuffer<PatchTesselationFactors> tessFactors : register(b0);
 
 struct VertexToHull
 {
 	float3 pos : POSITION;
 };
 
-VertexToHull main(VertexData input)
+struct PatchConstantData
 {
-	VertexToHull output;
-	output.pos = input.pos;
+	float EdgeTessFactor[4] : SV_TessFactor;
+	float InsideTessFactor[2] : SV_InsideTessFactor;
+};
+
+struct HullToDomain
+{
+	float3 pos : POSITION;
+};
+
+PatchConstantData CalculatePatchConstants(InputPatch<VertexToHull, NUM_CONTROL_POINTS> ip, uint patchID : SV_PrimitiveID)
+{
+	PatchConstantData Output;
+
+	Output.EdgeTessFactor[0] = tessFactors.edge;
+	Output.EdgeTessFactor[1] = tessFactors.edge;
+	Output.EdgeTessFactor[2] = tessFactors.edge;
+	Output.EdgeTessFactor[3] = tessFactors.edge;
+	Output.InsideTessFactor[0] = tessFactors.inside;
+	Output.InsideTessFactor[1] = tessFactors.inside;
+
+	return Output;
+}
+
+[domain("quad")]
+[partitioning("fractional_odd")]
+[outputtopology("triangle_cw")]
+[outputcontrolpoints(NUM_CONTROL_POINTS)]
+[patchconstantfunc("CalculatePatchConstants")]
+HullToDomain main(InputPatch<VertexToHull, NUM_CONTROL_POINTS> ip, uint i : SV_OutputControlPointID, uint patchID : SV_PrimitiveID)
+{
+	HullToDomain output;
+	output.pos = ip[i].pos;
 
 	return output;
 }
