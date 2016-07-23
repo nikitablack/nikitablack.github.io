@@ -12,6 +12,8 @@ In this tutorial we're going to render a teapot. But not just a static mesh, no.
 
 [picture]
 
+We're going to use 16-point patches for the teapot. we'll provide control points positions in one vertex buffer and patch indicies in one index buffer. For colors and transforms (more on this later) we'll use structured buffers.
+
 Usually directx tutorials follows the same pattern - d3d initialization, resource creation, rendering. I decided to go different way - first we'll create the most important part of the code and later will add different components one after another as required. And the most important part, by my opinion, is *shaders*. After all this is what we want the gpu to execute and later we'll create a code to serve our shaders. Let's start.
 
 ===== Shaders
@@ -100,6 +102,8 @@ HullToDomain main(InputPatch<VertexToHull, NUM_CONTROL_POINTS> ip, uint i : SV_O
 	return output;
 }
 ----
+
+Here you see that the patch outputs 16 control points. Also note the new hlsl 5.1 syntax for the constant buffer `ConstantBuffer<PatchTesselationFactors> tessFactors : register(b0);`. Thought you can use the old syntax I like the new one more.
 
 
 In my https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html[previous post] about delegates I wrote how to bind a member function to `std::function`. There was a lot of template magic involved in order to pass the correct number of http://en.cppreference.com/w/cpp/utility/functional/placeholders[placeholders]. Shortly after I published I received a lot of feedback and I'm very grateful for this. One advice was not to use http://en.cppreference.com/w/cpp/utility/functional/bind[`std::bind()`] at all. I'll paste directly the code from one of the comments and will make some time measurements:
