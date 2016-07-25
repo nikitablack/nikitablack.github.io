@@ -219,32 +219,3 @@ In the first step we're finding the vertex position in patch space.
 NOTE: Recal that this function is called for every generated vertex. For example, if we have a square patch and the lowest possible tesselation applied (assuming we're not discarding a patch) the tesselator generates 4 vertices - one for every corner point. If we have edge tesselation factor of 2 and no inside tesselation we get 8 vertices (4 edges each one splitted on two parts).
 
 Next with the help of the patch id we're obtaining some transform (next section will tell why) and transforming the vertex to the homogenious space by multiplying on world-view-projection matrix. Next we're sampling the color structured buffer (also - next section) and send all this data to our last programmable stage - `pixel` shader.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-In my https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html[previous post] about delegates I wrote how to bind a member function to `std::function`. There was a lot of template magic involved in order to pass the correct number of http://en.cppreference.com/w/cpp/utility/functional/placeholders[placeholders]. Shortly after I published I received a lot of feedback and I'm very grateful for this. One advice was not to use http://en.cppreference.com/w/cpp/utility/functional/bind[`std::bind()`] at all. I'll paste directly the code from one of the comments and will make some time measurements:
-
-[source,cpp]
-----
-template <class T, class R, class ... Args>
-auto make_function(T t, R(T::*mem_fn)(Args...))
-{
-  return [t, mem_fn] (Args ... args) mutable -> R { return ((t).*(mem_fn))(args...); };
-}
-----
