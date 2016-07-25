@@ -12,7 +12,7 @@ In this tutorial we're going to render a teapot. But not just a static mesh, no.
 
 [picture]
 
-We're going to use 16-point patches for the teapot. we'll provide control points positions in one vertex buffer and patch indicies in one index buffer. For colors and transforms (more on this later) we'll use structured buffers.
+We're going to use 16-point patches for the teapot. We'll provide control points positions in one vertex buffer and patch indicies in one index buffer. For colors and transforms (more on this later) we'll use structured buffers.
 
 Usually directx tutorials follows the same pattern - d3d initialization, resource creation, rendering. I decided to go different way - first we'll create the most important part of the code and later will add different components one after another as required. And the most important part, by my opinion, is *shaders*. After all this is what we want the gpu to execute and later we'll create a code to serve our shaders. Let's start.
 
@@ -103,7 +103,125 @@ HullToDomain main(InputPatch<VertexToHull, NUM_CONTROL_POINTS> ip, uint i : SV_O
 }
 ----
 
-Here you see that the patch outputs 16 control points. Also note the new hlsl 5.1 syntax for the constant buffer `ConstantBuffer<PatchTesselationFactors> tessFactors : register(b0);`. Thought you can use the old syntax I like the new one more.
+Here you see that the patch outputs 16 control points. Also note the new hlsl 5.1 syntax for the constant buffer `ConstantBuffer<PatchTesselationFactors> tessFactors : register(b0);`. Thought you can use the old syntax I like the new one more. Beyond this the shader is a simple pass-through, like a `vertex` shader.
+
+*Domain shader*
+
+Finally we arrived to the place of interest. Basically this is the place where all the work is done in our program.
+
+[source,cpp]
+----
+#define NUM_CONTROL_POINTS 16
+
+struct ConstantBufferPerObj
+{
+	row_major float4x4 wvpMat;
+};
+ConstantBuffer<ConstantBufferPerObj> constPerObject : register(b0);
+
+struct PatchTransform
+{
+	row_major float4x4 transform;
+};
+StructuredBuffer<PatchTransform> patchTransforms : register(t0);
+
+struct PatchColor
+{
+	float3 color;
+};
+StructuredBuffer<PatchColor> patchColors : register(t1);
+
+struct PatchConstantData
+{
+	float EdgeTessFactor[4] : SV_TessFactor;
+	float InsideTessFactor[2] : SV_InsideTessFactor;
+};
+
+struct HullToDomain
+{
+	float3 pos : POSITION;
+};
+
+struct DomainToPixel
+{
+	float4 pos : SV_POSITION;
+	float3 color : COLOR;
+};
+
+float4 BernsteinBasis(float t)
+{
+	float invT = 1.0f - t;
+	return float4(invT * invT * invT,	// (1-t)3
+		3.0f * t * invT * invT,			// 3t(1-t)2
+		3.0f * t * t * invT,			// 3t2(1-t)
+		t * t * t);						// t3
+}
+
+float4 dBernsteinBasis(float t)
+{
+	float invT = 1.0f - t;
+	return float4(-3 * invT * invT,		// -3(1-t)2
+		3 * invT * invT - 6 * t * invT,	// 3(1-t)-6t(1-t)
+		6 * t * invT - 3 * t * t,		// 6t(1-t) – 3t2
+		3 * t * t);						// 3t2
+}
+
+float3 EvaluateBezier(const OutputPatch<HullToDomain, NUM_CONTROL_POINTS> bezpatch, float4 BasisU, float4 BasisV)
+{
+	float3 Value = float3(0, 0, 0);
+	Value = BasisV.x * (bezpatch[0].pos * BasisU.x + bezpatch[1].pos * BasisU.y + bezpatch[2].pos * BasisU.z + bezpatch[3].pos * BasisU.w);
+	Value += BasisV.y * (bezpatch[4].pos * BasisU.x + bezpatch[5].pos * BasisU.y + bezpatch[6].pos * BasisU.z + bezpatch[7].pos * BasisU.w);
+	Value += BasisV.z * (bezpatch[8].pos * BasisU.x + bezpatch[9].pos * BasisU.y + bezpatch[10].pos * BasisU.z + bezpatch[11].pos * BasisU.w);
+	Value += BasisV.w * (bezpatch[12].pos * BasisU.x + bezpatch[13].pos * BasisU.y + bezpatch[14].pos * BasisU.z + bezpatch[15].pos * BasisU.w);
+
+	return Value;
+}
+
+[domain("quad")]
+DomainToPixel main(PatchConstantData input, float2 domain : SV_DomainLocation, const OutputPatch<HullToDomain, NUM_CONTROL_POINTS> patch, uint PatchID : SV_PrimitiveID)
+{
+	// Evaluate the basis functions at (u, v)
+	float4 BasisU = BernsteinBasis(domain.x);
+	float4 BasisV = BernsteinBasis(domain.y);
+	float4 dBasisU = dBernsteinBasis(domain.x);
+	float4 dBasisV = dBernsteinBasis(domain.y);
+
+	// Evaluate the surface position for this vertex
+	float3 WorldPos = EvaluateBezier(patch, BasisU, BasisV);
+
+	// Evaluate the tangent space for this vertex (using derivatives)
+	float3 Tangent = EvaluateBezier(patch, dBasisU, BasisV);
+	float3 BiTangent = EvaluateBezier(patch, BasisU, dBasisV);
+	float3 Norm = normalize(cross(Tangent, BiTangent));
+
+	float4x4 transform = patchTransforms[PatchID].transform;
+	float4 WorldPosTransformed = mul(float4(WorldPos, 1.0f), transform);
+	DomainToPixel output;
+	output.pos = mul(WorldPosTransformed, constPerObject.wvpMat);
+	output.color = patchColors[PatchID].color;
+
+	return output;
+}
+----
+
+Going from the top we ca see that we're operating on the same 16 point patch, we have a constant buffer for the patch`s world-view-projection, structured buffer for the patch transform (more on this in a next section), structured buffer for the patch color. Here we can use one structured buffer for both transforms and colors but I deliberately split it on two to show how we can assign resources through the root table (more on this later).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 In my https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html[previous post] about delegates I wrote how to bind a member function to `std::function`. There was a lot of template magic involved in order to pass the correct number of http://en.cppreference.com/w/cpp/utility/functional/placeholders[placeholders]. Shortly after I published I received a lot of feedback and I'm very grateful for this. One advice was not to use http://en.cppreference.com/w/cpp/utility/functional/bind[`std::bind()`] at all. I'll paste directly the code from one of the comments and will make some time measurements:
