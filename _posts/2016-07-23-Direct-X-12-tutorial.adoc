@@ -206,6 +206,8 @@ DomainToPixel main(PatchConstantData input, float2 domain : SV_DomainLocation, c
 
 Going from the top we ca see that we're operating on the same 16 point patch, we have a constant buffer for the patch`s world-view-projection, structured buffer for the patch transform (more on this in a next section), structured buffer for the patch color. Here we can use one structured buffer for both transforms and colors but I deliberately split it on two to show how we can assign resources through the root table (more on this later).
 
+NOTE: There're some places where I chose non optimal path and I did this by purpose - maybe for simplicity or maybe to show different possibilities of the api. In such places I added a note. But if you found a place where things done poorly and there's no note around - that means I simply missed something and it would be great if you point this in the comment so I can make a fix.
+
 
 
 
