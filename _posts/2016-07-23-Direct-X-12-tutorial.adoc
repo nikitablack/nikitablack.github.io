@@ -44,6 +44,8 @@ VertexToHull main(VertexData input)
 }
 ----
 
+Just for remainder - the `vertex` shader will be called once for every vertex (suddenly!). For 28 patches (and this is the number of patches used for the model) and 16 points each this is 448 times.
+
 *Hull shader*
 
 This shader, as you already know, accepts control point position from the `vertex` shader and also some data from the application in the form of constants which we'll use as tesseltion factors for the edge and inside of the patch.
