@@ -224,4 +224,6 @@ float4 main(DomainToPixel input) : SV_TARGET
 ----
 
 Very simple shader, don't even need to be discussed.
+
+That's basically it - we have a program and we need to make gpu to run it. All other code are just instructions to the gpu to use correct stages, correct data etc.
  
