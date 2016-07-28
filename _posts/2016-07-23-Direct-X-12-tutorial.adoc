@@ -29,30 +29,9 @@ In our example we'll use `vertex`, `hull`, `domain` and `pixel` shaders.
 
 *Vertex shader*
 
-The first shader in our pipeline is the `vertex` shader. All it's do is accepts control point position from the application and passes it to the `hull` shader.
+The first shader in our pipeline is the `vertex` shader. All it's do is accepts control point position from the application and passes it to the `hull` shader. Because of it's simplicity I'll not provide it here but you can observe it in https://github.com/nikitablack/directx-12/blob/master/TeapotTutorial/TeapotTutorial/VertexShader.hlsl[github].
 
-[source,cpp]
-----
-struct VertexData
-{
-	float3 pos : POSITION;
-};
-
-struct VertexToHull
-{
-	float3 pos : POSITION;
-};
-
-VertexToHull main(VertexData input)
-{
-	VertexToHull output;
-	output.pos = input.pos;
-
-	return output;
-}
-----
-
-Just for remainder - the `vertex` shader will be called once for every vertex (suddenly!). For 28 patches (and this is the number of patches used for the model) and 16 points each this is 448 times.
+Just for remainder - the `vertex` shader will be called once for every control point in the patch. For `28` patches (recall that this is the number of patches used for the model) `16` points each this is `448` times.
 
 *Hull shader*
 
