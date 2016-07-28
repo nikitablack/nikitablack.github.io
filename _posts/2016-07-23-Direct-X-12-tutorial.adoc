@@ -18,7 +18,7 @@ Usually directx tutorials follow the same pattern - initialization, resource cre
 
 ===== Teapot data
 
-Since we're going to use tesselation we're not interested in "usual" mesh consisting of triangles. We need patches. Of course somebody already did it before so we can use the data. For example https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot#The_Teapot_DataSet[here] the data set for `16`-point patches. But we can't use this data as it is, we need to adjust it a little. This set doesn't have a bottom and it's and it's ok, we'll not use it either. But the existing patches describe only parts of the teapot. For example rim, body and lid describe only a quarter of a teapot and handle and spout describe only left half of this parts. So if we'll render only this set we'll get this results.
+Since we're going to use tesselation we're not interested in _"usual"_ mesh consisting of triangles. We need patches. Of course somebody already described the teapot and we can use this data. For example https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot#The_Teapot_DataSet[here] is the set of `16`-point patches. Unfortunatelly we can't use this data as it is and we need to adjust it a little. This set doesn't have a bottom - -it's ok, we'll not use it either. But the existing patches describe only parts of the teapot. For example _rim_, _body_ and _lid_ describe only a quarter of a teapot and _handle_ and _spout_ describe only half of this parts. So if we'll render this set we'll get this:
 
 [picture]
 
