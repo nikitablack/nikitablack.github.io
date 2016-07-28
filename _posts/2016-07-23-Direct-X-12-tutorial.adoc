@@ -143,9 +143,9 @@ float4 BernsteinBasis(float t)
 {
 	float invT = 1.0f - t;
 	return float4(invT * invT * invT,	// (1-t)3
-		3.0f * t * invT * invT,			// 3t(1-t)2
-		3.0f * t * t * invT,			// 3t2(1-t)
-		t * t * t);						// t3
+		3.0f * t * invT * invT,		// 3t(1-t)2
+		3.0f * t * t * invT,		// 3t2(1-t)
+		t * t * t);			// t3
 }
 
 float3 evaluateBezier(const OutputPatch<HullToDomain, NUM_CONTROL_POINTS> bezpatch, float4 basisU, float4 basisV)
