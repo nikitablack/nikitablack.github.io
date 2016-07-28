@@ -16,7 +16,7 @@ We're going to use `16`-point patches for the teapot. We'll provide control poin
 
 Usually directx tutorials follow the same pattern - initialization, resource creation, rendering. I decided to go different way - first we'll create the most important part of the code and later will add different components to support it - one after another as required. And the most important part, by my opinion, is *shaders*. After all this is what we want the gpu to execute. This approach helped me to tie different parts of the api and undesrtand how they related to each other. In order to write a shader we need to figure out what data we need. So let's first define it.
 
-===== Teapot data
+===== Teapot Data
 
 Since we're going to use tesselation we're not interested in _"usual"_ mesh consisting of triangles. We need patches. Of course somebody already described the teapot and we can use this data. For example https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot#The_Teapot_DataSet[here] is the set of `16`-point patches. Unfortunatelly we can't use this data as it is and we need to adjust it a little. This set doesn't have a bottom - -it's ok, we'll not use it either. But the existing patches describe only parts of the teapot. For example _rim_, _body_ and _lid_ describe only a quarter of a teapot and _handle_ and _spout_ describe only half of this parts. So if we'll render this set we'll get this:
 
@@ -200,7 +200,11 @@ This is also very simple shader, don't even need to be discussed. You can find t
 
 That's basically it - we have a program and we need to make our hardware run it. All other code just exist for this purpose - to help the gpu execute shaders. To summarize things I drew a diagram that shows shader stages and resources we need.
 
+[picture]
 
+Couple of things to note. Resources stored in gpu in memory. Gpu have no idea what's stored inside its memory and how to interpret it - it's just a blob of data. It's our task to tell it where the data resides, the size and format. For `vertex buffer` and `index buffer` it's pretty easy - we create this buffers and later tell the gpu to use it with `ID3D12GraphicsCommandList::IASetVertexBuffers()` and `ID3D12GraphicsCommandList::IASetIndexBuffer()` methods. On the diagram I showed solid arrow from input to this resources. With other resources things are different. There's no such method like `DSSetStructuredBufferInSlot()` or similar and we need to use special structure called `RootSignature` to bind shaders and resources together. That's why there're question marks between shader and resource. We'll find out how to bind resources in the next section. Also on the diagram I specified the size of our data together with alignment size (for example `1416B / 64kB` for the `vertex buffer`). Id `directx 12` (and `11`) buffers should be aligned by `64kB`. We can specify this value during resource creation or let the api do it for us. That means if we have a lot of small buffers we're wasting a lot of space. But it's just an interesting point and we shoudn't bother about it in this example.
+
+===== Root Signature
 
 When I started to write this tutorial I wanted to make it as simple as possible and put everything in one file. But when this file became more than `1000` lines I decided to split the code on several logic units.
  
