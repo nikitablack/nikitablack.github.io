@@ -35,7 +35,7 @@ Just for remainder - the `vertex` shader will be called once for every control p
 
 *Hull shader*
 
-This shader, as you already know, accepts control point position from the `vertex` shader and also some data from the application in the form of constants which we'll use as tesseltion factors for the edge and inside of the patch.
+This shader, as you already know, receives control point position from the `vertex` shader and also some data from the application in the form of constants which we'll use as tesseltion factors for the edge and inside of the patch.
 
 [source,cpp]
 ----
@@ -64,7 +64,7 @@ struct HullToDomain
 	float3 pos : POSITION;
 };
 
-PatchConstantData CalculatePatchConstants()
+PatchConstantData calculatePatchConstants()
 {
 	PatchConstantData output;
 
@@ -79,10 +79,10 @@ PatchConstantData CalculatePatchConstants()
 }
 
 [domain("quad")]
-[partitioning("fractional_odd")]
+[partitioning("integer")]
 [outputtopology("triangle_cw")]
 [outputcontrolpoints(NUM_CONTROL_POINTS)]
-[patchconstantfunc("CalculatePatchConstants")]
+[patchconstantfunc("calculatePatchConstants")]
 HullToDomain main(InputPatch<VertexToHull, NUM_CONTROL_POINTS> input, uint i : SV_OutputControlPointID)
 {
 	HullToDomain output;
@@ -92,9 +92,9 @@ HullToDomain main(InputPatch<VertexToHull, NUM_CONTROL_POINTS> input, uint i : S
 }
 ----
 
-Here you see that the patch outputs 16 control points. Also note the new hlsl 5.1 syntax for the constant buffer `ConstantBuffer<PatchTesselationFactors> tessFactors : register(b0);`. Thought you can use the old syntax I like the new one more. Beyond this the shader is a simple pass-through, like a `vertex` shader.
+Here you see that the patch outputs the same `16` control points, uses `integer` partitioning and `quad` domain. Also note the new `hlsl 5.1` syntax for the constant buffer `ConstantBuffer<PatchTesselationFactors> tessFactors : register(b0);`. Thought you can use the old syntax I like the new one more. Beyond this the shader is a simple pass-through, like a `vertex` shader.
 
-This shader will be invoked 28 number of times (by the number of patches).
+This shader will be invoked `28` number of times (by the number of patches).
 
 *Domain shader*
 
