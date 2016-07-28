@@ -18,6 +18,12 @@ Usually directx tutorials follows the same pattern - d3d initialization, resourc
 
 ===== Teapot data
 
+Since we're going to use tesselation we're not interested in "usual" mesh consisting of triangles. We need patches. Of course somebody already did it before so we can use the data. For example https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot#The_Teapot_DataSet[here] the data set for 16-point patches. But we can't use this data as it is, we need to adjust it a little. This set doesn't have a bottom and it's and it's ok, we'll not use it either. But the existing patches describe only parts of the teapot. For example rim, body and lid describe only a quarter of a teapot and handle and spout describe only left half of this parts. So if we'll render only this set we'll get this results.
+
+[picture]
+
+There're several ways to fix it. One way is to use separate draw call for every part. This way we can render rim four times with different transformation. Another way is to draw a part once but use instancing. But we'll copy the data and render everything in one draw call. For this we'll duplicate the indices required number of times and also provide a transformation for every part. Let's take a rim as an example again. Instead of having one patch for the quarter we'll have 4 patches for the entire circle, that means `16 * 4 = 64` indices for this part. In the shader knowing the patch id we can apply a transform. In this case rotate it around an axis by `0`, `90`, `180` and `270` degrees. All that means that together with points positions and indices we need to provide a transformation data as. Additionaly to visually separate patches we'll use different colors which, as you guessed, also should be provided as a separate data. In total we'll have `28` patches - list of points (some points are shared between patches - that's why we need indices), list of indices (`28 * 16`), list of transforms (`28` matrices) and list of colors (`28` randomly generated rgb colors). Final data can be found https://github.com/nikitablack/directx-12/blob/master/TeapotTutorial/TeapotTutorial/TeapotData.cpp[here].
+
 ===== Shaders
 In our example we'll use `vertex`, `hull`, `domain` and `pixel` shaders.
 
