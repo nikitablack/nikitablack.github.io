@@ -14,7 +14,7 @@ In this tutorial we're going to render a teapot. But not just a static mesh, no.
 
 We're going to use `16`-point patches for the teapot. We'll provide control points positions in one vertex buffer and patch indicies in one index buffer. For colors and transforms (more on this later) we'll use structured buffers.
 
-Usually directx tutorials follows the same pattern - d3d initialization, resource creation, rendering. I decided to go different way - first we'll create the most important part of the code and later will add different components to support it - one after another as required. And the most important part, by my opinion, is *shaders*. After all this is what we want the gpu to execute and later we'll create a code to serve our shaders. In order to write a shader we need to figure out what data we need. So let's first define it.
+Usually directx tutorials follow the same pattern - initialization, resource creation, rendering. I decided to go different way - first we'll create the most important part of the code and later will add different components to support it - one after another as required. And the most important part, by my opinion, is *shaders*. After all this is what we want the gpu to execute. This approach helped me to tie different parts of the api and undesrtand how they related to each other. In order to write a shader we need to figure out what data we need. So let's first define it.
 
 ===== Teapot data
 
