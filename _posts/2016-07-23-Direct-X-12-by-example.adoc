@@ -214,4 +214,90 @@ As I mentioned above gpu can't use resource memory directly. How can we say then
 When I started to write this tutorial I wanted to make it as simple as possible and put everything in one file. But when this file became more than `1000` lines I decided to split the code on several logic units. `Window` is a class which encapsulates window creation and accepts a key press callback in the form of `std::function`. We'll use this callback to change demo parameters. 'Graphics` is a base class for our demo. It creates a 'Window' and also initializes `d3d`, i.e. it creates interfaces that are used by all graphics` applications. For example device, swap chain, depth buffer, back buffers, command list and so on. `TeapotTutorial` extends this class and adds functionality related to our demo - resources creation, rendering. I'll describe why each method exist ans we'll start with `TeapotTutorial::createRootSignature()`.
 
 ===== Root Signature
- 
+
+Ok, at this point we should know that shaders require resources and this resources should be bound to the correct resource slots (`b0` for constant buffer, `t0` for structured buffer, for eample). In `directx 12` we do it it with special interface - `ID3D12RootSignature`. With it we need to describe which resources which shader needs and which slot. We can say that it only describes input parameters, just like usual c++ function signature. For example:
+
+[source,cpp]
+----
+void rootSignature(std::array<int, 2> constants, XMFLOAT4X4* wvpMatrix, std::vector<XMFLOAT3*>* colors);
+----
+
+What we see here is that our function expects `3` input parameters - two ints, copied by value; pointer to a matrix, and a pointer to vector of pointers to some colors. If we're going to read these passed values we'll have this: the first parameter - two ints / will be copied to registers so accessing them will be extremely fast; for the second parameter we need to dereference a pointer and it will lead to read from memory with potential cache miss, so it's slower that the first parameter; the fird parameter is the slowest one - to read from the vector we need to dereference it first and then dereference the element we want to access - that means two indirections. Also notice that this is just a signature - it doesn't tell us what are the actual parameter values. Basically we can use as many different combinations of parameters as we can imagine with a single signature - the only mandatory is that we need to maintain correct types. Why did I tell all this? Because this is exactly how root signature works! We specify the input parameters and there types and later during runtime we pass the actual data.
+
+We're almost ready to start write a code but let's first discuss our input signature. As you remember we have `4` resources for our demo - `hull` constant buffer, `domain` constant buffer and `2` `domain` structured buffers.
+
+NOTE: "But there're also `vertex` and `index` buffers" - can ask somebody. Right, but they are _special_ buffers - we need to create a resources and corresponding views and this views we pass directly to pipeline in command list (as we'll see later). These views don't even need a resource heap!
+
+Also as we saw previously, the information about this resources should be stored in descriptors which should be stored in descriptor heaps. But I also mentioned that there're some other ways to pass data around. That's how we'll do it:
+
+1. Tesselation factors for the `hull` shader we'll pass *directly* in root signature. That means we don't need to create descriptor or descriptor heap or even resource itself! This works because we can pass `32` bit constants in root signature and they appear in shader as a constant buffer. Since we have only `2` tesselation factors this type of passing looks like a good choice. Moreover, this data will be accessed in a shader without indirection, just like `std::array<int, 2>` in an example c++ function signature!
+
+2. For `hull` shader's constant buffer we will use a descriptor. But again, this decriptor will be passed as a part of the root signature. And that means we can bypass a descriptor heap. Again, the descriptor will be inlined in the root signature that's why we don't need to store it somewhere else. With descriptor, in order to acces the resource the shader will need first it's address in descriptor and than read the actual data. Just like `XMFLOAT4X4*` in an example c++ function signature!
+
+
+Knowing all this we can write our first `directx 12` code.
+
+[source,cpp]
+----
+// TeapotTutorial.h
+Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+
+// TeapotTutorial.cpp
+void TeapotTutorial::createRootSignature()
+{
+	D3D12_DESCRIPTOR_RANGE dsTransformAndColorSrvRange;
+	ZeroMemory(&dsTransformAndColorSrvRange, sizeof(dsTransformAndColorSrvRange));
+	dsTransformAndColorSrvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	dsTransformAndColorSrvRange.NumDescriptors = 2;
+	dsTransformAndColorSrvRange.BaseShaderRegister = 0;
+	dsTransformAndColorSrvRange.RegisterSpace = 0;
+	dsTransformAndColorSrvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	D3D12_ROOT_PARAMETER dsTransformAndColorSrv;
+	ZeroMemory(&dsTransformAndColorSrv, sizeof(dsTransformAndColorSrv));
+	dsTransformAndColorSrv.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	dsTransformAndColorSrv.DescriptorTable = { 1, &dsTransformAndColorSrvRange };
+	dsTransformAndColorSrv.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+
+	D3D12_ROOT_PARAMETER dsObjCb;
+	ZeroMemory(&dsObjCb, sizeof(dsObjCb));
+	dsObjCb.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	dsObjCb.Descriptor = { 0, 0 };
+	dsObjCb.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+
+	D3D12_ROOT_PARAMETER hsTessFactorsCb;
+	ZeroMemory(&hsTessFactorsCb, sizeof(hsTessFactorsCb));
+	hsTessFactorsCb.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	hsTessFactorsCb.Constants = { 0, 0, 2 };
+	hsTessFactorsCb.ShaderVisibility = D3D12_SHADER_VISIBILITY_HULL;
+
+	vector<D3D12_ROOT_PARAMETER> rootParameters{ dsObjCb, hsTessFactorsCb, dsTransformAndColorSrv };
+
+	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags{
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS
+	};
+
+	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+	ZeroMemory(&rootSignatureDesc, sizeof(rootSignatureDesc));
+	rootSignatureDesc.NumParameters = static_cast<UINT>(rootParameters.size());
+	rootSignatureDesc.pParameters = rootParameters.data();
+	rootSignatureDesc.NumStaticSamplers = 0;
+	rootSignatureDesc.pStaticSamplers = nullptr;
+	rootSignatureDesc.Flags = rootSignatureFlags;
+
+	ComPtr<ID3DBlob> signature;
+	ComPtr<ID3DBlob> error;
+	if (FAILED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, signature.ReleaseAndGetAddressOf(), error.ReleaseAndGetAddressOf())))
+	{
+		throw(runtime_error{ "Error serializing root signature" });
+	}
+
+	if (FAILED(device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(rootSignature.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating root signature" });
+	}
+}
+----
