@@ -337,8 +337,7 @@ Microsoft::WRL::ComPtr<ID3D12Device> device;
 // Graphics.cpp
 void Graphics::createDevice()
 {
-	HRESULT hr{ D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)) };
-	if (FAILED(hr))
+	if (FAILED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device))))
 	{
 		throw(runtime_error{ "Error creating device." });
 	}
@@ -411,3 +410,5 @@ void Graphics::createFactory()
 	}
 }
 ----
+
+Finally no more new interfaces! Actually there's one - `ID3D12Debug`. You should always use it in debug run. During an error it writes to the output the reason.
