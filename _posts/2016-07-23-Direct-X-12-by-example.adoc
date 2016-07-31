@@ -345,4 +345,69 @@ void Graphics::createDevice()
 }
 ----
 
-Simple enough. But what is this `adapter`. We can use `nullptr` instead and let the api to choose the default adapter, but I'll show here how we can select among many adapters. Similar to `device` it's an `IDXGIAdapter` interface that represents a gpu. It's hard for me to tell why do we need two similar interfaces that represents basically the same thing. Let's think that `dxgi` interface provides different information about gpu, but `d3d` interface allows us to manipulate it - create different resources, change states. We'll use 
+Simple enough. But what is this `adapter`. We can use `nullptr` instead and let the api to choose the default adapter, but I'll show here how we can select among many adapters. Similar to `device` it's an `IDXGIAdapter` interface that represents a gpu. It's hard for me to tell why do we need two similar interfaces that represents basically the same thing. Let's think that `dxgi` interface provides different information about gpu, but `d3d` interface allows us to manipulate it - create different resources, change states. We'll use `IDXGIAdapter3` interface:
+
+[source,cpp]
+----
+// Graphics.h
+Microsoft::WRL::ComPtr<IDXGIAdapter3> adapter;
+
+// Graphics.cpp
+void Graphics::getAdapter()
+{
+	ComPtr<IDXGIAdapter1> adapterTemp;
+
+	for (UINT adapterIndex{ 0 }; factory->EnumAdapters1(adapterIndex, adapterTemp.ReleaseAndGetAddressOf()) != DXGI_ERROR_NOT_FOUND; ++adapterIndex)
+	{
+		DXGI_ADAPTER_DESC1 desc;
+		ZeroMemory(&desc, sizeof(desc));
+
+		adapterTemp->GetDesc1(&desc);
+
+		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+		{
+			continue;
+		}
+
+		if (SUCCEEDED(adapterTemp.As(&adapter)))
+		{
+			break;
+		}
+	}
+
+	if (adapter == nullptr)
+	{
+		throw(runtime_error{ "Error getting an adapter." });
+	}
+}
+----
+
+If you thought we're finished you were strongly mistaken. We're taking the first adapter that is not software (starting from `Windows 8` there's always a software adapter presented in the system). But you can use different logic - like checking the vendor. For enumerating we're using some `factory` which is `IDXGIFactory4` interface. So let's grab it:
+
+[source,cpp]
+----
+// Graphics.h
+Microsoft::WRL::ComPtr<IDXGIFactory4> factory;
+
+// Graphics.cpp
+void Graphics::createFactory()
+{
+#if defined(_DEBUG) 
+	ComPtr<ID3D12Debug> debugController;
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+	{
+		debugController->EnableDebugLayer();
+	}
+#endif
+
+	UINT factoryFlags{ 0 };
+#if _DEBUG
+	factoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+#endif
+
+	if (FAILED(CreateDXGIFactory2(factoryFlags, IID_PPV_ARGS(factory.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating IDXGIFactory." });
+	}
+}
+----
