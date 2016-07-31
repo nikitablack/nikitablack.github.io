@@ -247,6 +247,10 @@ Knowing all this we can write our first `directx 12` code.
 
 [source,cpp]
 ----
+// TeapotTutorial.h
+Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+
+// TeapotTutorial.cpp
 void TeapotTutorial::createRootSignature()
 {
 	/* We're using 3 root parameters:
@@ -319,6 +323,26 @@ void TeapotTutorial::createRootSignature()
 }
 ----
 
-The last method - `device->CreateRootSignature()` uses some `device` that we don't know yet. This is a software representation of the hardware - `ID3D12Device`. Now it's time to initialize `directx`.
+The last method - `device->CreateRootSignature()` uses some `device` that we don't know yet. This is a software representation of the hardware - `ID3D12Device`. During `directx` evolution the api gets expanded and new interfaces appears that extend old and adds new functionality. At the moment of writing there's `ID3D12Device1` available. I really like the naming! Now it's time to initialize `directx`.
 
 ===== DirectX Initialization
+
+As I told before base initialization is done in the base class called `Graphics`. This is how we create a device:
+
+[source,cpp]
+----
+// Graphics.h
+Microsoft::WRL::ComPtr<ID3D12Device> device;
+
+// Graphics.cpp
+void Graphics::createDevice()
+{
+	HRESULT hr{ D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)) };
+	if (FAILED(hr))
+	{
+		throw(runtime_error{ "Error creating device." });
+	}
+}
+----
+
+Simple enough. But what is this `adapter`. We can use `nullptr` instead and let the api to choose the default adapter, but I'll show here how we can select among many adapters. Similar to `device` it's an `IDXGIAdapter` interface that represents a gpu. It's hard for me to tell why do we need two similar interfaces that represents basically the same thing. Let's think that `dxgi` interface provides different information about gpu, but `d3d` interface allows us to manipulate it - create different resources, change states. We'll use 
