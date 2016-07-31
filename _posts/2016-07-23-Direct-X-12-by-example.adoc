@@ -239,7 +239,7 @@ Also as we saw previously, the information about this resources should be stored
 A question: why do we need to use descriptors or tables if we can pass everything as root constants?
 The answer: root signature have a very limited size - `64DWORD` (`1DWORD` = `32bit`). That means we can store `64` ints inside it, or `4` matrices. If there's not enough place the data will be stored somewhere else and it will add one more level of indirection. Root descriptor asks for `2DWORD` and table only `1DWORD`.
 
-NOTE: fg
+NOTE: Interesting note - https://developer.nvidia.com/dx12-dos-and-donts#roots[Nvidia] guys recommend to use root descriptors as much as you can. But http://gpuopen.com/performance-root-signature-descriptor-sets/[AMD] guys recommend to use tables.
 
 Remember that signature doesn't define any parameters - it just declares the type and the order. The actual data will be passed later.
 
