@@ -239,48 +239,57 @@ Also as we saw previously, the information about this resources should be stored
 A question: why do we need to use descriptors or tables if we can pass everything as root constants?
 The answer: root signature have a very limited size - `64DWORD` (`1DWORD` = `32bit`). That means we can store `64` ints inside it, or `4` matrices. If there's not enough place the data will be stored somewhere else and it will add one more level of indirection. Root descriptor asks for `2DWORD` and table only `1DWORD`.
 
+NOTE: fg
+
 Remember that signature doesn't define any parameters - it just declares the type and the order. The actual data will be passed later.
 
 Knowing all this we can write our first `directx 12` code.
 
 [source,cpp]
 ----
-// TeapotTutorial.h
-Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
-
-// TeapotTutorial.cpp
 void TeapotTutorial::createRootSignature()
 {
+	/* We're using 3 root parameters:
+	- root descriptor for domain shader's constant buffer
+	- 2 root constants for hull shader's constant buffer
+	- descriptor table for 2 structured buffers
+	*/
+
+	// this is the range of decriptors in the descriptor heap
 	D3D12_DESCRIPTOR_RANGE dsTransformAndColorSrvRange;
 	ZeroMemory(&dsTransformAndColorSrvRange, sizeof(dsTransformAndColorSrvRange));
-	dsTransformAndColorSrvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	dsTransformAndColorSrvRange.NumDescriptors = 2;
-	dsTransformAndColorSrvRange.BaseShaderRegister = 0;
-	dsTransformAndColorSrvRange.RegisterSpace = 0;
+	dsTransformAndColorSrvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // we're using structured buffers - it's a SRV
+	dsTransformAndColorSrvRange.NumDescriptors = 2; // we have 2 structured buffers and 2 descriptors
+	dsTransformAndColorSrvRange.BaseShaderRegister = 0; // we start from the first register (t0)
+	dsTransformAndColorSrvRange.RegisterSpace = 0; // this allows us to use the same register name if we use different space
 	dsTransformAndColorSrvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
+	// root table parameter
 	D3D12_ROOT_PARAMETER dsTransformAndColorSrv;
 	ZeroMemory(&dsTransformAndColorSrv, sizeof(dsTransformAndColorSrv));
 	dsTransformAndColorSrv.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	dsTransformAndColorSrv.DescriptorTable = { 1, &dsTransformAndColorSrvRange };
-	dsTransformAndColorSrv.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+	dsTransformAndColorSrv.DescriptorTable = { 1, &dsTransformAndColorSrvRange }; // one range
+	dsTransformAndColorSrv.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN; // only used in domain shader
 
+	// root descriptor parameter
 	D3D12_ROOT_PARAMETER dsObjCb;
 	ZeroMemory(&dsObjCb, sizeof(dsObjCb));
-	dsObjCb.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	dsObjCb.Descriptor = { 0, 0 };
-	dsObjCb.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN;
+	dsObjCb.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // constant buffer
+	dsObjCb.Descriptor = { 0, 0 }; // first register (b0) in first register space
+	dsObjCb.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN; // only used in domain shader
 
+	// root constants
 	D3D12_ROOT_PARAMETER hsTessFactorsCb;
 	ZeroMemory(&hsTessFactorsCb, sizeof(hsTessFactorsCb));
 	hsTessFactorsCb.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	hsTessFactorsCb.Constants = { 0, 0, 2 };
-	hsTessFactorsCb.ShaderVisibility = D3D12_SHADER_VISIBILITY_HULL;
+	hsTessFactorsCb.Constants = { 0, 0, 2 }; // 2 constants in first register (b0) in first register space
+	hsTessFactorsCb.ShaderVisibility = D3D12_SHADER_VISIBILITY_HULL; // only used in hull shader
 
 	vector<D3D12_ROOT_PARAMETER> rootParameters{ dsObjCb, hsTessFactorsCb, dsTransformAndColorSrv };
-
+	
+	// it's recommended to deny root signature access to the stages that are not interested in it
 	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags{
-		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | // we're using vertex and index buffers
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS
@@ -290,10 +299,11 @@ void TeapotTutorial::createRootSignature()
 	ZeroMemory(&rootSignatureDesc, sizeof(rootSignatureDesc));
 	rootSignatureDesc.NumParameters = static_cast<UINT>(rootParameters.size());
 	rootSignatureDesc.pParameters = rootParameters.data();
-	rootSignatureDesc.NumStaticSamplers = 0;
-	rootSignatureDesc.pStaticSamplers = nullptr;
+	rootSignatureDesc.NumStaticSamplers = 0; // samplers can be stored in root signature separately and consume no space
+	rootSignatureDesc.pStaticSamplers = nullptr; // we're not using texturing
 	rootSignatureDesc.Flags = rootSignatureFlags;
 
+	// we need to serialize first. This is useful because root siganture can be defined directly in a shader, not c++ app
 	ComPtr<ID3DBlob> signature;
 	ComPtr<ID3DBlob> error;
 	if (FAILED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, signature.ReleaseAndGetAddressOf(), error.ReleaseAndGetAddressOf())))
@@ -301,6 +311,7 @@ void TeapotTutorial::createRootSignature()
 		throw(runtime_error{ "Error serializing root signature" });
 	}
 
+	// finally create the root signature
 	if (FAILED(device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(rootSignature.ReleaseAndGetAddressOf()))))
 	{
 		throw(runtime_error{ "Error creating root signature" });
