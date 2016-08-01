@@ -329,7 +329,9 @@ When you serializing the signature you can get errors which will be writtent to 
 
 Now when we know about root signature we can update our diagram:
 
-image::teapot_tutorial/shader_res_1.png[Shader Resources, 800, link="https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/images/teapot_tutorial/shader_res_2.png"]
+image::teapot_tutorial/shader_res_2.png[Shader Resources, 800, link="https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/images/teapot_tutorial/shader_res_2.png"]
+
+It's a little bit messy but if you'll follow arrows you'll see that it's the same as the code.
 
 The last method - `device->CreateRootSignature()` uses some `device` that we don't know yet. This is a software representation of the hardware - `ID3D12Device`. During `directx` evolution the api gets expanded and new interfaces appears that extend old and adds new functionality. At the moment of writing there's `ID3D12Device1` available. I really like the naming! Now it's time to initialize `directx`.
 
