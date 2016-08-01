@@ -327,6 +327,10 @@ NOTE: `Directx` team kindly provided a helper header that simplifies creation of
 
 When you serializing the signature you can get errors which will be writtent to `error` instance. There're a lot of checks happens during serialization - for example if you overlap registers for the same shader (have two 'b0') you'll get an error. Very handy tool!
 
+Now when we know about root signature we can update our diagram:
+
+[picture]
+
 The last method - `device->CreateRootSignature()` uses some `device` that we don't know yet. This is a software representation of the hardware - `ID3D12Device`. During `directx` evolution the api gets expanded and new interfaces appears that extend old and adds new functionality. At the moment of writing there's `ID3D12Device1` available. I really like the naming! Now it's time to initialize `directx`.
 
 ===== DirectX Initialization
@@ -551,3 +555,5 @@ ComPtr<ID3D12PipelineState> TeapotTutorial::createPipelineState(D3D12_FILL_MODE 
 ----
 
 Wow, that's a lot of code. Let's step through the code line by line. First we create input layout. In `vertex` shader we're expecting only one input - the control point position so we have only one entry in `D3D12_INPUT_ELEMENT_DESC` vector. Next we create a rasterizer state. This structure can be replaced with a helper `CD3DX12_RASTERIZER_DESC` to make it shorter. Next is blend (can be replaced with `CD3DX12_BLEND_DESC`). Next is depth stencil (`CD3DX12_DEPTH_STENCIL_DESC`). And finally pipeline state object itself where we assign all the things we created. I think it should be clear from the names what each field represents so I won't describe it in detail.
+
+NOTE: Interesting thing - thought we assigned a root signature to pipeline state this assignmend done only for validation, i.e. the api will check that shader inputs correspond to signature parameters. After pipeline state creation the information about root signature is lost and we need to assign it again before drawing.
