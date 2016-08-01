@@ -411,4 +411,4 @@ void Graphics::createFactory()
 }
 ----
 
-Finally no more new interfaces! Actually there's one - `ID3D12Debug`. You should always use it in debug run. During an error it writes to the output the reason.
+Finally no more new dependent interfaces! Thought there's one which we not depend on - `ID3D12Debug`. You should always use it with debug configuration. During an error it writes detailed message to the output.
