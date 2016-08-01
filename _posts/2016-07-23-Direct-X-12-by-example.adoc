@@ -323,6 +323,10 @@ void TeapotTutorial::createRootSignature()
 }
 ----
 
+NOTE: `Directx` team kindly provided a helper header that simplifies creation of different structures - `d3dx12.h`. Thought the header is not a part of `directx 12` it's https://msdn.microsoft.com/en-us/library/windows/desktop/dn708058(v=vs.85).aspx[well documented] in `msdn` and pretty solid. The `D3D12_DESCRIPTOR_RANGE` creation can be replaced with `CD3DX12_DESCRIPTOR_RANGE`, `D3D12_ROOT_PARAMETER` with `CD3DX12_ROOT_PARAMETER` and `D3D12_ROOT_SIGNATURE_DESC` with `CD3DX12_ROOT_SIGNATURE_DESC`. Using this helpers allow us to reduce and hence simplify code dramatically. I deliberatelly removed all `d3dx12.h` dependencies from my code just to show how `directx` works under the hood.
+
+When you serializing the signature you can get errors which will be writtent to `error` instance. There're a lot of checks happens during serialization - for example if you overlap registers for the same shader (have two 'b0') you'll get an error. Very handy tool!
+
 The last method - `device->CreateRootSignature()` uses some `device` that we don't know yet. This is a software representation of the hardware - `ID3D12Device`. During `directx` evolution the api gets expanded and new interfaces appears that extend old and adds new functionality. At the moment of writing there's `ID3D12Device1` available. I really like the naming! Now it's time to initialize `directx`.
 
 ===== DirectX Initialization
@@ -412,3 +416,138 @@ void Graphics::createFactory()
 ----
 
 Finally no more new dependent interfaces! Thought there's one which we not depend on - `ID3D12Debug`. You should always use it with debug configuration. During an error it writes detailed message to the output. Now you can compile it successfully thought you'll not see anything on the screen. That's one of the downside of programming with `directx` - you can't have some intermediate results like render only one triangle from the teapot or shade only one pixel. You need to write a lot of code for both cpu and gpu to find the black screen. Nevertheless we'll continue. At yhis point we have defined shaders and a signature for the input. But the gpu doesn't know about our shaders - we only have several text files that are useful for us - not the hardware. As you have guessed we need to load out shaders to the graphics card. First we need to compile them. Later we'll use a new addtition to the api which allows us to send this data (and a lot of other) to the gpu - pipeline state object.
+
+===== Pipeline State Object
+
+As you know the gpu is a state machine - once it's setted up it will do the same actions again and again. Until you change a state. In `directx 12` the entire gpu state (plus or minus some minor things) is represented by `ID3D12PipelineState` interface. That mean that if you want to render the same object in wireframe and solid you have to create `2` such objects which will differ only by fill mode. State creation is a heavy operation that should be avoided in runtime. Instead all states that you need for your scene should be created as a part of initialization.
+
+In our demo we'll use `2` states - one for solid rendering and backface culling and another for wireframe rendering and without culling. Creating a state means filling a lot of structures and setting shaders. We're compiling our shaders as a build process in Visual Studio. Taht means that at this point you should have `cso` files somewhere which we need to load. The loading done like this:
+
+[source,cpp]
+----
+// TeapotTutorial.h
+Microsoft::WRL::ComPtr<ID3DBlob> vertexShaderBlob;
+Microsoft::WRL::ComPtr<ID3DBlob> hullShaderBlob;
+Microsoft::WRL::ComPtr<ID3DBlob> domainShaderBlob;
+Microsoft::WRL::ComPtr<ID3DBlob> pixelShaderBlob;
+
+// TeapotTutorial.cpp
+void TeapotTutorial::createShaders()
+{
+	if (FAILED(D3DReadFileToBlob(L"VertexShader.cso", vertexShaderBlob.ReleaseAndGetAddressOf())))
+	{
+		throw(runtime_error{ "Error reading vertex shader." });
+	}
+
+	if (FAILED(D3DReadFileToBlob(L"HullShader.cso", hullShaderBlob.ReleaseAndGetAddressOf())))
+	{
+		throw(runtime_error{ "Error reading hull shader." });
+	}
+
+	if (FAILED(D3DReadFileToBlob(L"DomainShader.cso", domainShaderBlob.ReleaseAndGetAddressOf())))
+	{
+		throw(runtime_error{ "Error reading domain shader." });
+	}
+
+	if (FAILED(D3DReadFileToBlob(L"PixelShader.cso", pixelShaderBlob.ReleaseAndGetAddressOf())))
+	{
+		throw(runtime_error{ "Error reading pixel shader." });
+	}
+}
+----
+
+And the pipeline state creation (remember - we have `2` states):
+
+[source,cpp]
+----
+// TeapotTutorial.h
+Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineStateWireframe;
+Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineStateSolid;
+Microsoft::WRL::ComPtr<ID3D12PipelineState> currPipelineState;
+
+// TeapotTutorial.cpp
+void TeapotTutorial::createPipelineStateWireframe()
+{
+	pipelineStateWireframe = createPipelineState(D3D12_FILL_MODE_WIREFRAME, D3D12_CULL_MODE_NONE);
+	currPipelineState = pipelineStateWireframe;
+}
+
+void TeapotTutorial::createPipelineStateSolid()
+{
+	pipelineStateSolid = createPipelineState(D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_NONE);
+}
+
+ComPtr<ID3D12PipelineState> TeapotTutorial::createPipelineState(D3D12_FILL_MODE fillMode, D3D12_CULL_MODE cullMode)
+{
+	vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	};
+
+	D3D12_RASTERIZER_DESC rasterizerDesc;
+	ZeroMemory(&rasterizerDesc, sizeof(rasterizerDesc));
+	rasterizerDesc.FillMode = fillMode;
+	rasterizerDesc.CullMode = cullMode;
+	rasterizerDesc.FrontCounterClockwise = FALSE;
+	rasterizerDesc.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
+	rasterizerDesc.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+	rasterizerDesc.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+	rasterizerDesc.DepthClipEnable = TRUE;
+	rasterizerDesc.MultisampleEnable = FALSE;
+	rasterizerDesc.AntialiasedLineEnable = FALSE;
+	rasterizerDesc.ForcedSampleCount = 0;
+	rasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+
+	D3D12_BLEND_DESC blendDesc;
+	ZeroMemory(&blendDesc, sizeof(blendDesc));
+	blendDesc.AlphaToCoverageEnable = FALSE;
+	blendDesc.IndependentBlendEnable = FALSE;
+	blendDesc.RenderTarget[0] = {
+		FALSE,FALSE,
+		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+		D3D12_LOGIC_OP_NOOP,
+		D3D12_COLOR_WRITE_ENABLE_ALL
+	};
+
+	D3D12_DEPTH_STENCIL_DESC depthStencilDesc;
+	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+	depthStencilDesc.DepthEnable = TRUE;
+	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	depthStencilDesc.StencilEnable = FALSE;
+	depthStencilDesc.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
+	depthStencilDesc.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
+	const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp = { D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_COMPARISON_FUNC_ALWAYS };
+	depthStencilDesc.FrontFace = defaultStencilOp;
+	depthStencilDesc.BackFace = defaultStencilOp;
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc;
+	ZeroMemory(&pipelineStateDesc, sizeof(pipelineStateDesc));
+	pipelineStateDesc.InputLayout = { inputElementDescs.data(), static_cast<UINT>(inputElementDescs.size()) };
+	pipelineStateDesc.pRootSignature = rootSignature.Get();
+	pipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
+	pipelineStateDesc.HS = { hullShaderBlob->GetBufferPointer(), hullShaderBlob->GetBufferSize() };
+	pipelineStateDesc.DS = { domainShaderBlob->GetBufferPointer(), domainShaderBlob->GetBufferSize() };
+	pipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
+	pipelineStateDesc.RasterizerState = rasterizerDesc;
+	pipelineStateDesc.BlendState = blendDesc;
+	pipelineStateDesc.DepthStencilState = depthStencilDesc;
+	pipelineStateDesc.SampleMask = UINT_MAX;
+	pipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+	pipelineStateDesc.NumRenderTargets = 1;
+	pipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	pipelineStateDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+	pipelineStateDesc.SampleDesc.Count = 1;
+
+	ComPtr<ID3D12PipelineState> pipelineState;
+	if (FAILED(device->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(pipelineState.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating pipeline state." });
+	}
+
+	return pipelineState;
+}
+----
+
+Wow, that's a lot of code. Let's step through the code line by line. First we create input layout. In `vertex` shader we're expecting only one input - the control point position so we have only one entry in `D3D12_INPUT_ELEMENT_DESC` vector. Next we create a rasterizer state. This structure can be replaced with a helper `CD3DX12_RASTERIZER_DESC` to make it shorter. Next is blend (can be replaced with `CD3DX12_BLEND_DESC`). Next is depth stencil (`CD3DX12_DEPTH_STENCIL_DESC`). And finally pipeline state object itself where we assign all the things we created. I think it should be clear from the names what each field represents so I won't describe it in detail.
