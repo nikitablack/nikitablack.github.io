@@ -739,4 +739,10 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device,
 }
 ----
 
-Looks scary. But going step by step we'll get familar with lots of `directx12` concepts. In the top we created different description structures where we declared that we're going to create default heap and a buffer. Notice that we didn't specify the purpose of the buffer - we just declared the size in other words we asked for a certain amount of memory. Next we're calling `device->CreateCommittedResource()` method that actually reserves a memory. This method let's the gpu to find free space in memory. There're other methods - for example we can use already reserved memory and create placed resource just like a `placement new` operator in `c++` (we'll not use this method in this demo).
+Looks scary. But going step by step we'll get familar with lots of `directx12` concepts. In the top we created different description structures where we declared that we're going to create default heap and a buffer. Notice that we didn't specify the purpose of the buffer - we just declared the size in other words we asked for a certain amount of memory.
+
+Next we're calling `device->CreateCommittedResource()` method that actually reserves a memory. This method let's the gpu to find free space in memory. There're other methods - for example we can use already reserved memory and create placed resource just like a `placement new` operator in `c++` (we'll not use this method in this demo).
+
+Next we're creating an intermediate resource. The only difference is that now we're asking for upload heap so we can write to it from the cpu.
+
+Next we're creating `D3D12_SUBRESOURCE_DATA` which points to the memory where we need to copy data (control points positions) from.
