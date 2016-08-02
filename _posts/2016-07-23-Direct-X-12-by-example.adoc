@@ -572,3 +572,171 @@ Let's recall which resources do we need:
 * Colors Structured Buffer
 
 Before we start to create this buffers let's understand how gpu stores resources. Similar to descriptors resources are stored in a memory called resource heap. There're several types of heaps, but we'll use only two - `D3D12_HEAP_TYPE_DEFAULT` and `D3D12_HEAP_TYPE_UPLOAD`. The first one is entirely gpu resident - once you create it you can't even upload an initial data. This heap type highly optimized and is faster than others. The second one is accessible by both gpu and cpu and as you have guessed it's not so fast. We need the default heap when we have a static data - vertex and index buffers are good candidates. The upload heap is good when we change data every frame - for example a constant buffer. But if we can't write data to default buffer how can we use it? We can use some intermediate upload buffer, write data there from the cpu and give a command to the gpu to copy data from upload to default. I said "give a command" - yes, that't how we communicate with the gpu - we write predefined commands to some list and send this list to the graphic card where it executes. You'll see this a lot because almost all remaining code is a constant communication between cpu and gpu.
+
+All buffer creation I placed in a constructor of our demo class
+
+*Vertex Buffer*
+
+This is a special buffer that doesn't requires a descriptor heap (but still requires a descripter/view).
+
+[source,cpp]
+----
+// TeapotTutorial.h
+Microsoft::WRL::ComPtr<ID3D12Resource> controlPointsBuffer;
+
+// TeapotTutorial.cpp
+controlPointsBuffer = teapot_tutorial::createDefaultBuffer(device.Get(), TeapotData::points, L"control points");
+----
+
+Looks easy, but it's not. I created a helper function `teapot_tutorial::createDefaultBuffer()` which takes a device (remember, we need it to create pretty everything for the application), a data and a buffer name. The last parameter is super helpful during debugging - in graphics debugger we can easily find our buffer knowing it's name. This helper function lives in a helper header called `Utils.h` (surprise surprise).
+
+[source,cpp]
+----
+template<typename T>
+Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device, const std::vector<T>& data, std::wstring name = L"")
+{
+	UINT elementSize{ static_cast<UINT>(sizeof(T)) };
+	UINT bufferSize{ static_cast<UINT>(data.size() * elementSize) };
+
+	D3D12_HEAP_PROPERTIES heapProps;
+	ZeroMemory(&heapProps, sizeof(heapProps));
+	heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+	heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	heapProps.CreationNodeMask = 1;
+	heapProps.VisibleNodeMask = 1;
+
+	D3D12_RESOURCE_DESC resourceDesc;
+	ZeroMemory(&resourceDesc, sizeof(resourceDesc));
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	resourceDesc.Alignment = 0;
+	resourceDesc.Width = bufferSize;
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.SampleDesc.Quality = 0;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> defaultBuffer;
+	HRESULT hr{ device->CreateCommittedResource(
+		&heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(defaultBuffer.ReleaseAndGetAddressOf())) };
+
+	if (FAILED(hr))
+	{
+		throw(runtime_error{ "Error creating a default buffer." });
+	}
+
+	defaultBuffer->SetName(name.c_str());
+
+	heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
+	hr = device->CreateCommittedResource(
+		&heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(uploadBuffer.ReleaseAndGetAddressOf()));
+
+	if (FAILED(hr))
+	{
+		throw(runtime_error{ "Error creating an upload buffer." });
+	}
+
+	D3D12_SUBRESOURCE_DATA subresourceData;
+	ZeroMemory(&subresourceData, sizeof(subresourceData));
+	subresourceData.pData = data.data();
+	subresourceData.RowPitch = bufferSize;
+	subresourceData.SlicePitch = bufferSize;
+
+	ComPtr<ID3D12CommandAllocator> commandAllocator;
+	if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocator.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating a command allocator." });
+	}
+
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
+	if (FAILED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(commandList.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating a command list." });
+	}
+
+	if (FAILED(commandList->Close()))
+	{
+		throw(runtime_error{ "Error closing a command list." });
+	}
+
+	D3D12_COMMAND_QUEUE_DESC queueDesc;
+	ZeroMemory(&queueDesc, sizeof(queueDesc));
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	queueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	queueDesc.NodeMask = 0;
+
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
+	if (FAILED(device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(commandQueue.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating a command queue." });
+	}
+
+	UINT64 initialValue{ 0 };
+	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+	if (FAILED(device->CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating a fence." });
+	}
+
+	HANDLE fenceEventHandle{ CreateEvent(nullptr, FALSE, FALSE, nullptr) };
+	if (fenceEventHandle == NULL)
+	{
+		throw(runtime_error{ "Error creating a fence event." });
+	}
+
+	commandList->Reset(commandAllocator.Get(), nullptr);
+	updateBuffer(commandList.Get(), defaultBuffer.Get(), uploadBuffer.Get(), subresourceData);
+
+	D3D12_RESOURCE_BARRIER barrierDesc;
+	ZeroMemory(&barrierDesc, sizeof(barrierDesc));
+	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrierDesc.Transition.pResource = defaultBuffer.Get();
+	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+	commandList->ResourceBarrier(1, &barrierDesc);
+
+	commandList->Close();
+	std::vector<ID3D12CommandList*> ppCommandLists{ commandList.Get() };
+	commandQueue->ExecuteCommandLists(static_cast<UINT>(ppCommandLists.size()), ppCommandLists.data());
+
+	if (FAILED(commandQueue->Signal(fence.Get(), 1)))
+	{
+		throw(runtime_error{ "Error siganalling buffer uploaded." });
+	}
+
+	if (FAILED(fence->SetEventOnCompletion(1, fenceEventHandle)))
+	{
+		throw(runtime_error{ "Failed set event on completion." });
+	}
+
+	DWORD wait{ WaitForSingleObject(fenceEventHandle, 10000) };
+	if (wait != WAIT_OBJECT_0)
+	{
+		throw(runtime_error{ "Failed WaitForSingleObject()." });
+	}
+
+	return defaultBuffer;
+}
+----
+
+Looks scary. But going step by step we'll get familar with lots of `directx12` concepts. In the top we created different description structures where we declared that we're going to create default heap and a buffer. Notice that we didn't specify the purpose of the buffer - we just declared the size in other words we asked for a certain amount of memory. Next we're calling `device->CreateCommittedResource()` method that actually reserves a memory. This method let's the gpu to find free space in memory. There're other methods - for example we can use already reserved memory and create placed resource just like a `placement new` operator in `c++` (we'll not use this method in this demo).
