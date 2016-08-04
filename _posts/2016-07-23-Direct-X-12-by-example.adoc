@@ -755,4 +755,4 @@ There're several types of command lists - for copy, compute, bundle. We're inter
 
 When we create a list it is in a record state that means it's ready to receive commands. If we're not going to record we need to close and we do it with `commandList->Close()` method (for this example we could omit this call since we record immediately).
 
-When we have a list filled with commands we need to tell the gpu that we want it to do some work. We can do it with `ID3D12CommandQueue` interface. It should be the same type as our list and allocator.
+When we have a list filled with commands we need to tell the gpu that we want it to do some work. We do with `ID3D12CommandQueue` interface. It should be the same type as our list and allocator.
