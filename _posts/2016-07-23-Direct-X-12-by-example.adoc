@@ -741,8 +741,18 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device,
 
 Looks scary. But going step by step we'll get familar with lots of `directx12` concepts. In the top we created different description structures where we declared that we're going to create default heap and a buffer. Notice that we didn't specify the purpose of the buffer - we just declared the size in other words we asked for a certain amount of memory.
 
-Next we're calling `device->CreateCommittedResource()` method that actually reserves a memory. This method let's the gpu to find free space in memory. There're other methods - for example we can use already reserved memory and create placed resource just like a `placement new` operator in `c++` (we'll not use this method in this demo).
+Next we're calling `device->CreateCommittedResource()` method that actually reserves a memory. This method asks gpu to find the free space in memory. There're other methods for resource creation - for example we can use already reserved memory and create placed resource just like a `placement new` operator in `c++` (we'll not use this in our demo).
 
 Next we're creating an intermediate resource. The only difference is that now we're asking for upload heap so we can write to it from the cpu.
 
 Next we're creating `D3D12_SUBRESOURCE_DATA` which points to the memory where we need to copy data (control points positions) from.
+
+Now we need to make a tep back and understand how cpu and gpu communicate with each other. Cpu tells gpu what to do via commands. There's a special interface `ID3D12GraphicsCommandList` which have tons of methods and each method is an instruction to the gpu what to do. For example, `ClearDepthStencilView()` or `DrawInstanced`. That means that when we call something on an instance of this interface a new command object is created. But command list doesn't create anything. Instead it uses another special interface `ID3D12CommandAllocator`. As the name suggests this object create an actual command. All that means that this two interfaces work together - first we need to create an allocator and later tell command list to use this allocator for allocation.
+
+NOTE: The allocator and command list are not thread safe - we can not call command list's methods from different threads. Every thread should have it's own allocator. Moreover we can't use command allocator on two different lists at the same time. All this leads to the question - why do we need this differentiation on lists and allocators. We can use this interfaces only in pair and there's a strong relation of one list and one allocator at the same time. For me it seems that having only a command list would be enough.
+
+There're several types of command lists - for copy, compute, bundle. We're interested only in `D3D12_COMMAND_LIST_TYPE_DIRECT` - basically this type can record commands of other types. As list and allocator tied together - they should have the same type.
+
+When we create a list it is in a record state that means it's ready to receive commands. If we're not going to record we need to close and we do it with `commandList->Close()` method (for this example we could omit this call since we record immediately).
+
+When we have a list filled with commands we need to tell the gpu that we want it to do some work. We can do it with `ID3D12CommandQueue` interface. It should be the same type as our list and allocator.
