@@ -652,12 +652,6 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device,
 		throw(runtime_error{ "Error creating an upload buffer." });
 	}
 
-	D3D12_SUBRESOURCE_DATA subresourceData;
-	ZeroMemory(&subresourceData, sizeof(subresourceData));
-	subresourceData.pData = data.data();
-	subresourceData.RowPitch = bufferSize;
-	subresourceData.SlicePitch = bufferSize;
-
 	ComPtr<ID3D12CommandAllocator> commandAllocator;
 	if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocator.ReleaseAndGetAddressOf()))))
 	{
@@ -668,11 +662,6 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device,
 	if (FAILED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(commandList.ReleaseAndGetAddressOf()))))
 	{
 		throw(runtime_error{ "Error creating a command list." });
-	}
-
-	if (FAILED(commandList->Close()))
-	{
-		throw(runtime_error{ "Error closing a command list." });
 	}
 
 	D3D12_COMMAND_QUEUE_DESC queueDesc;
@@ -688,21 +677,16 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device,
 		throw(runtime_error{ "Error creating a command queue." });
 	}
 
-	UINT64 initialValue{ 0 };
-	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
-	if (FAILED(device->CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.ReleaseAndGetAddressOf()))))
+	void* pData;
+	if (FAILED(uploadBuffer->Map(0, NULL, &pData)))
 	{
-		throw(runtime_error{ "Error creating a fence." });
+		throw(runtime_error{ "Failed map intermediate resource." });
 	}
 
-	HANDLE fenceEventHandle{ CreateEvent(nullptr, FALSE, FALSE, nullptr) };
-	if (fenceEventHandle == NULL)
-	{
-		throw(runtime_error{ "Error creating a fence event." });
-	}
+	memcpy(pData, data.data(), bufferSize);
+	uploadBuffer->Unmap(0, NULL);
 
-	commandList->Reset(commandAllocator.Get(), nullptr);
-	updateBuffer(commandList.Get(), defaultBuffer.Get(), uploadBuffer.Get(), subresourceData);
+	commandList->CopyBufferRegion(defaultBuffer.Get(), 0, uploadBuffer.Get(), 0, bufferSize);
 
 	D3D12_RESOURCE_BARRIER barrierDesc;
 	ZeroMemory(&barrierDesc, sizeof(barrierDesc));
@@ -718,6 +702,19 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device,
 	commandList->Close();
 	std::vector<ID3D12CommandList*> ppCommandLists{ commandList.Get() };
 	commandQueue->ExecuteCommandLists(static_cast<UINT>(ppCommandLists.size()), ppCommandLists.data());
+
+	UINT64 initialValue{ 0 };
+	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+	if (FAILED(device->CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating a fence." });
+	}
+
+	HANDLE fenceEventHandle{ CreateEvent(nullptr, FALSE, FALSE, nullptr) };
+	if (fenceEventHandle == NULL)
+	{
+		throw(runtime_error{ "Error creating a fence event." });
+	}
 
 	if (FAILED(commandQueue->Signal(fence.Get(), 1)))
 	{
@@ -739,7 +736,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device,
 }
 ----
 
-Looks scary. But going step by step we'll get familar with lots of `directx12` concepts. In the top we created different description structures where we declared that we're going to create default heap and a buffer. Notice that we didn't specify the purpose of the buffer - we just declared the size in other words we asked for a certain amount of memory.
+Looks scary. But going step by step we'll get familar with a lot of `directx12` concepts. In the top we created different description structures where we declared that we're going to create default heap and a buffer. Notice that we didn't specify the purpose of the buffer - we just declared the size in other words we asked for a certain amount of memory.
 
 Next we're calling `device->CreateCommittedResource()` method that actually reserves a memory. This method asks gpu to find the free space in memory. There're other methods for resource creation - for example we can use already reserved memory and create placed resource just like a `placement new` operator in `c++` (we'll not use this in our demo).
 
