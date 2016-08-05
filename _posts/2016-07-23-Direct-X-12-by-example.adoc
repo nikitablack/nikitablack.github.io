@@ -756,3 +756,11 @@ There're several types of command lists - for copy, compute, bundle. We're inter
 When we create a list it is in a record state that means it's ready to receive commands. If we're not going to record we need to close and we do it with `commandList->Close()` method (for this example we could omit this call since we record immediately).
 
 When we have a list filled with commands we need to tell the gpu that we want it to do some work. We do with `ID3D12CommandQueue` interface. It should be the same type as our list and allocator.
+
+If we'll look back on `device->CreateCommittedResource()` we'll see that we for the `4th` parameter we used `D3D12_RESOURCE_STATE_COPY_DEST` for the default buffer and `D3D12_RESOURCE_STATE_GENERIC_READ` for the upload. These are initial states of our resources. In order to manipulate memory it should be in some state and if it's not we'll get an error. For upload buffer documentation states that it should be created with `D3D12_RESOURCE_STATE_GENERIC_READ` state. And in order to copy from the source to destination the destination should be in `D3D12_RESOURCE_STATE_COPY_DEST`.
+
+[TODO: insert about update]
+
+After we finished with an update we need to transition default buffer to the state we provided as a `createDefaultBuffer()` function parameter. For different resources this state should be different. For example for constand or vertex buffer it should be `D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER`, for structured buffer - `D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE`. So we creating a command that tells gpu to transition to necessary state.
+
+Finally we tell the gpu to execute our commands with `commandQueue->ExecuteCommandLists()` method. But before we need to close the command list or we'll get an error. If we'll exit the method now we'll get an undefined behavior. When we tell queue to execute a list the gpu doesn't start to do it immediately. Instead the commands are queued and nobody knows when they'll be finished. That mean that if we leave the method now the upload buffer will be destroyed (we're not keeping pointer to it) and when the gpu will be ready to execute a copy command the source will not be valid any more.
