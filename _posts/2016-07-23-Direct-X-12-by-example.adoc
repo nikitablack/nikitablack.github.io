@@ -752,7 +752,7 @@ When we create a list it is in a record state that means it's ready to receive c
 
 When we have a list filled with commands we need to tell gpu to do some work. We do this with `ID3D12CommandQueue` interface. It should be the same type as our list and allocator.
 
-[TODO: insert about update]
+Next we're mapping the system memory to the ipload buffer and creating out first command with `CopyBufferRegion()`. It will gpu to copy `bufferSize` amount of data from upload buffer (which actually points to the system memory) to default buffer.
 
 After we finished with an update we need to transition default buffer to the state we provided as a `createDefaultBuffer()` function parameter. For different resources this state should be different. For example for constand or vertex buffer it should be `D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER`, for structured buffer - `D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE`. So we creating a command that tells gpu to transition to necessary state.
 
