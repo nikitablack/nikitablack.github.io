@@ -922,4 +922,6 @@ void createSrv(ID3D12Device* device, ID3D12DescriptorHeap* descHeap, int offset,
 }
 ----
 
-We're describing the view with the strut `D3D12_SHADER_RESOURCE_VIEW_DESC`. Since we can have arbitrary stride in structured buffer the formad defined as `DXGI_FORMAT_UNKNOWN`. All other parameters are pretty strightforward
+We're describing the view with the strut `D3D12_SHADER_RESOURCE_VIEW_DESC`. Since we can have arbitrary stride in structured buffer the formad defined as `DXGI_FORMAT_UNKNOWN`. `Shader4ComponentMapping` is a bit confusing for me - it looks like we can force some components be `0` or `1`. We don't need this so we're using default mapping, but if you have information how this can be useful please write in comments. All other parameters are pretty strightforward.
+
+Now we need to create descriptors in the heap. Descritors for constant buffer, srv and uav have the same size (but can differ in size among hardware vendors) and we're requesting this size with `device->GetDescriptorHandleIncrementSize()` method.
