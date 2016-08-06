@@ -775,6 +775,19 @@ Previously we talked about cpu-gpu communication. Now we're interesting in gpu-c
 
 In the we're returning created default buffer to the caller.
 
+Now we need to create a view for our resource. Remember that resource is just a bunch of data in memory - we need to describe this data so the gpu cn use it correctly.
+
+[source,cpp]
+----
+// TeapotTutorial.h
+D3D12_VERTEX_BUFFER_VIEW controlPointsBufferView;
+
+// TeapotTutorial.cpp
+controlPointsBufferView.BufferLocation = controlPointsBuffer->GetGPUVirtualAddress();
+controlPointsBufferView.StrideInBytes = static_cast<UINT>(sizeof(PointType));
+controlPointsBufferView.SizeInBytes = static_cast<UINT>(controlPointsBufferView.StrideInBytes * TeapotData::points.size());
+----
+
 *Index Buffer*
 
 [source,cpp]
@@ -797,3 +810,5 @@ template<typename T>
 		return details::createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_INDEX_BUFFER, name);
 	}
 ----
+
+Here we changed the final state of our buffer to `D3D12_RESOURCE_STATE_INDEX_BUFFER`. All other code remains the same as for the vertex buffer.
