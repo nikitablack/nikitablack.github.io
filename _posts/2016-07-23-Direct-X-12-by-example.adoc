@@ -592,6 +592,7 @@ Looks easy, but it's not. I created a helper function `teapot_tutorial::createVe
 
 [source,cpp]
 ----
+// Utils.h
 template<typename T>
 	Microsoft::WRL::ComPtr<ID3D12Resource> createVertexBuffer(ID3D12Device* device, const std::vector<T>& data, std::wstring name = L"")
 	{
@@ -603,6 +604,7 @@ This function calls another helpre function - `createDefaultBuffer()`;
 
 [source,cpp]
 ----
+// Utils.h
 template<typename T>
 Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device, const std::vector<T>& data, D3D12_RESOURCE_STATES finalState, std::wstring name = L"")
 {
@@ -774,3 +776,24 @@ Previously we talked about cpu-gpu communication. Now we're interesting in gpu-c
 In the we're returning created default buffer to the caller.
 
 *Index Buffer*
+
+[source,cpp]
+----
+// TeapotTutorial.h
+Microsoft::WRL::ComPtr<ID3D12Resource> controlPointsIndexBuffer;
+
+// TeapotTutorial.cpp
+controlPointsIndexBuffer = teapot_tutorial::createIndexBuffer(device.Get(), TeapotData::patches, L"patches");
+----
+
+And
+
+[source,cpp]
+----
+// Utils.h
+template<typename T>
+	Microsoft::WRL::ComPtr<ID3D12Resource> createIndexBuffer(ID3D12Device* device, const std::vector<T>& data, std::wstring name = L"")
+	{
+		return details::createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_INDEX_BUFFER, name);
+	}
+----
