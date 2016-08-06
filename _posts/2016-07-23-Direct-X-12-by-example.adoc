@@ -783,6 +783,8 @@ Now we need to create a view for our resource. Remember that resource is just a 
 D3D12_VERTEX_BUFFER_VIEW controlPointsBufferView;
 
 // TeapotTutorial.cpp
+using PointType = decltype(TeapotData::points)::value_type;
+
 controlPointsBufferView.BufferLocation = controlPointsBuffer->GetGPUVirtualAddress();
 controlPointsBufferView.StrideInBytes = static_cast<UINT>(sizeof(PointType));
 controlPointsBufferView.SizeInBytes = static_cast<UINT>(controlPointsBufferView.StrideInBytes * TeapotData::points.size());
@@ -861,6 +863,9 @@ This buffer finally needs a descriptor heap which we're creting with the followi
 
 [source,cpp]
 ----
+// TeapotTutorial.h
+Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> transformsAndColorsDescHeap;
+
 // TeapotTutorial.cpp
 void TeapotTutorial::createTransformsAndColorsDescHeap()
 {
@@ -879,3 +884,42 @@ void TeapotTutorial::createTransformsAndColorsDescHeap()
 ----
 
 Here we're specifying that we need a heap for `2` descriptors. Remember - we have `2` structured buffers - transforms and colors. Next we're telling that we want this heap be accessible from the shader. Examples of non shader visible heaps are render target view or stream output. Also we're defining a type. Constant buffer, srv and uav descriptors can leave in the same heap and this is for good - having many heaps and switching between them is not performance friendly.
+
+Now when we have a heap we need to fill it with descriptors.
+
+[source,cpp]
+----
+// TeapotTutorial.cpp
+using TransformType = decltype(TeapotData::patchesTransforms)::value_type;
+using ColorType = decltype(TeapotData::patchesColors)::value_type;
+    
+teapot_tutorial::createSrv<TransformType>(device.Get(), transformsAndColorsDescHeap.Get(), 0, transformsBuffer.Get(), TeapotData::patchesTransforms.size());
+teapot_tutorial::createSrv<ColorType>(device.Get(), transformsAndColorsDescHeap.Get(), 1, colorsBuffer.Get(), TeapotData::patchesColors.size());
+----
+
+Here we're refering util method from our `Utils.h` header:
+
+[source,cpp]
+----
+// Utils.h
+template<typename T>
+void createSrv(ID3D12Device* device, ID3D12DescriptorHeap* descHeap, int offset, ID3D12Resource* resource, size_t numElements)
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	ZeroMemory(&srvDesc, sizeof(srvDesc));
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Buffer.FirstElement = 0;
+	srvDesc.Buffer.NumElements = static_cast<UINT>(numElements);
+	srvDesc.Buffer.StructureByteStride = static_cast<UINT>(sizeof(T));
+	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+	static UINT descriptorSize{ device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) };
+	D3D12_CPU_DESCRIPTOR_HANDLE d{ descHeap->GetCPUDescriptorHandleForHeapStart() };
+	d.ptr += descriptorSize * offset;
+	device->CreateShaderResourceView(resource, &srvDesc, d);
+}
+----
+
+We're describing the view with the strut `D3D12_SHADER_RESOURCE_VIEW_DESC`. Since we can have arbitrary stride in structured buffer the formad defined as `DXGI_FORMAT_UNKNOWN`. All other parameters are pretty strightforward
