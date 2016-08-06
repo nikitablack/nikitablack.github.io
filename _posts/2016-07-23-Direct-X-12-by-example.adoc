@@ -585,15 +585,26 @@ This is a special buffer that doesn't requires a descriptor heap (but still requ
 Microsoft::WRL::ComPtr<ID3D12Resource> controlPointsBuffer;
 
 // TeapotTutorial.cpp
-controlPointsBuffer = teapot_tutorial::createDefaultBuffer(device.Get(), TeapotData::points, L"control points");
+controlPointsBuffer = teapot_tutorial::createVertexBuffer(device.Get(), TeapotData::points, L"control points");
 ----
 
-Looks easy, but it's not. I created a helper function `teapot_tutorial::createDefaultBuffer()` which takes a device (remember, we need it to create pretty everything for the application), a data and a buffer name. The last parameter is super helpful during debugging - in graphics debugger we can easily find our buffer knowing it's name. This helper function lives in a helper header called `Utils.h` (surprise surprise).
+Looks easy, but it's not. I created a helper function `teapot_tutorial::createVertexBuffer()` which takes a device (remember, we need it to create pretty everything for the application), a data and a buffer name. The last parameter is super helpful during debugging - in graphics debugger we can easily find our buffer knowing it's name. This helper function lives in a helper header called `Utils.h` (surprise surprise) and this is how it's defined:
 
 [source,cpp]
 ----
 template<typename T>
-Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device, const std::vector<T>& data, std::wstring name = L"")
+	Microsoft::WRL::ComPtr<ID3D12Resource> createVertexBuffer(ID3D12Device* device, const std::vector<T>& data, std::wstring name = L"")
+	{
+		return details::createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, name);
+	}
+----
+
+This function calls another helpre function - `createDefaultBuffer()`;
+
+[source,cpp]
+----
+template<typename T>
+Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device, const std::vector<T>& data, D3D12_RESOURCE_STATES finalState, std::wstring name = L"")
 {
 	UINT elementSize{ static_cast<UINT>(sizeof(T)) };
 	UINT bufferSize{ static_cast<UINT>(data.size() * elementSize) };
@@ -694,7 +705,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device,
 	barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	barrierDesc.Transition.pResource = defaultBuffer.Get();
 	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+	barrierDesc.Transition.StateAfter = finalState;
 	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 
 	commandList->ResourceBarrier(1, &barrierDesc);
@@ -736,7 +747,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device,
 }
 ----
 
-Looks scary. But going step by step we'll get familar with a lot of `directx12` concepts. In the top we're creating a couple of structures that describe that we're going to create a default heap and a buffer. Notice that we're not specifying the purpose of the buffer - we're just declaring the size. In other words we're asking for a certain amount of memory. Among other rhings notice that `Alignment` is `0`. Remember, on previous diagramm we had `2` numbers for the resource size - the actual data size and the alignement size. We should specify `64KB` for the buffer or `0` (which will set it to `64KB` under the hood).
+Looks scary. But going step by step we'll get familar with a lot of `directx12` concepts. In the top we're creating a couple of structures that describe that we're going to create a default heap and a buffer. Notice that we're not specifying the purpose of the buffer - we're just declaring the size. In other words we're asking for a certain amount of memory. Among other rhings notice that `Alignment` is `0`. Remember, on previous diagramm we had `2` numbers for the resource size - the actual data size and the alignement size. We should specify `64KB` for the buffer or `0` (which will set it to `64KB` under the hood). We can use helper structures `CD3DX12_HEAP_PROPERTIES` and `CD3DX12_RESOURCE_DESC`.
 
 Next we're calling `device->CreateCommittedResource()` method that actually reserves a memory. This method asks gpu to find the free space. There're other methods for resource creation - for example we can use already reserved memory and create placed resource in it - just like a `placement new` operator in `c++` (we'll not use this in our demo).
 
@@ -754,8 +765,12 @@ When we have a list filled with commands we need to tell gpu to do some work. We
 
 Next we're mapping the system memory to the ipload buffer and creating out first command with `CopyBufferRegion()`. It will gpu to copy `bufferSize` amount of data from upload buffer (which actually points to the system memory) to default buffer.
 
-After we finished with an update we need to transition default buffer to the state that will allow correct access to it. For different resources this state should be different. For example for constand or vertex buffer it should be `D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER`, for structured buffer - `D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE`. So we creating a command that tells gpu to put a transition barrier to necessary state. During this transition gpu will not touch the resource and will wait when transition is done. Asyou may guess this is an expensive operation.
+After we finished with an update we need to transition default buffer to the state that will allow correct access to it. For different resources this state should be different. For example for constand or vertex buffer it should be `D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER`, for structured buffer - `D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE`. So we creating a command that tells gpu to put a transition barrier to necessary state. During this transition gpu will not touch the resource and will wait when transition is done. As you may guess this is an expensive operation. We can use helper structure `CD3DX12_RESOURCE_BARRIER`.
 
 Finally we're telling gpu to execute our commands with `commandQueue->ExecuteCommandLists()` method. But before we need to close command list or we'll get an error. If we'll exit `createDefaultBuffer()` method now we'll get an undefined behavior. When we're telling the gpu to execute a list it doesn't start to do it immediately. Instead the commands are queued and nobody knows when they start or finish. That mean that if we leave now the upload buffer will be destroyed (we're not keeping pointer to it) and when the gpu will be ready to execute a copy command the source will not be valid any more.
 
 Previously we talked about cpu-gpu communication. Now we're interesting in gpu-cpu talk. We do it with fences. Fence is nothing more than an integer value. After we submitted a command list we can add one more command to the queue that will set the fence to the specified value. All we left to do is to check wherether our fence have a correct value or not and if it not - just wait untill it change. Super simple, isn't it? First we're creating `ID3D12Fence` itself and also some `fenceEventHandle`. This handle is not a part of `directx` but `winapi`. We're assigning value to the fence on the gpu with `commandQueue->Signal()` method. The first parameter is a fence object and the second is a desired value we want out fence be after the command list executed. Next we're setting an event on completion with `fence->SetEventOnCompletion()` method. When the fence value will be equal to the first parameter then the event (second parameter) should be raised. In `WaitForSingleObject()` we're waiting when this happens for specified number of seconds (`10` seconds in our case but can be up to infinite). If at the moment of calling the fence already have desired value it will return `WAIT_OBJECT_0` immediately in other case it will wait.
+
+In the we're returning created default buffer to the caller.
+
+*Index Buffer*
