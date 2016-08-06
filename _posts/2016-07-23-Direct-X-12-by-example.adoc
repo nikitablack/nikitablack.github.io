@@ -10,7 +10,7 @@ Also I assume that the reader have an experience with previous directx versions 
 
 In this tutorial we're going to render a teapot. But not just a static mesh, no. We'll render a tesselated teapot. Why did I chose this? Well, because you can find in the web a plenty of different _HelloWorld_ examples. I didn't want to create another _HelloWorld_ but somethig that covers different areas of the api and at the same time is simple.
 
-[picture]
+image::teapot_tutorial/teapot.png["Teapot", 400]
 
 We're going to use `16`-point patches for the teapot. We'll provide control points positions in one vertex buffer and patch indicies in one index buffer. For colors and transforms (more on this later) we'll use structured buffers.
 
