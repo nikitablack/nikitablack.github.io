@@ -854,3 +854,28 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createStructuredBuffer(ID3D12Device* devi
 	return details::createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, name);
 }
 ----
+
+All the same as before.
+
+This buffer finally needs a descriptor heap which we're creting with the following code:
+
+[source,cpp]
+----
+// TeapotTutorial.cpp
+void TeapotTutorial::createTransformsAndColorsDescHeap()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
+	ZeroMemory(&heapDesc, sizeof(heapDesc));
+	heapDesc.NumDescriptors = 2;
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	heapDesc.NodeMask = 0;
+
+	if (FAILED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(transformsAndColorsDescHeap.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating descriptor heap." });
+	}
+}
+----
+
+Here we're specifying that we need a heap for `2` descriptors. Remember - we have `2` structured buffers - transforms and colors. Next we're telling that we want this heap be accessible from the shader. Examples of non shader visible heaps are render target view or stream output. Also we're defining a type. Constant buffer, srv and uav descriptors can leave in the same heap and this is for good - having many heaps and switching between them is not performance friendly. 
