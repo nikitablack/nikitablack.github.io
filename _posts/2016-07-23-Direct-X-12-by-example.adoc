@@ -594,10 +594,10 @@ Looks easy, but it's not. I created a helper function `teapot_tutorial::createVe
 ----
 // Utils.h
 template<typename T>
-	Microsoft::WRL::ComPtr<ID3D12Resource> createVertexBuffer(ID3D12Device* device, const std::vector<T>& data, std::wstring name = L"")
-	{
-		return details::createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, name);
-	}
+Microsoft::WRL::ComPtr<ID3D12Resource> createVertexBuffer(ID3D12Device* device, const std::vector<T>& data, std::wstring name = L"")
+{
+	return details::createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, name);
+}
 ----
 
 This function calls another helpre function - `createDefaultBuffer()`;
@@ -790,6 +790,8 @@ controlPointsBufferView.SizeInBytes = static_cast<UINT>(controlPointsBufferView.
 
 *Index Buffer*
 
+Similar to vertex buffer this buffer doesn’t require a descriptor heap.
+
 [source,cpp]
 ----
 // TeapotTutorial.h
@@ -805,10 +807,50 @@ And
 ----
 // Utils.h
 template<typename T>
-	Microsoft::WRL::ComPtr<ID3D12Resource> createIndexBuffer(ID3D12Device* device, const std::vector<T>& data, std::wstring name = L"")
-	{
-		return details::createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_INDEX_BUFFER, name);
-	}
+Microsoft::WRL::ComPtr<ID3D12Resource> createIndexBuffer(ID3D12Device* device, const std::vector<T>& data, std::wstring name = L"")
+{
+	return details::createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_INDEX_BUFFER, name);
+}
 ----
 
 Here we changed the final state of our buffer to `D3D12_RESOURCE_STATE_INDEX_BUFFER`. All other code remains the same as for the vertex buffer.
+
+The view is also very simple:
+
+[source,cpp]
+----
+// TeapotTutorial.h
+D3D12_INDEX_BUFFER_VIEW controlPointsIndexBufferView;
+
+// TeapotTutorial.cpp
+controlPointsIndexBufferView.BufferLocation = controlPointsIndexBuffer->GetGPUVirtualAddress();
+controlPointsIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+controlPointsIndexBufferView.SizeInBytes = static_cast<UINT>(TeapotData::patches.size() * sizeof(uint32_t));
+----
+
+*Structured buffers*
+
+Resource creation for this buffers is also the same as for previous buffers:
+
+[source,cpp]
+----
+// TeapotTutorial.h
+Microsoft::WRL::ComPtr<ID3D12Resource> transformsBuffer;
+Microsoft::WRL::ComPtr<ID3D12Resource> colorsBuffer;
+
+// TeapotTutorial.cpp
+transformsBuffer = teapot_tutorial::createStructuredBuffer(device.Get(), TeapotData::patchesTransforms, L"transforms");
+colorsBuffer = teapot_tutorial::createStructuredBuffer(device.Get(), TeapotData::patchesColors, L"colors");
+----
+
+Where `createStructuredBuffer` defined:
+
+[source,cpp]
+----
+// Utils.h
+template<typename T>
+Microsoft::WRL::ComPtr<ID3D12Resource> createStructuredBuffer(ID3D12Device* device, const std::vector<T>& data, std::wstring name = L"")
+{
+	return details::createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, name);
+}
+----
