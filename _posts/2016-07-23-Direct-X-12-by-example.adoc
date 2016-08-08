@@ -922,6 +922,14 @@ void createSrv(ID3D12Device* device, ID3D12DescriptorHeap* descHeap, int offset,
 }
 ----
 
-We're describing the view with the strut `D3D12_SHADER_RESOURCE_VIEW_DESC`. Since we can have arbitrary stride in structured buffer the formad defined as `DXGI_FORMAT_UNKNOWN`. `Shader4ComponentMapping` is a bit confusing for me - it looks like we can force some components be `0` or `1`. We don't need this so we're using default mapping, but if you have information how this can be useful please write in comments. All other parameters are pretty strightforward.
+We're describing the view with the strut `D3D12_SHADER_RESOURCE_VIEW_DESC`. Since we can have arbitrary stride in structured buffer the format should defined as `DXGI_FORMAT_UNKNOWN`. `Shader4ComponentMapping` is a bit confusing for me - it looks like we can force some components be `0` or `1`. We don't need this so we're using default mapping, but if you have information how this can be useful please write in comments. All other parameters are pretty strightforward.
 
 Now we need to create descriptors in the heap. Descritors for constant buffer, srv and uav have the same size (but can differ in size among hardware vendors) and we're requesting this size with `device->GetDescriptorHandleIncrementSize()` method. Next we're searching the pace in the heap where we can create a descriptor. The very first descriptor we can put in the heap start but for the next descriptor we need to offset position by the size of the desriptor. And finally we're asking the device to create specified descriptor in specified place.
+
+*Constant buffers*
+
+The last resources left are constant buffers. If you refer back to root signature section you'll recal that we don't need resource and descriptor for tesselation factors for the `hull` shader - we store constants directly in the signature. So nothing to do here, moving on to the next buffer.
+
+`Constant buffer for `domain` shader stores a matrix. Recall that we store descriptor in root signature so no need in descriptor heap. But we still need a resource. If you'll look at the diagram we drew before you'll notice that we still don't know the size of the buffer. Let's figure out why.
+
+As you remember the commands are stored in the queue and don't execute immediately after submission. Cpu and gpu have different timelines. Now imagine that we submitted a matrix for the frame `1` in constant buffer. Gpu is not executing yet. Now on cpu we're executing frame `2` and we need to update the matrix. We can do this but in this case the matrix from the frame `1` will be lost for the gpu. Or even worse - imagine that gpu starts reading the matrix at the moment we're updating it. How can we fix this? We can do exactly how we did when we created a default buffer. We can put a fence and stall the cpu until gpu finishes reading the matrix. As you understand this is not the way to go - when the cpu work gpu is idle and vice versa.
