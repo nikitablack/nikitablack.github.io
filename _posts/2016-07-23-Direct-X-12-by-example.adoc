@@ -932,4 +932,63 @@ The last resources left are constant buffers. If you refer back to root signatur
 
 `Constant buffer for `domain` shader stores a matrix. Recall that we store descriptor in root signature so no need in descriptor heap. But we still need a resource. If you'll look at the diagram we drew before you'll notice that we still don't know the size of the buffer. Let's figure out why.
 
-As you remember the commands are stored in the queue and don't execute immediately after submission. Cpu and gpu have different timelines. Now imagine that we submitted a matrix for the frame `1` in constant buffer. Gpu is not executing yet. Now on cpu we're executing frame `2` and we need to update the matrix. We can do this but in this case the matrix from the frame `1` will be lost for the gpu. Or even worse - imagine that gpu starts reading the matrix at the moment we're updating it. How can we fix this? We can do exactly how we did when we created a default buffer. We can put a fence and stall the cpu until gpu finishes reading the matrix. As you understand this is not the way to go - when the cpu work gpu is idle and vice versa.
+As you remember the commands are stored in the queue and don't execute immediately after submission. Cpu and gpu have different timelines. Now imagine that we submitted a matrix for the frame `1` in constant buffer. Gpu is not executing yet. Now on cpu we're executing frame `2` and we need to update the matrix. We can do this but in this case the matrix from the frame `1` will be lost for the gpu. Or even worse - imagine that gpu starts reading the matrix at the moment we're updating it. How can we fix this? We can do exactly how we did when we created a default buffer. We can put a fence and stall the cpu until gpu finishes reading the matrix. As you understand this is not the way to go - when the cpu work gpu is idle and vice versa even if cpu and gpu can complete their tasks with the same speed. The solution is to have several buffers - when cpu updated one it can start to update second safely. This is the same reason why we have several back buffers - we're displaying one while writing to another.
+
+NOTE: Several buffers is not a silver buller. There still can be a situation when the cpu is faster than gpu and we need to syncronize anyway.
+
+So how much buffers do we need? Usually `2` or `3` is enough. In the demo I made this number adjustible but by default using `3`. That means that we need to create `3` constant buffers. Or create one big resource that can fit `3` matrices (remember that resource is just blob of memory). This is how we create out buffer:
+
+[source,cpp]
+----
+// TeapotTutorial.h
+Microsoft::WRL::ComPtr<ID3D12Resource> constBuffer;
+
+// TeapotTutorial.cpp
+void TeapotTutorial::createConstantBuffer()
+{
+	UINT elementSizeAligned{ (sizeof(XMFLOAT4X4) + 255) & ~255 };
+	UINT64 bufferSize{ elementSizeAligned * bufferCount };
+
+	D3D12_HEAP_PROPERTIES heapProps;
+	ZeroMemory(&heapProps, sizeof(heapProps));
+	heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+	heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	heapProps.CreationNodeMask = 1;
+	heapProps.VisibleNodeMask = 1;
+
+	D3D12_RESOURCE_DESC resourceDesc;
+	ZeroMemory(&resourceDesc, sizeof(resourceDesc));
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	resourceDesc.Alignment = 0;
+	resourceDesc.Width = bufferSize;
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.SampleDesc.Quality = 0;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	HRESULT hr{ device->CreateCommittedResource(
+		&heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(constBuffer.ReleaseAndGetAddressOf())
+	) };
+
+	if (FAILED(hr))
+	{
+		throw(runtime_error{ "Error creating constant buffer." });
+	}
+
+	constBuffer->SetName(L"constants");
+}
+----
+
+Since constant buffer will be updated every frame there's no need to create it with default type. As an interesting note the read of constant buffer in `directx 12` should be aligned on `256B`. If we have `4x4` matrix of `float` which requires `16 * 4 = 64B` we can't place the next matrix immediately after it or we'll break the alignment rule and will get an error. So our total size for `3` buffers will be `3 * 256 = 768B`. And since constant buffer is just a usual buffer it itself will be aligned on `64KB`. Finally we can finish our diagram. 
+
+NOTE: The weird looking line `(sizeof(XMFLOAT4X4) + 255) & ~255` calculates the next multiple of `256`.
