@@ -1074,3 +1074,105 @@ void Graphics::createFenceEventHandle()
 
 All this code should be already familar to you. Here we're creating allocators, a list and we close it for now because we're not going to use it now, fences - one for each buffered frame and one handle. We need multiple fences by the same reason we need multiple allocators. Imagine we submitted commands for frame `1` and told the queue to set fence value after these commands for this frame finish. We do the same for frames `2` and `3`. Now when we're ready to reuse allocator `1` we need to check fence value `1` - not `2` or `3` (they still can be in use) and if the value is what we expect we can safely reuse memory. In other case we need to wait.
 
+Next we'll create command queue and  swap chain:
+
+[source,cpp]
+----
+// Graphics.h
+Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
+Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain;
+
+// Graphics.cpp
+void Graphics::createCommandQueue()
+{
+	D3D12_COMMAND_QUEUE_DESC queueDesc;
+	ZeroMemory(&queueDesc, sizeof(queueDesc));
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	queueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	queueDesc.NodeMask = 0;
+
+	HRESULT hr{ device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(commandQueue.ReleaseAndGetAddressOf())) };
+	if (FAILED(hr))
+	{
+		throw(runtime_error{ "Error creating command queue." });
+	}
+}
+
+void Graphics::createSwapChain()
+{
+	POINT wSize(window->getSize());
+
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
+	ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
+	swapChainDesc.Width = static_cast<UINT>(wSize.x);
+	swapChainDesc.Height = static_cast<UINT>(wSize.y);
+	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.Stereo = FALSE;
+	swapChainDesc.SampleDesc = { 1, 0 }; // no anti-aliasing
+	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDesc.BufferCount = bufferCount;
+	swapChainDesc.Scaling = DXGI_SCALING_NONE;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swapChainDesc.Flags = 0;
+
+	ComPtr<IDXGISwapChain1> swapChain1;
+	if (FAILED(factory->CreateSwapChainForHwnd(commandQueue.Get(), window->getHandle(), &swapChainDesc, nullptr, nullptr, swapChain1.ReleaseAndGetAddressOf())))
+	{
+		throw(runtime_error{ "Error creating IDXGISwapChain1." });
+	}
+
+	if (FAILED(swapChain1.As(&swapChain)))
+	{
+		throw(runtime_error{ "Error creating IDXGISwapChain3." });
+	}
+}
+----
+
+You should be familar with command queue. The swap chain comcept didn't change since `directx 11` the only interesting thing is that you need to specify command queue during swap chain creation. Here `bufferCount` variable is a number of buffered frames.
+
+Now it's time to create back buffers:
+
+[source,cpp]
+----
+// Graphics.h
+std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> swapChainBuffers;
+Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descHeapRtv;
+
+// Graphics.cpp
+void Graphics::getSwapChainBuffers()
+{
+	for (UINT i{ 0 }; i < bufferCount; i++)
+	{
+		if (FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(swapChainBuffers[i].ReleaseAndGetAddressOf()))))
+		{
+			throw(runtime_error{ "Error getting buffer." });
+		}
+	}
+}
+
+void Graphics::createDescriptoprHeapRtv()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
+	ZeroMemory(&heapDesc, sizeof(heapDesc));
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	heapDesc.NumDescriptors = bufferCount;
+	heapDesc.NodeMask = 0;
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	if (FAILED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(descHeapRtv.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating descriptor heap." });
+	}
+
+	UINT rtvStep{ device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) };
+	for (UINT i{ 0 }; i < bufferCount; i++)
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE d = descHeapRtv->GetCPUDescriptorHandleForHeapStart();
+		d.ptr += i * rtvStep;
+		device->CreateRenderTargetView(swapChainBuffers[i].Get(), nullptr, d);
+	}
+}
+----
+
+When we specified during swap chain creation the number of back buffers we want buffers created implicitly so we don't need to create resources manualy. But we still need to create descriptors for all our back buffers. In `Graphics::getSwapChainBuffers()` we're obtaining pointers to created resources and in `Graphics::createDescriptoprHeapRtv()` we're creating a descriptor heap (recal that descriptors should be stored somewhere) with the type `D3D12_DESCRIPTOR_HEAP_TYPE_RTV` and big enough to store necessary amount of views. Next we're iterating over obtained buffer pointers and for every resource we're creating a corresponding view (recal that `device->GetDescriptorHandleIncrementSize()` is a cross vendor way to get descriptor size).
