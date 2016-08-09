@@ -994,3 +994,83 @@ Since constant buffer will be updated every frame there's no need to create it w
 image::teapot_tutorial/shader_res_3.png[Shader Resources, 800, link="https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/images/teapot_tutorial/shader_res_3.png"]
 
 NOTE: The weird looking line `(sizeof(XMFLOAT4X4) + 255) & ~255` calculates the next multiple of `256`.
+
+At this point we have shaders, device and resources but we're still not ready to draw. We don't have a buffer to draw, a swap chain to present a back buffer and some other things.
+
+===== DirectX Initialization part 2
+
+You already know what are command lists, command allocator, fences - we used them when we created our resources. We need the same resources for rendering - after all rendering is just commands to the gpu what to do.
+
+NOTE: We could create on command list, allocator, fence for entire application and reuse it for rendering, resource creation but I decided to use more functional approach and for simplicity created an isolated function for resource creation.
+
+Remember when we discussed matrix constant buffer we decided to use multiple buffers to avoid stalls and you know that we should use several resources for buffered frames (we're using `3` frames by default but this number can be changed). So for rendering we need to use `3` caommand allocators, `3` fences but only one command list. This is because when we're resetting a list it can be used immediately - the memory for commands managed by the allocator. So we can reuse the same list with several allocators.
+
+NOTE: If we would use multiple threads for commands creation submission, we have to use `3 * numTheads` allocators and `numThreads` lists. That's because when the list is in use with particular allocator it can't be used with another until it closed.
+
+This is how we're creating necessary data:
+
+[source,cpp]
+----
+// Graphics.h
+std::vector<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>> commandAllocators;
+Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
+std::vector<Microsoft::WRL::ComPtr<ID3D12Fence>> fences;
+std::vector<UINT64> fenceValues;
+HANDLE fenceEventHandle;
+
+// Graphics.cpp
+void Graphics::createCommandAllocators()
+{
+	for (UINT i{ 0 }; i < bufferCount; i++)
+	{
+		ComPtr<ID3D12CommandAllocator> commandAllocator;
+		if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocator.ReleaseAndGetAddressOf()))))
+		{
+			throw(runtime_error{ "Error creating command allocator." });
+		}
+
+		commandAllocators.push_back(commandAllocator);
+	}
+}
+
+void Graphics::createCommandList()
+{
+	if (FAILED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators[0].Get(), nullptr, IID_PPV_ARGS(commandList.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating command list." });
+	}
+
+	if (FAILED(commandList->Close()))
+	{
+		throw(runtime_error{ "Error closing command list." });
+	}
+}
+
+void Graphics::createFences()
+{
+	for (UINT i{ 0 }; i < bufferCount; i++)
+	{
+		UINT64 initialValue{ 0 };
+		ComPtr<ID3D12Fence> fence;
+		if (FAILED(device->CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.ReleaseAndGetAddressOf()))))
+		{
+			throw(runtime_error{ "Error creating fence." });
+		}
+
+		fences.push_back(fence);
+		fenceValues.push_back(initialValue);
+	}
+}
+
+void Graphics::createFenceEventHandle()
+{
+	fenceEventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (fenceEventHandle == NULL)
+	{
+		throw(runtime_error{ "Error creating fence event." });
+	}
+}
+----
+
+All this code should be already familar to you. Here we're creating allocators, a list and we close it for now because we're not going to use it now, fences - one for each buffered frame and one handle. We need multiple fences by the same reason we need multiple allocators. Imagine we submitted commands for frame `1` and told the queue to set fence value after these commands for this frame finish. We do the same for frames `2` and `3`. Now when we're ready to reuse allocator `1` we need to check fence value `1` - not `2` or `3` (they still can be in use) and if the value is what we expect we can safely reuse memory. In other case we need to wait.
+
