@@ -1269,9 +1269,9 @@ We have everything for our demo - all resources and infrastructure. Now we'll ca
 // TeapotTutorial.cpp
 void TeapotTutorial::render()
 {
-	UINT frameIndex{ swapChain->GetCurrentBackBufferIndex() };
+	UINT frameIndex{ swapChain->GetCurrentBackBufferIndex() }; // #1
 
-	ComPtr<ID3D12CommandAllocator> commandAllocator{ commandAllocators[frameIndex] };
+	ComPtr<ID3D12CommandAllocator> commandAllocator{ commandAllocators[frameIndex] }; // #2
 
 	if (FAILED(commandAllocator->Reset()))
 	{
@@ -1283,13 +1283,16 @@ void TeapotTutorial::render()
 		throw(runtime_error{ "Error resetting command list." });
 	}
 
+	// #3
 	commandList->SetPipelineState(currPipelineState.Get());
 	commandList->SetGraphicsRootSignature(rootSignature.Get());
 	commandList->RSSetViewports(1, &viewport);
 	commandList->RSSetScissorRects(1, &scissorRect);
 
+	// #4
 	ID3D12Resource* currBuffer{ swapChainBuffers[frameIndex].Get() };
 
+	// #5
 	D3D12_RESOURCE_BARRIER barrierDesc;
 	ZeroMemory(&barrierDesc, sizeof(barrierDesc));
 	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -1300,6 +1303,7 @@ void TeapotTutorial::render()
 	barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	commandList->ResourceBarrier(1, &barrierDesc);
 
+	// #6
 	static UINT descriptorSize{ device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) };
 	D3D12_CPU_DESCRIPTOR_HANDLE descHandleRtv(descHeapRtv->GetCPUDescriptorHandleForHeapStart());
 	descHandleRtv.ptr += frameIndex * descriptorSize;
@@ -1308,6 +1312,7 @@ void TeapotTutorial::render()
 
 	commandList->OMSetRenderTargets(1, &descHandleRtv, FALSE, &descHandleDepthStencil);
 
+	// #7
 	static float clearColor[]{ 0.1f, 0.1f, 0.1f, 1.0f };
 	commandList->ClearRenderTargetView(descHandleRtv, clearColor, 0, nullptr);
 	commandList->ClearDepthStencilView(descHeapDepthStencil->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
