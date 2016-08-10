@@ -1262,6 +1262,8 @@ Wow. Finally. We're ready to draw!
 
 ===== Rendering
 
+We have everything for our demo - all resources and infrastructure. Now we'll call `TeapotTutorial::render()` method every frame where we'll tell gpu to use resources and run shaders.
+
 [source,cpp]
 ----
 // TeapotTutorial.cpp
