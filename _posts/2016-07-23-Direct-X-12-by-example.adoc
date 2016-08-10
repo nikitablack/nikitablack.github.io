@@ -1397,6 +1397,6 @@ void TeapotTutorial::render()
 		throw(runtime_error{ "Failed signal." });
 	}
 
-	waitForPreviousFrame();
+	waitFrameComplete(swapChain->GetCurrentBackBufferIndex());
 }
 ----
