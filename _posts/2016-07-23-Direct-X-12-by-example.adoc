@@ -1322,9 +1322,11 @@ void TeapotTutorial::render()
 	vector<D3D12_VERTEX_BUFFER_VIEW> myArray{ controlPointsBufferView };
 	commandList->IASetVertexBuffers(0, static_cast<UINT>(myArray.size()), myArray.data());
 
+	// #9
 	vector<int> rootConstants{ tessFactor, tessFactor };
 	commandList->SetGraphicsRoot32BitConstants(1, static_cast<UINT>(rootConstants.size()), rootConstants.data(), 0);
 
+	// #10
 	ID3D12DescriptorHeap* ppHeaps[] = { transformsAndColorsDescHeap.Get() };
 	commandList->SetDescriptorHeaps(1, ppHeaps);
 	D3D12_GPU_DESCRIPTOR_HANDLE d { transformsAndColorsDescHeap->GetGPUDescriptorHandleForHeapStart() };
