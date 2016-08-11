@@ -1318,6 +1318,7 @@ void TeapotTutorial::render()
 	commandList->ClearDepthStencilView(descHeapDepthStencil->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_16_CONTROL_POINT_PATCHLIST);
 
+	// #8
 	vector<D3D12_VERTEX_BUFFER_VIEW> myArray{ controlPointsBufferView };
 	commandList->IASetVertexBuffers(0, static_cast<UINT>(myArray.size()), myArray.data());
 
@@ -1446,3 +1447,13 @@ void TeapotTutorial::createScissorRect()
 	scissorRect.bottom = rect.bottom - rect.top;
 }
 ----
+
+Also we need to get a pointer to the current back buffer (*#4*).
+
+Now when we have a back buffer we need to move it to the correct state. Since we're going to render a teapot into it the state should be `D3D12_RESOURCE_STATE_RENDER_TARGET` (*#5*).
+
+Next we need to say gpu that we need to use this back buffer as a render target. But we can't do it directly. Instead we need to set the view that describes this buffer. As you know all views are stored in descriptor heap. All we need to do is to calculate the correct offset from the heap start (*#6*). And we're doing the same for the depth buffer (we have only one depth buffer so the descriptor and heap have same addreses).
+
+Next we're clearing render target and depth buffer to some initial values adn also specifying the topology we're going to use in this draw - `D3D_PRIMITIVE_TOPOLOGY_16_CONTROL_POINT_PATCHLIST` (*#7*).
+
+Next we need to specify vertex buffer. Again, we're doing it with a view (*#8*).
