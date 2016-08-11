@@ -1333,6 +1333,7 @@ void TeapotTutorial::render()
 	d.ptr += 0;
 	commandList->SetGraphicsRootDescriptorTable(2, d);
 
+	// #11
 	POINT windowSize(window->getSize());
 	float ratio{ static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y) };
 	XMMATRIX projMatrixDX{ XMMatrixPerspectiveFovLH(XMConvertToRadians(45), ratio, 1.0f, 100.0f) };
@@ -1346,8 +1347,6 @@ void TeapotTutorial::render()
 	UINT constDataSizeAligned{ (sizeof(XMFLOAT4X4) + 255) & ~255 };
 
 	POINT mousePoint(window->getMousePosition());
-	mousePoint.x = 210;
-	mousePoint.y = 50;
 	float pitch{ -XMConvertToRadians((mousePoint.x - (static_cast<float>(windowSize.x) / 2.0f)) / (static_cast<float>(windowSize.x) / 2.0f) * 180.0f) };
 	float roll{ XMConvertToRadians((mousePoint.y - (static_cast<float>(windowSize.y) / 2.0f)) / (static_cast<float>(windowSize.y) / 2.0f) * 180.0f) };
 
@@ -1357,19 +1356,24 @@ void TeapotTutorial::render()
 	XMFLOAT4X4 mvpMatrix;
 	XMStoreFloat4x4(&mvpMatrix, modelMatrixDX * viewProjMatrixDX);
 
+	// #12
 	D3D12_RANGE readRange = {0, 0};
 	uint8_t* cbvDataBegin;
 	constBuffer->Map(0, &readRange, reinterpret_cast<void**>(&cbvDataBegin));
 	memcpy(&cbvDataBegin[frameIndex * constDataSizeAligned], &mvpMatrix, sizeof(mvpMatrix));
 	constBuffer->Unmap(0, nullptr);
 
+	// #13
 	commandList->SetGraphicsRootConstantBufferView(0, constBuffer->GetGPUVirtualAddress() + frameIndex * constDataSizeAligned);
 
+	// #14
 	commandList->IASetIndexBuffer(&controlPointsIndexBufferView);
 
+	// #15
 	uint32_t numIndices{ controlPointsIndexBufferView.SizeInBytes / sizeof(uint32_t) };
 	commandList->DrawIndexedInstanced(numIndices, 1, 0, 0, 0);
 
+	// #16
 	ZeroMemory(&barrierDesc, sizeof(barrierDesc));
 	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrierDesc.Transition.pResource = currBuffer;
@@ -1379,19 +1383,23 @@ void TeapotTutorial::render()
 	barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	commandList->ResourceBarrier(1, &barrierDesc);
 
+	// #17
 	if (FAILED(commandList->Close()))
 	{
 		throw(runtime_error{ "Failed closing command list." });
 	}
 
+	// #18
 	ID3D12CommandList* cmdList{ commandList.Get() };
 	commandQueue->ExecuteCommandLists(1, &cmdList);
 
+	// #19
 	if (FAILED(swapChain->Present(1, 0)))
 	{
 		throw(runtime_error{ "Failed present." });
 	}
 
+	// #20
 	UINT64& fenceValue{ fenceValues[frameIndex] };
 	++fenceValue;
 	ComPtr<ID3D12Fence> fence{ fences[frameIndex] };
@@ -1400,6 +1408,7 @@ void TeapotTutorial::render()
 		throw(runtime_error{ "Failed signal." });
 	}
 
+	// #21
 	waitFrameComplete(swapChain->GetCurrentBackBufferIndex());
 }
 ----
