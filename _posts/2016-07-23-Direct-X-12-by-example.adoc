@@ -1400,3 +1400,9 @@ void TeapotTutorial::render()
 	waitFrameComplete(swapChain->GetCurrentBackBufferIndex());
 }
 ----
+
+As usual we'll go step by step.
+
+`IDXGISwapChain3` have a very handy method https://msdn.microsoft.com/en-us/library/windows/desktop/dn903675(v=vs.85).aspx[IDXGISwapChain3::GetCurrentBackBufferIndex()] (*#1*). It shows the index of the current back buffer where we'll draw. In the beginnig the index is `0` and after calling `IDXGISwapChain::Present()` it will change to `2` (if we have more than `1` buffer of cource). So we don't need to track manually the current frame.
+
+Using current frame index we can obtain a corresponding allocator (*#2*). We need to reset it before we can start to work with it. Remember that we need to be sure that there're no more commands in flight from this allocator so we'll not break anything (we'll discover syncronization later). Also we need to tell our command list that we're going to use this allocator with it.
