@@ -1490,7 +1490,6 @@ After calling `swapChain->Present()` (*#19*) we need to tell the gpu to incremen
 // Graphics.cpp
 void Graphics::waitFrameComplete(UINT frameIndex)
 {
-	//UINT frameIndex{ swapChain->GetCurrentBackBufferIndex() };
 	UINT64 fenceValue{ fenceValues[frameIndex] };
 	ComPtr<ID3D12Fence> fence{ fences[frameIndex] };
 
@@ -1506,3 +1505,27 @@ void Graphics::waitFrameComplete(UINT frameIndex)
 	}
 }
 ----
+
+One more time. Imagine we just finished with frame with index `2`. Since we have `3` buffered frames total the next index will be `0`. In `waitFrameComplete()` we're checking the status of frame `0` - if it's still in flight we have to stall and wait until fence will be equal to expected value.
+
+===== Cleanup
+
+One thing we forgot is a cleaning. But it's pretty simple - since we used smart pointers we don't need to delete pointers manually. The only thing we need to take care of is to be sure that during interface desctruction gpu finished with it. We can do it with good old fences:
+
+[source,cpp]
+----
+// Graphics.cpp
+Graphics::~Graphics()
+{
+	for (UINT i{ 0 }; i < bufferCount; i++)
+	{
+		waitFrameComplete(i);
+	}
+}
+----
+
+Here I just iterate over all buffered frames and check that all they are done.
+
+===== Conclusion
+
+Wow, that's was a really long journey. As you can see there's a lot of code for such a simple application but most of this code can be abstracted with reusable structures like ones in `d3dx12.h`. What we did today is just scratched a surface - `directx12` api is very complex and still evolving. But I encourage you to continue investigation - after all it's so fun :)
