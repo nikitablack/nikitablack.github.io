@@ -1510,7 +1510,7 @@ One more time. Imagine we just finished with frame with index `2`. Since we have
 
 ===== Cleanup
 
-One thing we forgot is a cleaning. But it's pretty simple - since we used smart pointers we don't need to delete pointers manually. The only thing we need to take care of is to be sure that during interface desctruction gpu finished with it. We can do it with good old fences:
+One thing we didn't mention is cleaning. But it's pretty simple - since we used smart pointers we don't need to delete pointers manually. The only thing we need to take care of is to be sure that during interface desctruction gpu finished with it. We can do it with good old fences:
 
 [source,cpp]
 ----
