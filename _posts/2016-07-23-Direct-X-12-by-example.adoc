@@ -1475,4 +1475,4 @@ Third parameter in the root signature was a descriptor table. Recall that table 
 
 Next we're doing some math (*#11*) - creating a projection matrix, view matrix, rotating our model depending on mouse position. And updating our upload constant buffer with `constBuffer->Map()` method (*#12*). As you remember our constant buffer store data for all our buffered frames. In order to write to the correct place we need to use a correct offset from the start of the buffer (don't forget about `256B` alignment).
 
-Now when we have updated constant buffer we're ready to finish with the root signature. We're setting the last parameter - root descriptor (*#13*). 
+Now when we have updated constant buffer we're ready to finish with the root signature. We're setting the last parameter - root descriptor (*#13*) as a first parameter not forgetting the correct offset from descriptor heap start. 
