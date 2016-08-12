@@ -1529,3 +1529,7 @@ Here I just iterate over all buffered frames and check that all they are done.
 ===== Conclusion
 
 Wow, that's was a really long journey. As you can see there's a lot of code for such a simple application but most of this code can be abstracted with reusable structures like ones in `d3dx12.h`. What we did today is just scratched a surface - `directx12` api is very complex and still evolving. But I encourage you to continue investigation - after all it's so fun :)
+
+Here's the result of the work we have done:
+
+[VIDEO]
