@@ -2,21 +2,23 @@
 :hp-tags: c++, directx12
 
 ===== Disclaimer!
-I'm not an expert, computer graphics is my hobby. When I started to learn `directx 12` I already was quite comfortable with `directx 11` but it was still difficult to switch. And even after several months of investigations I still have a feeling that I just scratched a surface. I'm constantly learning and this post is a syncronization of my thoughts. I found that attempts to explain complex things makes me understand these things better. Thought the artile was written by me for me I hope you'll find it useful too.
+I'm not an expert, computer graphics is my hobby. When I started to learn directx 12 I already was quite comfortable with directx 11 but it was still difficult to switch. And even after several months of investigations I still have a feeling that I just scratched a surface. I'm constantly learning and this post is a syncronization of my thoughts. I found that attempts to explain complex things makes me understand these things better. Thought the artile was written by me for me I hope you'll find it useful too.
 
-`Directx 12` is low level, it have many concepts and in order to make your code work well you need to take into account a lot of things. You need to profile a lot. And you need to know a hardware. For example you need to know that changing descriptor heaps is a heavy operation. I have no idea what's happening in hardware and why it's expensive. I'm just following guidelines trying to remember and reading gpu specs in parallel.
+Directx 12 is low level, it have many concepts and in order to make your code work well you need to take into account a lot of things. You need to profile a lot. And you need to know a hardware. For example you need to know that changing descriptor heaps is a heavy operation. I have no idea what's happening in hardware and why it's expensive. I'm just following guidelines trying to remember and reading gpu specs in parallel.
 
-Also I assume that you have an experience with previous directx versions because I'll not explain in this post what is swapchain or backbuffer. You should be familar with tesselation - what are tesselation factors, what is a constant function, why do you need hull and domain shaders. Good overview of `directx 11` tesselation can be found https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[here]. Also you need to know basic windows programming because we need to create a window and I'll not explain how to do it.
+Also I assume that you have an experience with previous directx versions because I'll not explain in this post what is swapchain or backbuffer. You should be familar with tesselation - what are tesselation factors, what is a constant function, why do you need hull and domain shaders. Good overview of directx 11 tesselation can be found https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[here]. Also you need to know basic windows programming because we need to create a window and I'll not explain how to do it.
 
 ===== Preface
 
-In this tutorial we're going to render a teapot. But not just a static mesh, no. We'll render a tesselated teapot. Why did I chose this? Well, because you can find in the web a plenty of different _HelloWorld_ examples. I didn't want to create another _HelloWorld_ but somethig that covers different areas of the api and at the same time is simple.
+In this tutorial we'll render a teapot. But not just a static mesh, no. We'll render a tesselated teapot. Why did I choose this? Well, because you can find in the web a plenty of different _HelloWorld_ examples. I didn't want to create another _HelloWorld_ but somethig that covers different areas of the api and at the same time is simple.
 
 image::teapot_tutorial/teapot.png["Teapot", 400]
 
 We're going to use `16`-point patches for the teapot. We'll provide control points positions in one vertex buffer and patch indicies in one index buffer. For colors and transforms (more on this later) we'll use structured buffers.
 
-Usually directx tutorials follow the same pattern - initialization, resource creation, rendering. I decided to go different way - first we'll create the most important part of the code and later will add different components to support it - one after another as required. And the most important part, by my opinion, is *shaders*. After all this is what we want the gpu to execute. This approach helped me to tie different parts of the api and undesrtand how they related to each other. In order to write a shader we need to figure out what data we need. So let's first define it.
+Usually directx tutorials follow the same pattern - initialization, resource creation, rendering. I decided to go slightly different way - first we'll create the most important part and later will add different components to support it - one after another as required. And the most important part, by my opinion, are shaders. After all this is what we want the gpu to execute. This approach helped me to tie different parts of the api and undesrtand how they related to each other.
+
+In order to write a shader we need to figure out what data it operates on. So let's first define it.
 
 ===== Teapot Data
 
