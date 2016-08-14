@@ -2,7 +2,7 @@
 :hp-tags: c++, directx12
 
 ===== Disclaimer!
-I'm not an expert. When I started to learn `directx 12` I already was quite comfortable with `directx 11`. Nevertheless it was very difficult for me to switch. And even after several months of learning I still have a feeling that I just scratched a surface. I'm still learning and this post is a syncronization of my thoughts so far and it will contain questions. Thought I hope somebody will find it useful.
+I'm not an expert. When I started to learn `directx 12` I already was quite comfortable with `directx 11`. Nevertheless it was very difficult for me to switch. And even after several months of investigations I still have a feeling that I just scratched a surface. I'm still learning and this post is a syncronization of my thoughts so far and it will contain questions. Thought I hope somebody will find it useful.
 
 `Directx 12` is low level, it have many concepts and in order to make your code work well you need to take into account a lot of things. You need to profile a lot. And you need to know a hardware. For example you need to know that changing descriptor heaps is a heavy operation. I have no idea what's happening in hardware and why it's expensive. I'm just following guidelines trying to remember and reading gpu specs in parallel.
 
