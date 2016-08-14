@@ -22,7 +22,7 @@ In order to write a shader we need to figure out what data it operates on. So le
 
 ===== Teapot Data
 
-Since we're going to use tesselation we're not interested in _"usual"_ mesh consisting of triangles. We need patches. Of course somebody already described the teapot and we can use this data. For example https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot#The_Teapot_DataSet[here] is the set of `16`-point patches. Unfortunatelly we can't use this data as it is and we need to adjust it a little. This set doesn't have a bottom - -it's ok, we'll not use it either. But the existing patches describe only parts of the teapot. For example _rim_, _body_ and _lid_ describe only a quarter of a teapot and _handle_ and _spout_ describe only half of this parts. So if we'll render this set we'll get this:
+Since we're going to use tesselation we're not interested in _"usual"_ mesh made of triangles. We need patches. Of course somebody already did this for us and we can use ready data. For example https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot#The_Teapot_DataSet[here] is the set of `16`-point patches that describe a teapot. Unfortunatelly we can't use this data as is but we need to adjust it a little. This set doesn't have a bottom - it's ok, we'll not use it either but existing patches describe only parts of the teapot. For example _rim_, _body_ and _lid_ describe only a quarter of a teapot and _handle_ and _spout_ describe only half of respective parts. So if we'll render this set we'll get this:
 
 image::teapot_tutorial/teapot_quarter.png["Teapot", 400]
 
