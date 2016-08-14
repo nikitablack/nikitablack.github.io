@@ -6,7 +6,9 @@ I'm not an expert, computer graphics is my hobby. When I started to learn `direc
 
 `Directx 12` is low level, it have many concepts and in order to make your code work well you need to take into account a lot of things. You need to profile a lot. And you need to know a hardware. For example you need to know that changing descriptor heaps is a heavy operation. I have no idea what's happening in hardware and why it's expensive. I'm just following guidelines trying to remember and reading gpu specs in parallel.
 
-Also I assume that the reader have an experience with previous directx versions because I'll not explain in this post what is swapchain or backbuffer. You should be familar with tesselation - what are tesselation factors, what is a constant function, why do you need `hull` and `domain` shaders. Good overview of `directx 11` tesselation can be found https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[here]. Also you need to know basic windows programming because we need to create a window and I'll not explain how to do it.
+Also I assume that you have an experience with previous directx versions because I'll not explain in this post what is swapchain or backbuffer. You should be familar with tesselation - what are tesselation factors, what is a constant function, why do you need hull and domain shaders. Good overview of `directx 11` tesselation can be found https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[here]. Also you need to know basic windows programming because we need to create a window and I'll not explain how to do it.
+
+===== Preface
 
 In this tutorial we're going to render a teapot. But not just a static mesh, no. We'll render a tesselated teapot. Why did I chose this? Well, because you can find in the web a plenty of different _HelloWorld_ examples. I didn't want to create another _HelloWorld_ but somethig that covers different areas of the api and at the same time is simple.
 
