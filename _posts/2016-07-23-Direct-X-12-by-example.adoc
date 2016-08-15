@@ -756,22 +756,26 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device,
 		throw(runtime_error{ "Error creating a fence." });
 	}
 
+	// #13
 	HANDLE fenceEventHandle{ CreateEvent(nullptr, FALSE, FALSE, nullptr) };
 	if (fenceEventHandle == NULL)
 	{
 		throw(runtime_error{ "Error creating a fence event." });
 	}
 
+	// #14
 	if (FAILED(commandQueue->Signal(fence.Get(), 1)))
 	{
 		throw(runtime_error{ "Error siganalling buffer uploaded." });
 	}
 
+	// #15
 	if (FAILED(fence->SetEventOnCompletion(1, fenceEventHandle)))
 	{
 		throw(runtime_error{ "Failed set event on completion." });
 	}
 
+	// #16
 	DWORD wait{ WaitForSingleObject(fenceEventHandle, 10000) };
 	if (wait != WAIT_OBJECT_0)
 	{
@@ -806,11 +810,11 @@ Finally we're telling gpu to execute our commands with https://msdn.microsoft.co
 
 If we'll exit `createDefaultBuffer()` method now we'll get an undefined behavior. When we're telling the gpu to execute a list it doesn't start to do it immediately. Instead the commands are queued and nobody knows when they start or finish. That mean that if we leave now the upload buffer will be destroyed (we're not keeping a pointer to it) and when the gpu will be ready to execute a copy command the source will not be valid anymore.
 
-Previously we talked about cpu-gpu communication. Now we're interested in gpu-cpu talk. We do it with fences. Fence is nothing more than an integer value. After we submitted a command list we can add one more command to the queue that will set the fence to the specified value. All we left to do is to check wherether our fence have a correct value or not and if it not - just wait untill it change. Super simple, isn't it? First we're creating `ID3D12Fence` itself and also some `fenceEventHandle`. This handle is not a part of `directx` but `winapi`. We're assigning value to the fence on the gpu with `commandQueue->Signal()` method. The first parameter is a fence object and the second is a desired value we want out fence be after the command list executed. Next we're setting an event on completion with `fence->SetEventOnCompletion()` method. When the fence value will be equal to the first parameter then the event (second parameter) should be raised. In `WaitForSingleObject()` we're waiting when this happens for specified number of seconds (`10` seconds in our case but can be up to infinite). If at the moment of calling the fence already have desired value it will return `WAIT_OBJECT_0` immediately in other case it will wait.
+Previously we talked about cpu-gpu communication. Now we're interested in gpu-cpu talk. We do it with fences. Fence is nothing more than an integer value. After we submitted a command list we can add one more command to the queue that will set the fence to the specified value. All we left to do is to check wherether our fence have a correct value or not and if it not - just wait untill it change. Super simple, isn't it? First we're creating https://msdn.microsoft.com/en-us/library/windows/desktop/dn899188%28v=vs.85%29.aspx[`ID3D12Fence`] itself (*#12*) and also some `fenceEventHandle` (*#13*). This handle is not a part of `directx` but `winapi`. We're assigning value to the fence on the gpu with https://msdn.microsoft.com/en-us/library/windows/desktop/dn899171(v=vs.85).aspx[`ID3D12CommandQueue::Signal()`] method (*#14*). The first parameter is a fence object and the second is a desired value we want out fence be after the command list executed. Next we're setting an event on completion with https://msdn.microsoft.com/en-us/library/windows/desktop/dn899190%28v=vs.85%29.aspx[`ID3D12Fence::SetEventOnCompletion()`] method (*#15*). When the fence value will be equal to the first parameter then the event (second parameter) will be raised. In https://msdn.microsoft.com/en-us/library/windows/desktop/ms687032(v=vs.85).aspx[`WaitForSingleObject()`] (*#16*) we're waiting when this happens for specified number of seconds (`10` seconds in our case but can be up to infinite). If at the moment of calling the fence already have a desired value it will return `WAIT_OBJECT_0` immediately in other case it will wait.
 
-In the we're returning created default buffer to the caller.
+Finally we're returning created default buffer to the caller.
 
-Now we need to create a view for our resource. Remember that resource is just a bunch of data in memory - we need to describe this data so the gpu cn use it correctly.
+Now we need to create a view for our resource. Remember that resource is just a bunch of data in memory - we need to describe this data so the gpu can use it correctly.
 
 [source,cpp]
 ----
