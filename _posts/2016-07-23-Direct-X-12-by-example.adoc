@@ -225,18 +225,20 @@ When I started to write this tutorial I wanted to make it as simple as possible 
 
 ===== Root Signature
 
-Ok, at this point we should know that shaders require resources and this resources should be bound to the correct resource slots (`b0` for constant buffer, `t0` for structured buffer, for eample). In `directx 12` we do it it with special interface - `ID3D12RootSignature`. With it we need to describe which resources which shader needs and which slot. We can say that it only describes input parameters, just like usual c++ function signature. For example:
+At this point we should know that shaders require resources and this resources should be bound to the correct resource slots (`b0` for constant buffer, `t0` for structured buffer, for example). In directx 12 we bind with special interface - `ID3D12RootSignature`. With the help of the interface we can describe which resources a shader needs and in which slot. We can say that signature only declares input parameters, just like usual c++ function signature. For example:
 
 [source,cpp]
 ----
 void rootSignature(std::array<int, 2> constants, XMFLOAT4X4* wvpMatrix, std::vector<XMFLOAT3*>* colors);
 ----
 
-What we see here is that our function expects `3` input parameters - two ints, copied by value; pointer to a matrix, and a pointer to vector of pointers to some colors. If we're going to read these passed values we'll have this: the first parameter - two ints / will be copied to registers so accessing them will be extremely fast; for the second parameter we need to dereference a pointer and it will lead to read from memory with potential cache miss, so it's slower that the first parameter; the fird parameter is the slowest one - to read from the vector we need to dereference it first and then dereference the element we want to access - that means two indirections. Also notice that this is just a signature - it doesn't tell us what are the actual parameter values. Basically we can use as many different combinations of parameters as we can imagine with a single signature - the only mandatory is that we need to maintain correct types. Why did I tell all this? Because this is exactly how root signature works! We specify the input parameters and there types and later during runtime we pass the actual data.
+What we see here is that our function expects `3` parameters - two ints, copied by value; pointer to a matrix, and a pointer to vector of pointers to some colors. This is what happening if we're using these values: the first parameter - two ints - will be copied to registers so accessing them will be extremely fast; for the second parameter we need to dereference a pointer and it will lead to memory read with a potential cache miss, so it's slower that the first parameter; the third parameter is the slowest one - to read from the vector we need to dereference it first and then dereference the element we want to access - that means two indirections.
 
-We're almost ready to start write a code but let's first discuss our input signature. As you remember we have `4` resources for our demo - `hull` constant buffer, `domain` constant buffer and `2` `domain` structured buffers.
+Please notice that this is just a signature - it doesn't tell us what are the actual parameter values. Basically we can use as many different combinations of parameters as we can imagine with a single signature - the only mandatory is that we need to maintain correct types. Why did I tell all this? Because this is exactly how root signature works! We specify the input parameters and their types and later during runtime we call the function passing the actual data.
 
-NOTE: "But there're also `vertex` and `index` buffers" - can ask somebody. Right, but they are _special_ buffers - we need to create a resources and corresponding views and this views we pass directly to pipeline in command list (as we'll see later). These views don't even need a resource heap!
+As you remember we have `4` resources for our demo - hull constant buffer, domain constant buffer and `2` domain structured buffers.
+
+NOTE: "But there're also vertex and index buffers" - somebody can ask. Right, but they are _special_ buffers - we need to create resources and corresponding views and pass this views directly to the pipeline in command list (as we'll see later). These views don't even need a resource heap!
 
 Also as we saw previously, the information about this resources should be stored in descriptors which should be stored in descriptor heaps. But I also mentioned that there're some other ways to pass data around. That's how we'll do it:
 
@@ -1541,4 +1543,6 @@ Here I just iterate over all buffered frames and check that all they are done.
 
 Wow, that's was a really long journey. As you can see there's a lot of code for such a simple application but most of this code can be abstracted with reusable structures like ones in `d3dx12.h`. What we did today is just scratched a surface - `directx12` api is very complex and still evolving. But I encourage you to continue investigation - after all it's so fun :)
 
-https://www.youtube.com/watch?v=m5Lac8TNsc0[Here's] the result of the work we have done. And https://github.com/nikitablack/directx-12/tree/master/TeapotTutorial/TeapotTutorial[here] is the full source.
+The video below shows the result of work we done. And https://github.com/nikitablack/directx-12/tree/master/TeapotTutorial/TeapotTutorial[here] is the full source.
+
+video::m5Lac8TNsc0[youtube, width=480, height=300]
