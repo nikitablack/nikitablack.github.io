@@ -795,7 +795,7 @@ When we create a list it is in a record state that means it's ready to receive c
 
 When we have a list filled with commands we need to tell gpu to do some work. We do this with https://msdn.microsoft.com/en-us/library/windows/desktop/dn788627%28v=vs.85%29.aspx[`ID3D12CommandQueue`] interface (*#7*). It should be the same type as our list and allocator.
 
-Next we're mapping the system memory to the upload buffer (*#8*) and creating out first command with https://msdn.microsoft.com/en-us/library/windows/desktop/dn903856(v=vs.85).aspx[`ID3D12GraphicsCommandList::CopyBufferRegion()`] (*#9*). It will gpu to copy `bufferSize` amount of data from upload buffer (which actually points to the system memory) to default buffer.
+Next we're mapping the system memory to the upload buffer (*#8*) and creating out first command with https://msdn.microsoft.com/en-us/library/windows/desktop/dn903856(v=vs.85).aspx[`ID3D12GraphicsCommandList::CopyBufferRegion()`] (*#9*). It will tell the gpu to copy `bufferSize` amount of data from upload buffer (which actually points to the system memory) to default buffer.
 
 After we finished with an update we need to transition default buffer to the state that will allow correct access to it. For different resources this state should be different. For example for constand or vertex buffer it should be `D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER`, for structured buffer - `D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE`. So we creating a command that tells gpu to put a transition barrier to necessary state. During this transition gpu will not touch the resource and will wait when transition is done. As you may guess this is an expensive operation. We can use helper structure `CD3DX12_RESOURCE_BARRIER`.
 
