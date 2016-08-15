@@ -334,7 +334,7 @@ void TeapotTutorial::createRootSignature()
 }
 ----
 
-NOTE: `Directx` team kindly provided a helper header that simplifies creation of different structures - `d3dx12.h`. Thought the header is not a part of `directx 12` it's https://msdn.microsoft.com/en-us/library/windows/desktop/dn708058(v=vs.85).aspx[well documented] in `msdn` and pretty solid. The `D3D12_DESCRIPTOR_RANGE` creation can be replaced with `CD3DX12_DESCRIPTOR_RANGE`, `D3D12_ROOT_PARAMETER` with `CD3DX12_ROOT_PARAMETER` and `D3D12_ROOT_SIGNATURE_DESC` with `CD3DX12_ROOT_SIGNATURE_DESC`. Using this helpers allow us to reduce and hence simplify code dramatically. I deliberatelly removed all `d3dx12.h` dependencies from my code just to show how `directx` works under the hood.
+NOTE: Directx team kindly provided a helper header that simplifies creation of different structures - `d3dx12.h`. Thought the header is not a part of `directx 12` it's https://msdn.microsoft.com/en-us/library/windows/desktop/dn708058(v=vs.85).aspx[well documented] in `msdn` and pretty solid. The `D3D12_DESCRIPTOR_RANGE` creation can be replaced with `CD3DX12_DESCRIPTOR_RANGE`, `D3D12_ROOT_PARAMETER` with `CD3DX12_ROOT_PARAMETER` and `D3D12_ROOT_SIGNATURE_DESC` with `CD3DX12_ROOT_SIGNATURE_DESC`. Using this helpers allow us to reduce and hence simplify code dramatically. I deliberatelly removed all `d3dx12.h` dependencies from my code just to show how api works under the hood.
 
 When you serializing the signature you can get errors which will be writtent to `error` instance. There're a lot of checks happens during serialization - for example if you overlap registers for the same shader (have two 'b0') you'll get an error. Very handy tool!
 
