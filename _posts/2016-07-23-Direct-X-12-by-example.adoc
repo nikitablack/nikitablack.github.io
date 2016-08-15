@@ -934,7 +934,7 @@ teapot_tutorial::createSrv<TransformType>(device.Get(), transformsAndColorsDescH
 teapot_tutorial::createSrv<ColorType>(device.Get(), transformsAndColorsDescHeap.Get(), 1, colorsBuffer.Get(), TeapotData::patchesColors.size());
 ----
 
-Here we're refering util method from our `Utils.h` header:
+Here we're calling a method from our `Utils.h` header:
 
 [source,cpp]
 ----
@@ -942,6 +942,7 @@ Here we're refering util method from our `Utils.h` header:
 template<typename T>
 void createSrv(ID3D12Device* device, ID3D12DescriptorHeap* descHeap, int offset, ID3D12Resource* resource, size_t numElements)
 {
+	// #1
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	ZeroMemory(&srvDesc, sizeof(srvDesc));
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -952,16 +953,19 @@ void createSrv(ID3D12Device* device, ID3D12DescriptorHeap* descHeap, int offset,
 	srvDesc.Buffer.StructureByteStride = static_cast<UINT>(sizeof(T));
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
+	// #2
 	static UINT descriptorSize{ device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) };
 	D3D12_CPU_DESCRIPTOR_HANDLE d{ descHeap->GetCPUDescriptorHandleForHeapStart() };
+    // #3
 	d.ptr += descriptorSize * offset;
+    // #4
 	device->CreateShaderResourceView(resource, &srvDesc, d);
 }
 ----
 
-We're describing the view with the strut `D3D12_SHADER_RESOURCE_VIEW_DESC`. Since we can have arbitrary stride in structured buffer the format should defined as `DXGI_FORMAT_UNKNOWN`. `Shader4ComponentMapping` is a bit confusing for me - it looks like we can force some components be `0` or `1`. We don't need this so we're using default mapping, but if you have information how this can be useful please write in comments. All other parameters are pretty strightforward.
+We're describing a view with the struct `D3D12_SHADER_RESOURCE_VIEW_DESC` (*#1*). Since we can have arbitrary stride in structured buffer the format should defined as `DXGI_FORMAT_UNKNOWN`. `Shader4ComponentMapping` is a bit confusing for me - it looks like we can force some components be `0` or `1`. We don't need this so we're using default mapping, but if you have information how this can be useful please write in comments. All other parameters are pretty strightforward.
 
-Now we need to create descriptors in the heap. Descritors for constant buffer, srv and uav have the same size (but can differ in size among hardware vendors) and we're requesting this size with `device->GetDescriptorHandleIncrementSize()` method. Next we're searching the pace in the heap where we can create a descriptor. The very first descriptor we can put in the heap start but for the next descriptor we need to offset position by the size of the desriptor. And finally we're asking the device to create specified descriptor in specified place.
+Next we're creating descriptor in the heap. Descritors for constant buffer, srv and uav have the same size (but can differ in size among hardware vendors) and we're requesting this size with https://msdn.microsoft.com/en-us/library/windows/desktop/dn899186(v=vs.85).aspx[`ID3D12Device::GetDescriptorHandleIncrementSize()`] method (*#2*). We're searching the place in the heap where we can create a descriptor (*#3*). The very first descriptor we can put in the heap start but for the next descriptor we need to offset position by the size of the descriptor. And finally we're asking the device to create specified descriptor in specified place (*#4*).
 
 *Constant buffers*
 
