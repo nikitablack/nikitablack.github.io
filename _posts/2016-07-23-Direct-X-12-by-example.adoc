@@ -884,7 +884,7 @@ transformsBuffer = teapot_tutorial::createStructuredBuffer(device.Get(), TeapotD
 colorsBuffer = teapot_tutorial::createStructuredBuffer(device.Get(), TeapotData::patchesColors, L"colors");
 ----
 
-Where `createStructuredBuffer` defined:
+Where `createStructuredBuffer` defined as here:
 
 [source,cpp]
 ----
@@ -896,9 +896,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createStructuredBuffer(ID3D12Device* devi
 }
 ----
 
-All the same as before.
-
-This buffer finally needs a descriptor heap which we're creting with the following code:
+This buffer finally needs a descriptor heap which we're creating with the following code:
 
 [source,cpp]
 ----
