@@ -1030,11 +1030,13 @@ void TeapotTutorial::createConstantBuffer()
 }
 ----
 
-Since constant buffer will be updated every frame there's no need to create it with default type. As an interesting note the read of constant buffer in `directx 12` should be aligned on `256B`. If we have `4x4` matrix of `float` which requires `16 * 4 = 64B` we can't place the next matrix immediately after it or we'll break the alignment rule and will get an error. So our total size for `3` buffers will be `3 * 256 = 768B`. And since constant buffer is just a usual buffer it itself will be aligned on `64KB`. Finally we can finish our diagram.
+Since constant buffer will be updated every frame there's no need to create it with default type. The read of constant buffer in directx 12 should be aligned by `256B`. If we have `4x4` matrix of `float` which requires `16 * 4 = 64B` we can't place the next matrix immediately after it or we'll break the alignment rule and will get an error. So our total size for `3` buffers will be `3 * 256 = 768B`. And since constant buffer is just a usual buffer it will be aligned by `64KB`. Finally we can finish our diagram.
 
 image::teapot_tutorial/shader_res_3.png[Shader Resources, 800, link="https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/images/teapot_tutorial/shader_res_3.png"]
 
 NOTE: The weird looking line `(sizeof(XMFLOAT4X4) + 255) & ~255` calculates the next multiple of `256`.
+
+One more time, since this is very important - in our case we have `1` buffer which can hold `3` matrices. In every frame we can safely update corresponding matrix. Let's call this frames _buffered frames_. But if we have all `3` frames in flight (i.e. gpu not finished to render any of them yet) we can't update out buffer and we have to wait.
 
 At this point we have shaders, device and resources but we're still not ready to draw. We don't have a buffer to draw, a swap chain to present a back buffer and some other things.
 
