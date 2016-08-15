@@ -920,7 +920,7 @@ void TeapotTutorial::createTransformsAndColorsDescHeap()
 }
 ----
 
-Here we're specifying that we need a heap for `2` descriptors. Remember - we have `2` structured buffers - transforms and colors. Next we're telling that we want this heap be accessible from the shader. Examples of non shader visible heaps are render target view or stream output. Also we're defining a type. Constant buffer, srv and uav descriptors can leave in the same heap and this is for good - having many heaps and switching between them is not performance friendly.
+Here we're specifying that we need a heap for `2` descriptors. Remember - we have `2` structured buffers - transforms and colors. Next we're telling that we want this heap to be accessible from the shader. Examples of non shader visible heaps are render target view or stream output. Also we're defining a type. Constant buffer, srv and uav descriptors can leave in the same heap and this is for good - having many heaps and switching between them is not performance friendly.
 
 Now when we have a heap we need to fill it with descriptors.
 
