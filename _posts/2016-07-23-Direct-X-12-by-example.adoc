@@ -264,13 +264,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
 // TeapotTutorial.cpp
 void TeapotTutorial::createRootSignature()
 {
-	/* We're using 3 root parameters:
-	- root descriptor for domain shader's constant buffer
-	- 2 root constants for hull shader's constant buffer
-	- descriptor table for 2 structured buffers
-	*/
-
-	// this is the range of decriptors in the descriptor heap
+	// #1
 	D3D12_DESCRIPTOR_RANGE dsTransformAndColorSrvRange;
 	ZeroMemory(&dsTransformAndColorSrvRange, sizeof(dsTransformAndColorSrvRange));
 	dsTransformAndColorSrvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // we're using structured buffers - it's a SRV
@@ -279,21 +273,21 @@ void TeapotTutorial::createRootSignature()
 	dsTransformAndColorSrvRange.RegisterSpace = 0; // this allows us to use the same register name if we use different space
 	dsTransformAndColorSrvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	// root table parameter
+	// #2
 	D3D12_ROOT_PARAMETER dsTransformAndColorSrv;
 	ZeroMemory(&dsTransformAndColorSrv, sizeof(dsTransformAndColorSrv));
 	dsTransformAndColorSrv.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	dsTransformAndColorSrv.DescriptorTable = { 1, &dsTransformAndColorSrvRange }; // one range
 	dsTransformAndColorSrv.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN; // only used in domain shader
 
-	// root descriptor parameter
+	//#3
 	D3D12_ROOT_PARAMETER dsObjCb;
 	ZeroMemory(&dsObjCb, sizeof(dsObjCb));
 	dsObjCb.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // constant buffer
 	dsObjCb.Descriptor = { 0, 0 }; // first register (b0) in first register space
 	dsObjCb.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN; // only used in domain shader
 
-	// root constants
+	// #4
 	D3D12_ROOT_PARAMETER hsTessFactorsCb;
 	ZeroMemory(&hsTessFactorsCb, sizeof(hsTessFactorsCb));
 	hsTessFactorsCb.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
@@ -302,7 +296,7 @@ void TeapotTutorial::createRootSignature()
 
 	vector<D3D12_ROOT_PARAMETER> rootParameters{ dsObjCb, hsTessFactorsCb, dsTransformAndColorSrv };
 	
-	// it's recommended to deny root signature access to the stages that are not interested in it
+	// #5
 	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags{
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | // we're using vertex and index buffers
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS |
@@ -310,6 +304,7 @@ void TeapotTutorial::createRootSignature()
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS
 	};
 
+	// #6
 	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	ZeroMemory(&rootSignatureDesc, sizeof(rootSignatureDesc));
 	rootSignatureDesc.NumParameters = static_cast<UINT>(rootParameters.size());
@@ -318,7 +313,7 @@ void TeapotTutorial::createRootSignature()
 	rootSignatureDesc.pStaticSamplers = nullptr; // we're not using texturing
 	rootSignatureDesc.Flags = rootSignatureFlags;
 
-	// we need to serialize first. This is useful because root siganture can be defined directly in a shader, not c++ app
+	// #7
 	ComPtr<ID3DBlob> signature;
 	ComPtr<ID3DBlob> error;
 	if (FAILED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, signature.ReleaseAndGetAddressOf(), error.ReleaseAndGetAddressOf())))
@@ -327,6 +322,7 @@ void TeapotTutorial::createRootSignature()
 	}
 
 	// finally create the root signature
+	// #8
 	if (FAILED(device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(rootSignature.ReleaseAndGetAddressOf()))))
 	{
 		throw(runtime_error{ "Error creating root signature" });
@@ -334,15 +330,19 @@ void TeapotTutorial::createRootSignature()
 }
 ----
 
+We're using `3` root parameters: root descriptor for domain shader's constant buffer, `2` root constants for hull shader's constant buffer and a descriptor table for `2` structured buffers.
+
+First we're creating a descriptor table - for this we need to specify the range of descriptors (*#1*) we'll use and pass this range to the parameter description (*#2*). Next we're creating a root descriptor for the domain constant buffer (*#3*). The final parameter is our root constants (*#4*). Notice how we specified shader visibility for each parameter. The api will validate this input and say us if there's something wrong. Also notice how we excluded certain stages from accessing root signature (*#5*) - this is recommended. Next we're creating root signature description struct (*#6*) with all the information we have so far and serializing it (*#7*). The last step is necessary because there's another way to create a root signature - directly in shader, not c++ app. And finally we're creating our root signature.
+
 NOTE: Directx team kindly provided a helper header that simplifies creation of different structures - `d3dx12.h`. Thought the header is not a part of `directx 12` it's https://msdn.microsoft.com/en-us/library/windows/desktop/dn708058(v=vs.85).aspx[well documented] in `msdn` and pretty solid. The `D3D12_DESCRIPTOR_RANGE` creation can be replaced with `CD3DX12_DESCRIPTOR_RANGE`, `D3D12_ROOT_PARAMETER` with `CD3DX12_ROOT_PARAMETER` and `D3D12_ROOT_SIGNATURE_DESC` with `CD3DX12_ROOT_SIGNATURE_DESC`. Using this helpers allow us to reduce and hence simplify code dramatically. I deliberatelly removed all `d3dx12.h` dependencies from my code just to show how api works under the hood.
 
-When you serializing the signature you can get errors which will be writtent to `error` instance. There're a lot of checks happens during serialization - for example if you overlap registers for the same shader (have two 'b0') you'll get an error. Very handy tool!
+When we serialize the signature we can get errors which will be writtent to `error` instance. There're a lot of checks happens during serialization - for example if we'll overlap registers for the same shader (have two `b0`) we'll get an error. Very handy tool!
 
 Now when we know about root signature we can update our diagram:
 
 image::teapot_tutorial/shader_res_2.png[Shader Resources, 800, link="https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/images/teapot_tutorial/shader_res_2.png"]
 
-It's a little bit messy but if you'll follow arrows you'll see that it's the same as the code. Notice how `hull` shader constant buffer want away (because we're using inlined root constants) and descriptor heap appeared. There's still some mistery left, namely the size of the `domain` shader constant buffer (intriguing, isn't it?).
+It's a little bit messy but if you'll follow arrows you'll see that it's the same as the code. Notice how hull shader constant buffer went away (because we're using inlined root constants) and descriptor heap for structured buffers appeared. There's still some mistery left, namely the size of the domain constant buffer (you'll learn about this later).
 
 The last method - `device->CreateRootSignature()` uses some `device` that we don't know yet. This is a software representation of the hardware - `ID3D12Device`. During `directx` evolution the api gets expanded and new interfaces appears that extend old and adds new functionality. At the moment of writing there's `ID3D12Device1` available. I really like the naming! Now it's time to initialize `directx`.
 
