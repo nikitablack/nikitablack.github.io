@@ -344,7 +344,7 @@ image::teapot_tutorial/shader_res_2.png[Shader Resources, 800, link="https://raw
 
 It's a little bit messy but if you'll follow arrows you'll see that it's the same as the code. Notice how hull shader constant buffer went away (because we're using inlined root constants) and descriptor heap for structured buffers appeared. There's still some mistery left, namely the size of the domain constant buffer (you'll learn about this later).
 
-The last method - `device->CreateRootSignature()` uses some `device` that we don't know yet. This is a software representation of the hardware - `ID3D12Device`. During `directx` evolution the api gets expanded and new interfaces appears that extend old and adds new functionality. At the moment of writing there's `ID3D12Device1` available. I really like the naming! Now it's time to initialize `directx`.
+The last method - https://msdn.microsoft.com/en-us/library/windows/desktop/dn899182(v=vs.85).aspx[`ID3D12Device::CreateRootSignature`] - uses some `device` that we don't know yet. This is a software representation of the hardware and we'll find how to create one in the next section.
 
 ===== DirectX Initialization
 
