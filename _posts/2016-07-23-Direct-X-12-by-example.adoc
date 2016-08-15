@@ -969,9 +969,9 @@ Next we're creating descriptor in the heap. Descritors for constant buffer, srv 
 
 *Constant buffers*
 
-The last resources left are constant buffers. If you refer back to root signature section you'll recal that we don't need resource and descriptor for tesselation factors for the `hull` shader - we store constants directly in the signature. So nothing to do here, moving on to the next buffer.
+The last resources left are constant buffers. If you refer back to theroot signature section you'll recal that we don't need resource and descriptor for tesselation factors for the hull shader since we're storing constants directly in the signature. So nothing to do here, moving on to the next buffer.
 
-`Constant buffer for `domain` shader stores a matrix. Recall that we store descriptor in root signature so no need in descriptor heap. But we still need a resource. If you'll look at the diagram we drew before you'll notice that we still don't know the size of the buffer. Let's figure out why.
+Constant buffer for domain shader stores a matrix. Recall that we store descriptor for this resource in the root signature so no need in descriptor heap. But we still need a resource itself. If you'll look at the diagram we drew before you'll notice that we still don't know the size of the buffer. Let's figure out why.
 
 As you remember the commands are stored in the queue and don't execute immediately after submission. Cpu and gpu have different timelines. Now imagine that we submitted a matrix for the frame `1` in constant buffer. Gpu is not executing yet. Now on cpu we're executing frame `2` and we need to update the matrix. We can do this but in this case the matrix from the frame `1` will be lost for the gpu. Or even worse - imagine that gpu starts reading the matrix at the moment we're updating it. How can we fix this? We can do exactly how we did when we created a default buffer. We can put a fence and stall the cpu until gpu finishes reading the matrix. As you understand this is not the way to go - when the cpu work gpu is idle and vice versa even if cpu and gpu can complete their tasks with the same speed. The solution is to have several buffers - when cpu updated one it can start to update second safely. This is the same reason why we have several back buffers - we're displaying one while writing to another.
 
