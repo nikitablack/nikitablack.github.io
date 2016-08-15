@@ -1490,7 +1490,7 @@ If you're thinking that after drawing we can relax - I'll upset you. We still ne
 
 Now when we're done with command list we need to close it (*#17*) and send it to the command queue for execution (*#18*).
 
-After calling `swapChain->Present()` (*#19*) we need to tell the gpu to increment corresponding fence after frame is finished (*#20*). Exactly how we did during default buffer creation. For example if we rendered a frame `0` we need to update a fence `0` for this frame and store the updated value (also with index `0`) on cpu. This way we can anytime check the current value of fence `0` and say for sure if it's done or not. And actually we're doing it in `waitFrameComplete()` function (*#21*):
+After calling https://msdn.microsoft.com/en-us/library/windows/desktop/bb174576(v=vs.85).aspx[`IDXGISwapChain->Present()`] (*#19*) we need to tell the gpu to increment corresponding fence after frame will finish (*#20*). Exactly how we did during default buffer creation. For example if we rendered a frame `0` we need to update a fence `0` for this frame and store the updated value (also with index `0`) on cpu. This way we can anytime check the current value of fence `0` and say for sure if it's done or not. And we're doing it in `waitFrameComplete()` function (*#21*):
 
 [source,cpp]
 ----
@@ -1513,11 +1513,11 @@ void Graphics::waitFrameComplete(UINT frameIndex)
 }
 ----
 
-One more time. Imagine we just finished with frame with index `2`. Since we have `3` buffered frames total the next index will be `0`. In `waitFrameComplete()` we're checking the status of frame `0` - if it's still in flight we have to stall and wait until fence will be equal to expected value.
+One more time - imagine we just finished a frame with index `2`. Since we have `3` buffered frames total the next index will be `0`. In `waitFrameComplete()` we're checking the status of frame `0` - if it's still in flight we have to stall and wait until fence will be equal to the expected value.
 
 ===== Cleanup
 
-One thing we didn't mention is cleaning. But it's pretty simple - since we used smart pointers we don't need to delete pointers manually. The only thing we need to take care of is to be sure that during interface desctruction gpu finished with it. We can do it with good old fences:
+One thing we didn't mention is cleaning. But it's pretty simple - since we used smart pointers we don't need to delete pointers manually. The only thing we need to take care of is to be sure that during resources desctruction gpu finished with them. We can do it with good old fences:
 
 [source,cpp]
 ----
