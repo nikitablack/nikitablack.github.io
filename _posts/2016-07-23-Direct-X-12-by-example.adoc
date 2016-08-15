@@ -1312,9 +1312,11 @@ We have everything for our demo - all resources and infrastructure. Now we'll ca
 // TeapotTutorial.cpp
 void TeapotTutorial::render()
 {
-	UINT frameIndex{ swapChain->GetCurrentBackBufferIndex() }; // #1
+	// #1
+	UINT frameIndex{ swapChain->GetCurrentBackBufferIndex() }; 
 
-	ComPtr<ID3D12CommandAllocator> commandAllocator{ commandAllocators[frameIndex] }; // #2
+	// #2
+	ComPtr<ID3D12CommandAllocator> commandAllocator{ commandAllocators[frameIndex] }; 
 
 	if (FAILED(commandAllocator->Reset()))
 	{
@@ -1458,55 +1460,17 @@ void TeapotTutorial::render()
 
 As usual we'll go step by step.
 
-`IDXGISwapChain3` have a very handy method https://msdn.microsoft.com/en-us/library/windows/desktop/dn903675(v=vs.85).aspx[IDXGISwapChain3::GetCurrentBackBufferIndex()] (*#1*). It shows the index of the current back buffer where we'll draw. In the beginnig the index is `0` and after calling `IDXGISwapChain::Present()` it will change to `2` (if we have more than `1` buffer of cource). So we don't need to track manually the current frame.
+`IDXGISwapChain3` have a very handy method https://msdn.microsoft.com/en-us/library/windows/desktop/dn903675(v=vs.85).aspx[IDXGISwapChain3::GetCurrentBackBufferIndex()] (*#1*). It shows the index of the current back buffer. In the beginnig the index is `0` and after calling `IDXGISwapChain::Present()` it will change to `2` (if we have more than `1` buffer of course). So we don't need to track manually the current frame.
 
-Using current frame index we can obtain a corresponding allocator (*#2*). We need to reset it before we can start to work with it. Remember that we need to be sure that there're no more commands in flight from this allocator so we'll not break anything (we'll discover syncronization later). Also we need to tell our command list that we're going to use this allocator with it.
+Using current frame index we can obtain a corresponding allocator (*#2*). We need to reset it before we can start to work with it. Remember that we need to be sure that there're no more commands in flight from this allocator so we'll not break anything. Also we need to tell our command list that we're going to use this allocator with it.
 
-Next we're setting pso, signature, viewport and scissor rect (*#3*). We didn't discuss the last two objects. They're pretty strightforward and created with other resources in constructor:
+Next we're setting pso, signature, viewport and scissor rect (*#3*). We didn't discuss the last two objects. They're pretty strightforward and created with other resources in constructor (please refer to https://github.com/nikitablack/directx-12/blob/master/TeapotTutorial/TeapotTutorial/TeapotTutorial.cpp[github]).
 
-[source,cpp]
-----
-// TeapotTutorial.h
-D3D12_VIEWPORT viewport;
-D3D12_RECT scissorRect;
-    
-// TeapotTutorial.cpp
-void TeapotTutorial::createViewport()
-{
-	RECT rect;
-	if (!GetClientRect(window->getHandle(), &rect))
-	{
-		throw(runtime_error{ "Error getting window size." });
-	}
-
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
-	viewport.Width = static_cast<FLOAT>(rect.right - rect.left);
-	viewport.Height = static_cast<FLOAT>(rect.bottom - rect.top);
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-}
-
-void TeapotTutorial::createScissorRect()
-{
-	RECT rect;
-	if (!GetClientRect(window->getHandle(), &rect))
-	{
-		throw(runtime_error{ "Error getting window size." });
-	}
-
-	scissorRect.left = 0;
-	scissorRect.top = 0;
-	scissorRect.right = rect.right - rect.left;
-	scissorRect.bottom = rect.bottom - rect.top;
-}
-----
-
-Also we need to get a pointer to the current back buffer (*#4*).
+Also we need to get a pointer to the current back buffer (*#4*) since we'll use it several times.
 
 Now when we have a back buffer we need to move it to the correct state. Since we're going to render a teapot into it the state should be `D3D12_RESOURCE_STATE_RENDER_TARGET` (*#5*).
 
-Next we need to say gpu that we need to use this back buffer as a render target. But we can't do it directly. Instead we need to set the view that describes this buffer. As you know all views are stored in descriptor heap. All we need to do is to calculate the correct offset from the heap start (*#6*). And we're doing the same for the depth buffer (we have only one depth buffer so the descriptor and heap have same addreses).
+Next we need to say gpu that we want to use this back buffer as a render target. But we can't do it directly. Instead we need to set the view that describes this buffer. As you know all views are stored in descriptor heap. All we need to do is to calculate the correct offset from the heap start (*#6*). And we're doing the same for the depth buffer (we have only one depth buffer so the descriptor and heap have same addreses).
 
 Next we're clearing render target and depth buffer to some initial values adn also specifying the topology we're going to use in this draw - `D3D_PRIMITIVE_TOPOLOGY_16_CONTROL_POINT_PATCHLIST` (*#7*).
 
