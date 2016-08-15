@@ -1044,9 +1044,9 @@ At this point we have shaders, device and resources but we're still not ready to
 
 You already know what are command lists, command allocator, fences - we used them when we created our resources. We need the same resources for rendering - after all rendering is just commands to the gpu what to do.
 
-NOTE: We could create on command list, allocator, fence for entire application and reuse it for rendering, resource creation but I decided to use more functional approach and for simplicity created an isolated function for resource creation.
+NOTE: We could create one command list, allocator, fence for entire application and reuse it for rendering, resource creation but I decided to use more functional approach and for simplicity created an isolated function for resource creation.
 
-Remember when we discussed matrix constant buffer we decided to use multiple buffers to avoid stalls and you know that we should use several resources for buffered frames (we're using `3` frames by default but this number can be changed). So for rendering we need to use `3` caommand allocators, `3` fences but only one command list. This is because when we're resetting a list it can be used immediately - the memory for commands managed by the allocator. So we can reuse the same list with several allocators.
+Remember when we discussed matrix constant buffer we decided to use multiple buffers to avoid stalls and you know that we should use several resources for buffered frames (we're using `3` frames by default but this number can be changed). So for rendering we need to use `3` command allocators, `3` fences but only one command list. This is because when we're resetting a list it can be reused immediately - the memory for commands managed by the allocator. So we can reuse the same list with several allocators.
 
 NOTE: If we would use multiple threads for commands creation submission, we have to use `3 * numTheads` allocators and `numThreads` lists. That's because when the list is in use with particular allocator it can't be used with another until it closed.
 
@@ -1115,7 +1115,7 @@ void Graphics::createFenceEventHandle()
 }
 ----
 
-All this code should be already familar to you. Here we're creating allocators, a list and we close it for now because we're not going to use it now, fences - one for each buffered frame and one handle. We need multiple fences by the same reason we need multiple allocators. Imagine we submitted commands for frame `1` and told the queue to set fence value after these commands for this frame finish. We do the same for frames `2` and `3`. Now when we're ready to reuse allocator `1` we need to check fence value `1` - not `2` or `3` (they still can be in use) and if the value is what we expect we can safely reuse memory. In other case we need to wait.
+All this code should be already familar to you. Here we're creating allocators, a list and we're closing it because we're not going to use it now, fences - one for each buffered frame and one handle. We need multiple fences by the same reason we need multiple allocators. Imagine we submitted commands for frame `1` and told the queue to set a fence after this frame. We do the same for frames `2` and `3`. Now when we're ready to reuse allocator `1` we need to check fence value `1` - not `2` or `3` (they still can be in use) and if the value is what we're expecting we can safely reuse the memory. In other case we need to wait.
 
 Next we'll create command queue and  swap chain:
 
@@ -1172,7 +1172,7 @@ void Graphics::createSwapChain()
 }
 ----
 
-You should be familar with command queue. The swap chain comcept didn't change since `directx 11` the only interesting thing is that you need to specify command queue during swap chain creation. Here `bufferCount` variable is a number of buffered frames.
+You should be familar with command queue. The swap chain concept didn't change since directx 11 the only interesting thing is that you need to specify command queue during swap chain creation. Here `bufferCount` variable is a number of buffered frames.
 
 Now it's time to create back buffers:
 
@@ -1218,9 +1218,9 @@ void Graphics::createDescriptoprHeapRtv()
 }
 ----
 
-When we specified during swap chain creation the number of back buffers we want buffers created implicitly so we don't need to create resources manualy. But we still need to create descriptors for all our back buffers. In `Graphics::getSwapChainBuffers()` we're obtaining pointers to created resources and in `Graphics::createDescriptoprHeapRtv()` we're creating a descriptor heap (recal that descriptors should be stored somewhere) with the type `D3D12_DESCRIPTOR_HEAP_TYPE_RTV` and big enough to store necessary amount of views. Next we're iterating over obtained buffer pointers and for every resource we're creating a corresponding view (recal that `device->GetDescriptorHandleIncrementSize()` is a cross vendor way to get descriptor size).
+When we specified the number of back buffers in swap chain creation they become created implicitly so we don't need to create resources manualy. But we still need to create descriptors for all our back buffers. In `Graphics::getSwapChainBuffers()` we're obtaining pointers to created resources and in `Graphics::createDescriptoprHeapRtv()` we're creating a descriptor heap (recal that descriptors should be stored somewhere) with the type `D3D12_DESCRIPTOR_HEAP_TYPE_RTV` and big enough to store necessary amount of views. Next we're iterating over obtained buffer pointers and for every resource we're creating a corresponding view (recal that `ID3D12Device::GetDescriptorHandleIncrementSize` is a cross vendor way to get descriptor size).
 
-Almost done. For our demo we need a depth buffer:
+For our demo we also need a depth buffer:
 
 [source,cpp]
 ----
