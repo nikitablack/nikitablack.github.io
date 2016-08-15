@@ -248,8 +248,7 @@ Also as we saw previously, the information about this resources should be stored
 
 3. For domain shader's structured buffers we will finaly use descriptor and descriptor heaps. That means we need to create a descriptor heap to hold `2` descriptors (one for every buffer) and desciptors itself. In order to pass information to the root signature we need to pack it to descriptor table. Descriptor table just tells which descriptor heap to use and the number of descriptors. When we need to access a buffer in a shader the runtime will first read the table, next will read the descriptor and finally will read the actual data. Just like `std::vector<XMFLOAT3*>*` in an example c++ function signature!
 
-A question: why do we need to use descriptors or tables if we can pass everything as root constants?
-The answer: root signature have a very limited size - `64DWORD` (`1DWORD` = `32bit`). That means we can store `64` ints inside it, or `4` matrices. If there's not enough place the data will be stored somewhere else and it will add one more level of indirection. Root descriptor asks for `2DWORD` and table only `1DWORD`.
+NOTE: "Why do we need to use descriptors or tables if we can pass everything as root constants?" Root signature has a very limited size - `64DWORD` (`1DWORD` == `32bit`). That means we can store `64` ints inside it, or `4` matrices. If there's not enough place the data will be stored somewhere else and it will add one more level of indirection. Root descriptor asks for `2DWORD` and table only `1DWORD`.
 
 NOTE: Interesting note - https://developer.nvidia.com/dx12-dos-and-donts#roots[Nvidia] guys recommend to use root descriptors as much as you can. But http://gpuopen.com/performance-root-signature-descriptor-sets/[AMD] guys recommend to use tables.
 
