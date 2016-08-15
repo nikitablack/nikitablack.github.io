@@ -1472,11 +1472,11 @@ Now when we have a back buffer we need to move it to the correct state. Since we
 
 Next we need to say gpu that we want to use this back buffer as a render target. But we can't do it directly. Instead we need to set the view that describes this buffer. As you know all views are stored in descriptor heap. All we need to do is to calculate the correct offset from the heap start (*#6*). And we're doing the same for the depth buffer (we have only one depth buffer so the descriptor and heap have same addreses).
 
-Next we're clearing render target and depth buffer to some initial values adn also specifying the topology we're going to use in this draw - `D3D_PRIMITIVE_TOPOLOGY_16_CONTROL_POINT_PATCHLIST` (*#7*).
+Next we're clearing render target and depth buffer to some initial values and also specifying the topology we're going to use in this draw - `D3D_PRIMITIVE_TOPOLOGY_16_CONTROL_POINT_PATCHLIST` (*#7*).
 
-Next we need to specify vertex buffer. Again, we're doing it with a view (*#8*).
+Next we need to specify a vertex buffer. Again, we're doing it with a view (*#8*).
 
-Do you remember how we created our root signature? The second parameter were `2` root constants for the hull shader. We're using single `tessFactor` constant for both edge and inside factors and we're setting this constant with `commandList->SetGraphicsRoot32BitConstants()` method specifying the position in the root signature (*#9*).
+Do you remember how we created our root signature? The second parameter were `2` root constants for the hull shader. We're using single `tessFactor` constant for both edge and inside factors and we're setting this constant with https://msdn.microsoft.com/en-us/library/windows/desktop/dn903910(v=vs.85).aspx[`ID3D12GraphicsCommandList::SetGraphicsRoot32BitConstants()`] method specifying the position in the root signature (*#9*).
 
 Third parameter in the root signature was a descriptor table. Recall that table points to continious range of descriptors in descriptor heap. During parameter creation we specified that we'll use `2` descriptors. All we have to do is to pass an address of the first descriptor in `commandList->SetGraphicsRootDescriptorTable()` method (*#10*). But we before we need to set a correct descriptor heap or we'll get an error.
 
