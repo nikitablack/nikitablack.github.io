@@ -1535,7 +1535,9 @@ Here I just iterate over all buffered frames and check that all they are done.
 
 ===== Conclusion
 
-Wow, that's was a really long journey. As you can see there's a lot of code for such a simple application but most of this code can be abstracted with reusable structures like ones in `d3dx12.h`. What we did today is just scratched a surface - `directx12` api is very complex and still evolving. But I encourage you to continue investigation - after all it's so fun :)
+Wow, that's was a really long journey. As you can see there's a lot of code for such a simple application but most of this code can be abstracted with reusable structures like ones in `d3dx12.h`.
+
+What we did today is just scratched a surface - directx12 api is very complex and still evolving. But I encourage you to continue investigation - after all it's so fun :)
 
 The video below shows the result of work we done. And https://github.com/nikitablack/directx-12/tree/master/TeapotTutorial/TeapotTutorial[here] is the full source.
 
