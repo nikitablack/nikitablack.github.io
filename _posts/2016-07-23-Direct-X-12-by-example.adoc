@@ -731,6 +731,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> createDefaultBuffer(ID3D12Device* device,
 	// #9
 	commandList->CopyBufferRegion(defaultBuffer.Get(), 0, uploadBuffer.Get(), 0, bufferSize);
 
+	// #10
 	D3D12_RESOURCE_BARRIER barrierDesc;
 	ZeroMemory(&barrierDesc, sizeof(barrierDesc));
 	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -797,7 +798,7 @@ When we have a list filled with commands we need to tell gpu to do some work. We
 
 Next we're mapping the system memory to the upload buffer (*#8*) and creating out first command with https://msdn.microsoft.com/en-us/library/windows/desktop/dn903856(v=vs.85).aspx[`ID3D12GraphicsCommandList::CopyBufferRegion()`] (*#9*). It will tell the gpu to copy `bufferSize` amount of data from upload buffer (which actually points to the system memory) to default buffer.
 
-After we finished with an update we need to transition default buffer to the state that will allow correct access to it. For different resources this state should be different. For example for constand or vertex buffer it should be `D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER`, for structured buffer - `D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE`. So we creating a command that tells gpu to put a transition barrier to necessary state. During this transition gpu will not touch the resource and will wait when transition is done. As you may guess this is an expensive operation. We can use helper structure `CD3DX12_RESOURCE_BARRIER`.
+After we finished with a resource update we need to transition default buffer to the state that will allow correct access to it. For different resources this state is different. For example for constant or vertex buffer it should be `D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER`, for structured buffer - `D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE`. So we creating a command that tells gpu to put a transition barrier to necessary state (*#10*). During this transition gpu will not touch the resource and will wait when transition is done. As you may guess this is an expensive operation. We can use helper structure `CD3DX12_RESOURCE_BARRIER` here.
 
 Finally we're telling gpu to execute our commands with `commandQueue->ExecuteCommandLists()` method. But before we need to close command list or we'll get an error. If we'll exit `createDefaultBuffer()` method now we'll get an undefined behavior. When we're telling the gpu to execute a list it doesn't start to do it immediately. Instead the commands are queued and nobody knows when they start or finish. That mean that if we leave now the upload buffer will be destroyed (we're not keeping pointer to it) and when the gpu will be ready to execute a copy command the source will not be valid any more.
 
