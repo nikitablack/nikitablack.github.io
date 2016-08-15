@@ -348,7 +348,7 @@ The last method - https://msdn.microsoft.com/en-us/library/windows/desktop/dn899
 
 ===== DirectX Initialization
 
-As I told before base initialization is done in the base class called `Graphics`. This is how we create a device:
+As you remember the base initialization is done in the base class called `Graphics`. This is how we create a device:
 
 [source,cpp]
 ----
@@ -365,7 +365,7 @@ void Graphics::createDevice()
 }
 ----
 
-Simple enough. But what is this `adapter`. We can use `nullptr` instead and let the api to choose the default adapter, but I'll show here how we can select among many adapters. Similar to `device` it's an `IDXGIAdapter` interface that represents a gpu. It's hard for me to tell why do we need two similar interfaces that represents basically the same thing. Let's think that `dxgi` interface provides different information about gpu, but `d3d` interface allows us to manipulate it - create different resources, change states. We'll use `IDXGIAdapter3` interface:
+Simple enough. But what is this `adapter`? We can use `nullptr` instead and let the api to choose the default adapter, but let's see how we can select among many adapters that exist in our system. https://msdn.microsoft.com/en-us/library/windows/desktop/bb174523(v=vs.85).aspx[`IDXGIAdapter`] is similar to `ID3D12Device` interface - it also a presentation of a gpu. It's hard for me to tell why do we need two similar interfaces that basically represent the same thing. Let's think that `dxgi` interface provides different information about a gpu itself (vendor, name etc.), but `d3d` interface allows us to manipulate it - create different resources, change states.
 
 [source,cpp]
 ----
@@ -402,7 +402,7 @@ void Graphics::getAdapter()
 }
 ----
 
-If you thought we're finished you were strongly mistaken. We're taking the first adapter that is not software (starting from `Windows 8` there's always a software adapter presented in the system). But you can use different logic - like checking the vendor. For enumerating we're using some `factory` which is `IDXGIFactory4` interface. So let's grab it:
+Here we just grab the first adapter that is not software (starting from `Windows 8` there's always a software adapter presented in the system). But you can use different logic - like checking a vendor. For enumerating we're using some `factory` which is https://msdn.microsoft.com/en-us/library/windows/desktop/bb174535(v=vs.85).aspx[`IDXGIFactory]` interface. So let's create it too:
 
 [source,cpp]
 ----
@@ -432,13 +432,17 @@ void Graphics::createFactory()
 }
 ----
 
-Finally no more new dependent interfaces! Thought there's one which we not depend on - `ID3D12Debug`. You should always use it with debug configuration. During an error it writes detailed message to the output. Now you can compile it successfully thought you'll not see anything on the screen. That's one of the downside of programming with `directx` - you can't have some intermediate results like render only one triangle from the teapot or shade only one pixel. You need to write a lot of code for both cpu and gpu to find the black screen. Nevertheless we'll continue. At yhis point we have defined shaders and a signature for the input. But the gpu doesn't know about our shaders - we only have several text files that are useful for us - not the hardware. As you have guessed we need to load out shaders to the graphics card. First we need to compile them. Later we'll use a new addtition to the api which allows us to send this data (and a lot of other) to the gpu - pipeline state object.
+Finally no more new dependent interfaces! Thought there's one which we not depend on - https://msdn.microsoft.com/en-us/library/windows/desktop/dn950153(v=vs.85).aspx[`ID3D12Debug`]. You should always use it with debug configuration. During an error it writes detailed message to the output.
+
+Now we can compile the code we have successfully thought we'll not see anything on the screen. That's one of the downside of programming with directx - we can't have some intermediate results like render only one triangle from the teapot or shade only one pixel. We need to write a lot of code for both cpu and gpu just to find the black screen or artifacts.
+
+At this point we have defined shaders and a signature. But the gpu doesn't know about our shaders - we only have several text files that are useful for us - not the hardware. As you have guessed we need to load our shaders to the graphics card. But first we need to compile them. Later we'll use a new addtition to the api which allows us to send this compiled data (and a lot of other stuff) to the gpu - pipeline state object (or pso for short).
 
 ===== Pipeline State Object
 
-As you know the gpu is a state machine - once it's setted up it will do the same actions again and again. Until you change a state. In `directx 12` the entire gpu state (plus or minus some minor things) is represented by `ID3D12PipelineState` interface. That mean that if you want to render the same object in wireframe and solid you have to create `2` such objects which will differ only by fill mode. State creation is a heavy operation that should be avoided in runtime. Instead all states that you need for your scene should be created as a part of initialization.
+As you know the gpu is a state machine - once it's setted up it will do the same actions over and over again until we change a state. In directx 12 the entire gpu state (plus or minus some minor things) is represented by https://msdn.microsoft.com/en-us/library/windows/desktop/dn788705(v=vs.85).aspx[`ID3D12PipelineState`] interface. This means that if you want to render the same object in wireframe and solid you have to create `2` such objects which will differ only by fill mode. State creation is a heavy operation that should be avoided in runtime. Instead all states that you need for your scene should be created as a part of initialization.
 
-In our demo we'll use `2` states - one for solid rendering and backface culling and another for wireframe rendering and without culling. Creating a state means filling a lot of structures and setting shaders. We're compiling our shaders as a build process in Visual Studio. Taht means that at this point you should have `cso` files somewhere which we need to load. The loading done like this:
+In our demo we'll use `2` states - one for solid rendering and backface culling and another for wireframe rendering and without culling. Creating a state means filling a lot of structures and setting shaders. We're compiling our shaders as a build process in Visual Studio. This means that during application start we should have `cso` files somewhere which we need to load. The loading is very simple and can be done like this:
 
 [source,cpp]
 ----
@@ -473,7 +477,7 @@ void TeapotTutorial::createShaders()
 }
 ----
 
-And the pipeline state creation (remember - we have `2` states):
+And now the pipeline state creation (remember - we have `2` states):
 
 [source,cpp]
 ----
@@ -496,11 +500,13 @@ void TeapotTutorial::createPipelineStateSolid()
 
 ComPtr<ID3D12PipelineState> TeapotTutorial::createPipelineState(D3D12_FILL_MODE fillMode, D3D12_CULL_MODE cullMode)
 {
+	// #1
 	vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 
+	// #2
 	D3D12_RASTERIZER_DESC rasterizerDesc;
 	ZeroMemory(&rasterizerDesc, sizeof(rasterizerDesc));
 	rasterizerDesc.FillMode = fillMode;
@@ -515,6 +521,7 @@ ComPtr<ID3D12PipelineState> TeapotTutorial::createPipelineState(D3D12_FILL_MODE 
 	rasterizerDesc.ForcedSampleCount = 0;
 	rasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
+	// #3
 	D3D12_BLEND_DESC blendDesc;
 	ZeroMemory(&blendDesc, sizeof(blendDesc));
 	blendDesc.AlphaToCoverageEnable = FALSE;
@@ -527,6 +534,7 @@ ComPtr<ID3D12PipelineState> TeapotTutorial::createPipelineState(D3D12_FILL_MODE 
 		D3D12_COLOR_WRITE_ENABLE_ALL
 	};
 
+	// #4
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc;
 	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
 	depthStencilDesc.DepthEnable = TRUE;
@@ -539,6 +547,7 @@ ComPtr<ID3D12PipelineState> TeapotTutorial::createPipelineState(D3D12_FILL_MODE 
 	depthStencilDesc.FrontFace = defaultStencilOp;
 	depthStencilDesc.BackFace = defaultStencilOp;
 
+	// #5
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc;
 	ZeroMemory(&pipelineStateDesc, sizeof(pipelineStateDesc));
 	pipelineStateDesc.InputLayout = { inputElementDescs.data(), static_cast<UINT>(inputElementDescs.size()) };
@@ -567,9 +576,9 @@ ComPtr<ID3D12PipelineState> TeapotTutorial::createPipelineState(D3D12_FILL_MODE 
 }
 ----
 
-Wow, that's a lot of code. Let's step through the code line by line. First we create input layout. In `vertex` shader we're expecting only one input - the control point position so we have only one entry in `D3D12_INPUT_ELEMENT_DESC` vector. Next we create a rasterizer state. This structure can be replaced with a helper `CD3DX12_RASTERIZER_DESC` to make it shorter. Next is blend (can be replaced with `CD3DX12_BLEND_DESC`). Next is depth stencil (`CD3DX12_DEPTH_STENCIL_DESC`). And finally pipeline state object itself where we assign all the things we created. I think it should be clear from the names what each field represents so I won't describe it in detail.
+Wow, that's a lot of code. Let's step through the code line by line. First we create input layout (*#1*). In vertex shader we're expecting only one input - the control point position so we have only one entry in https://msdn.microsoft.com/en-us/library/windows/desktop/dn770377(v=vs.85).aspx[`D3D12_INPUT_ELEMENT_DESC`] vector. Next we're creating a rasterizer state (*#2*). This structure can be replaced with a helper `CD3DX12_RASTERIZER_DESC` to make it shorter. Next is blend (*#*) - it can be replaced with `CD3DX12_BLEND_DESC`. Next is depth stencil (*#4* and `CD3DX12_DEPTH_STENCIL_DESC`). And finally pipeline state object itself where we assign all the things we created (*#5*). All these structures are pretty simple and I think it should be clear from the names what each field represent so I won't describe it in detail.
 
-NOTE: Interesting thing - thought we assigned a root signature to pipeline state this assignmend done only for validation, i.e. the api will check that shader inputs correspond to signature parameters. After pipeline state creation the information about root signature is lost and we need to assign it again before drawing.
+NOTE: Interesting thing - thought we assigned a root signature to pso this assignmend done only for validation, i.e. the api will check that shader inputs correspond to signature parameters. After pipeline state creation the information about root signature is lost and we need to assign it again before drawing.
 
 Yay, we have shaders, we have signature! But we still don't have resources. Let's fix that.
 
