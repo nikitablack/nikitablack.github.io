@@ -1480,13 +1480,13 @@ Do you remember how we created our root signature? The second parameter were `2`
 
 Third parameter in the root signature was a descriptor table. Recall that the table points to a continious range of descriptors in descriptor heap. During parameter creation we specified that we'll use `2` descriptors. All we have to do is to pass an address of the first descriptor in https://msdn.microsoft.com/en-us/library/windows/desktop/dn903912(v=vs.85).aspx[`ID3D12GraphicsCommandList->SetGraphicsRootDescriptorTable()`] method (*#10*). But before we need to set a correct descriptor heap or we'll get an error.
 
-Next we're doing some math (*#11*) - creating a projection matrix, view matrix, rotating our model depending on mouse position. And updating our upload constant buffer with `constBuffer->Map()` method (*#12*). As you remember our constant buffer store data for all our buffered frames. In order to write to the correct place we need to use a correct offset from the start of the buffer (don't forget about `256B` alignment).
+Next we're doing some math (*#11*) - creating a projection matrix, view matrix, rotating our model depending on mouse position. And updating our upload constant buffer with https://msdn.microsoft.com/en-us/library/windows/desktop/dn788712%28v=vs.85%29.aspx[`ID3D12Resource->Map()`] method (*#12*). As you remember our constant buffer store data for all our buffered frames. In order to write to the correct place we need to use a correct offset from the start of the buffer (don't forget about `256B` alignment).
 
 Now when we have updated constant buffer we're ready to finish with the root signature. We're setting the last parameter - root descriptor as a first parameter not forgetting the correct offset from descriptor heap start (*#13*).
 
 Next we're setting index buffer via view (*#14*) and drawing (*#15*).
 
-If you're thinking that after drawing we can relax - you're wrong. We still need some work to do. Remember that before drawing to a back buffer we set it's state as `D3D12_RESOURCE_STATE_RENDER_TARGET`. In order to be presented the buffer have to be in `D3D12_RESOURCE_STATE_PRESENT` state (*#16*).
+If you're thinking that after drawing we can relax - I'll upset you. We still need some work to do. Remember that before drawing to a back buffer we set it's state as `D3D12_RESOURCE_STATE_RENDER_TARGET`. In order to be presented the buffer have to be in `D3D12_RESOURCE_STATE_PRESENT` state (*#16*).
 
 Now when we're done with command list we need to close it (*#17*) and send it to the command queue for execution (*#18*).
 
