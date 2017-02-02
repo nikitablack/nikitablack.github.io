@@ -1,0 +1,168 @@
+= Data Oriented Design by example
+:hp-tags: c++, dod
+
+В последнее время все чаще можно встретить обсуждение интересной, но не очень популярной парадигмы — так называемой Data Oriented Design (DOD). Если вы устраиваетесь на работу, связанную с высокопроизводительными вычислениями, будьте готовы к соответствующим вопросам. Но я был очень очень удивлен, узнав, что некоторые мои коллеги не слышали об этом подходе и после недолго обсуждения отнеслись к нему скептически. В этой статье я постараюсь сравнить традиционный OOP подход с DOD.
+
+===== Что такое DOD?
+
+Данная статья была задумана как попытка сравнить разные подходы без попытки объянить их суть. На хабре есть несколько статей по теме, например эта. Стоит также помотреть видео с конференции https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[CppCon]. Но в двух словах, DOD — это способ оперировать данными в cache friendly манере. Звучит непонятно, пример объяснит лучше.
+
+[source,cpp]
+----
+#include <chrono>
+#include <iostream>
+#include <vector>
+
+using namespace std;
+using namespace std::chrono;
+
+struct S
+{
+	uint64_t u;
+	double d;
+	int i;
+	float f;
+};
+
+struct Data
+{
+	vector<uint64_t> vu;
+	vector<double> vd;
+	vector<int> vi;
+	vector<float> vf;
+};
+
+int test1(S const & s1, S const & s2)
+{
+	return s1.i + s2.i;
+}
+
+int test2(Data const & data, size_t const ind1, size_t const ind2)
+{
+	return data.vi[ind1] + data.vi[ind2];
+}
+
+int main()
+{
+	size_t const N{ 30000 };
+	size_t const R{ 10 };
+
+	vector<S> v(N);
+	Data data;
+	data.vu.resize(N);
+	data.vd.resize(N);
+	data.vi.resize(N);
+	data.vf.resize(N);
+
+	int result{ 0 };
+
+	cout << "test #1" << endl;
+	for (uint32_t i{ 0 }; i < R; ++i)
+	{
+		auto const start{ high_resolution_clock::now() };
+		for (size_t a{ 0 }; a < v.size() - 1; ++a)
+		{
+			for (size_t b{ a + 1 }; b < v.size(); ++b)
+			{
+				result += test1(v[a], v[b]);
+			}
+		}
+		cout << duration<float>{ high_resolution_clock::now() - start }.count() << endl;
+	}
+
+	cout << "test #2" << endl;
+	for (uint32_t i{ 0 }; i < R; ++i)
+	{
+		auto const start{ high_resolution_clock::now() };
+		for (size_t a{ 0 }; a < v.size() - 1; ++a)
+		{
+			for (size_t b{ a + 1 }; b < v.size(); ++b)
+			{
+				result += test2(data, a, b);
+			}
+		}
+		cout << duration<float>{ high_resolution_clock::now() - start }.count() << endl;
+	}
+    
+    return result;
+}
+----
+
+Второй тест выполняется быстрее на 30% (в VS2017 и gcc7.0.1). Но почему?
+
+Размер структуры S равен 24 байтам. Мой процессор (Intel Core i7) имеет 32KB кэш на ядро с 64B кэш-линией (cache line). Это значит, что при запросе данных из памяти в одну кэш-линию полностью поместятся только две структуры S. В первом тесте я читаю только одно int поле, т.е. при одном обращении к памяти в одной кэш-линии будет только 2 (иногда 3) нужных нам поля. Во втором тесте я читаю такое же int значение, но из вектора. std::vector гарантирует последоватеьность данных. Это означает, что при обращении к памяти в одной кэш-линии будет 16 (64KB / sizeof(int) = 16) нужных нам значений. Получается, что во втором тесте мы обращаемся к памяти реже. A обращение к памяти, как известно, является слабым звеном в современных процессорах.
+
+===== Как дела обстоят на практике?
+
+Пример выше наглядно показывает преимущества использования SoA (Struct of Arrays) вместо AoS (Array of Structs), но этот пример из разряда Hello World, т.е. далек от реальной жизни. В реальном коде много зависимостей и специфических данных, которые, возможно не дадут прироста производительности. К тому же, если в тестах мы будем обращаться ко всем полям структуры, разницы в производительности не будет.
+
+Чтобы понять реальность применения подхода я решил написать более-менее комплексный код, используя обе техники и сравнить результаты. Пускай это будет 2d симуляция твердых тел — мы создадим N выпуклых многоугольников, зададим параметры — массу, скорость и т.п. и посмотрим, сколько объектов мы сможем симулировать оставаясь на отметке 30 fps.
+
+===== Array of Structures
+*Первая версия программы*
+
+Исходный код для первой версии программы можно взять из https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[этого коммита]. Сейчас мы кратко пробежимся по коду.
+
+Для простоты программа написана для Windows и использует DirectX11 для отрисовки. Цель этой статьи — сравнение производительности на процессоре, поэтому графику мы обсуждать не будем. Класс Shape, который представляет физическое тело, выглядит так:
+
+[source,cpp]
+----
+class Shape
+{
+public:
+	Shape(uint32_t const numVertices, float radius, math::Vec2 const pos, math::Vec2 const vel, float m, math::Color const col);
+
+	static Shape createWall(float const w, float const h, math::Vec2 const pos);
+
+public:
+	math::Vec2 position{ 0.0f, 0.0f };
+	math::Vec2 velocity{ 0.0f, 0.0f };
+	math::Vec2 overlapResolveAccumulator{ 0.0f, 0.0f };
+	float massInverse;
+	math::Color color;
+	std::vector<math::Vec2> vertices;
+	math::Bounds bounds;
+};
+----
+
+* Назначение position и velocity, думаю, очевидно. vertices — вершины фигуры заданные рандомно.
+* bounds — это ограничивающий прямоугольник, который полностью содержит фигуру — используется для предварительной проверки пересечений.
+* massInverse — единица, разделенная на массу — мы будем использовать только это значение, поэтому будем хранить его, вместо массы.
+* color — цвет — используется только при рендеринге, но хранится в экземляре фигуры, задается рандомно.
+* overlapResolveAccumulator см. пояснение ниже.
+
+image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/1.png["Teapot", 400]
+
+Когда треугольник пересекается с фигурой a, мы должны подвинуть его немного, чтобы исключить наложение фигур друг на друга. Также мы должны пересчитать bounds. Но после перемещения треугольник пересекает другую фигуру — b, и мы снова должны переместить его и снова пересчитать bounds. Заметьте, что после второго перемещения треугольник снова окажется над фигурой a. Чтобы избежать повторных вычислений мы будем хранить величину, на которую нужно переместить треугольник в специальном аккумуляторе — overlapResolveAccumulator — и позже будем перемещать фигуру на это значение, но только один раз.
+
+Сердце нашей программы — это метод ShapesApp::update(). Вот его упрощенный вариант:
+
+[source,cpp]
+----
+void ShapesApp::update(float const dt)
+{
+	float const dtStep{ dt / NUM_PHYSICS_STEPS };
+	for (uint32_t s{ 0 }; s < NUM_PHYSICS_STEPS; ++s)
+	{
+		updatePositions(dtStep);
+
+		for (size_t i{ 0 }; i < _shapes.size() - 1; ++i)
+		{
+			for (size_t j{ i + 1 }; j < _shapes.size(); ++j)
+			{
+				CollisionSolver::solveCollision(_shapes[i].get(), _shapes[j].get());
+			}
+		}
+	}
+}
+----
+
+Каждый кадр мы вызываем ShapesApp::updatePositions() метод, который меняет положение каждой фигуры и рассчитывает новый Shape::bounds. Затем мы проверяем каждую фигуру с каждой другой на пересечение — CollisionSolver::solveCollision(). Я использовал Separating Axis Theorem (SAT). Все эти проверки мы делаем NUM_PHYSICS_STEPS раз. Эта переменная служит нескольким целям — во-первых, физика получается более стабильная, во-вторых, она ограничивает количество объектов на экране. с++ быстр, очень быстр, и без этой переменной у нас будут десятки тысяч фигур, что замедлит отрисовку. Я использовал NUM_PHYSICS_STEPS = 20
+
+На моем стареньком ноутбуке эта программа рассчитывает 500 фигур максимум, перед тем, как fps начинает падать ниже 30. Фуууу, всего 500???! Согласен, немного, но не забывайте, что каждый кадр мы повторяем рассчеты 20 раз.
+
+Думаю, что стоит разбавить статью скриншотами, поэтому вот:
+
+image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/2.png["Teapot", 600]
+
+*Оптимизация номер 1. Spatial Grid*
