@@ -3,7 +3,7 @@
 
 The last couple of years interesting but not so popular paradigm appears more often. I'm talking about *Data Oriented Design* (*DOD*). If you're searching for a job that involves high-performance calculations be ready to hear corresponding questions. And I was surprised knowing that some my colleagues never hear about the approach and after short discussion stayed skeptical. In this article I'll try to compare traditional *OOP* approach with *DOD* on a real world example.
 
-===== Что такое DOD?
+===== What is DOD?
 
 Данная статья была задумана как попытка сравнить разные подходы без попытки объянить их суть. На хабре есть несколько статей по теме, например эта. Стоит также помотреть видео с конференции https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[CppCon]. Но в двух словах, DOD — это способ оперировать данными в cache friendly манере. Звучит непонятно, пример объяснит лучше.
 
