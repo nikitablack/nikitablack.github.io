@@ -1,7 +1,7 @@
 = Data Oriented Design by example
 :hp-tags: c++, dod
 
-В последнее время все чаще можно встретить обсуждение интересной, но не очень популярной парадигмы — так называемой Data Oriented Design (DOD). Если вы устраиваетесь на работу, связанную с высокопроизводительными вычислениями, будьте готовы к соответствующим вопросам. Но я был очень очень удивлен, узнав, что некоторые мои коллеги не слышали об этом подходе и после недолго обсуждения отнеслись к нему скептически. В этой статье я постараюсь сравнить традиционный OOP подход с DOD.
+The last couple of years interesting but not so popular paradigm appears more often. I'm talking about *Data Oriented Design* (*DOD*). If you're searching for a job that involves high-performance calculations be ready to hear corresponding questions. And I was surprised knowing that some my colleagues never hear about the approach and after short discussion stayed skeptical. In this article I'll try to compare traditional *OOP* approach with *DOD* on a real world example.
 
 ===== Что такое DOD?
 
