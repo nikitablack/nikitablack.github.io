@@ -3,6 +3,8 @@
 
 The last couple of years interesting but not so popular paradigm appears more often. I'm talking about *Data Oriented Design* (*DOD*). If you're searching for a job that involves high-performance calculations be ready to hear corresponding questions. And I was surprised knowing that some my colleagues have never heard about the approach and after the short discussion stayed skeptical. In this article I'll try to compare traditional *OOP* approach with *DOD* on a real world example.
 
+The Russian version of the post is https://habrahabr.ru/post/321106/[here].
+
 ===== What is DOD?
 
 This post is an attempt to compare different programming approach without trying to explain them. I assume you know what we'll talk about. There're a lot of articles on the web about the subject. https://fuzzyreflection.com/2016/07/14/maximizing-code-performance-by-thinking-data-first-part-1/[This one] is good. https://www.youtube.com/watch?v=rX0ItVEVjHc[This video] from *CppCon* also is a _must see_. But in layman's terms, *DOD* is a way to work with data in _cache friendly_ manner. Better see an example:
