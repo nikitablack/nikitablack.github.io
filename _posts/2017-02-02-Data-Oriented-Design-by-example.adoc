@@ -101,19 +101,20 @@ In order to understand possibility to apply *DOD* I decided to write more or les
 ===== Array of Structures
 *Initial program*
 
-Исходный код для первой версии программы можно взять из https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[этого коммита]. Сейчас мы кратко пробежимся по коду.
+Source code for this version can be found in https://github.com/nikitablack/cpp-tests/tree/b672ca106ef5c88a23d7f8e2a909e07d6e54ca4a/data_oriented/oop/oop[this] commit. Now we briefly run through the code.
 
-Для простоты программа написана для Windows и использует DirectX11 для отрисовки. Цель этой статьи — сравнение производительности на процессоре, поэтому графику мы обсуждать не будем. Класс Shape, который представляет физическое тело, выглядит так:
+For simplicity reasons the program is written in Visual Studio for Windows and uses DirectX11 for rendering.
+
+NOTE: I'm using the latest VS2017 and some features of c++17, namely http://en.cppreference.com/w/cpp/utility/optional[std::optional]. Intersection detector takes two objects and returns by value a struct with intersection information - normal, penetration depth. Previously I used a boolean flag inside that structure that showed was there an intersection at all. With the new `std::optional` I got rid of that flag and the code became more clear.
+
+The purpose of this article is to show some numbers on CPU so we'll not discuss graphics.
+
+The `Shape` class which represents physical body looks like this (simplified):
 
 [source,cpp]
 ----
 class Shape
 {
-public:
-	Shape(uint32_t const numVertices, float radius, math::Vec2 const pos, math::Vec2 const vel, float m, math::Color const col);
-
-	static Shape createWall(float const w, float const h, math::Vec2 const pos);
-
 public:
 	math::Vec2 position{ 0.0f, 0.0f };
 	math::Vec2 velocity{ 0.0f, 0.0f };
