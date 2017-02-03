@@ -1,0 +1,3527 @@
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Simply about complex]]></title><description><![CDATA[c++, graphics and stuff]]></description><link>https://nikitablack.github.io</link><image><url>https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/images/cover.png</url><title>Simply about complex</title><link>https://nikitablack.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Fri, 03 Feb 2017 16:30:40 GMT</lastBuildDate><atom:link href="https://nikitablack.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Data Oriented Design by example]]></title><description><![CDATA[<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The last couple of years interesting but not so popular paradigm appears more often. I&#8217;m talking about <strong>Data Oriented Design</strong> (<strong>DOD</strong>). If you&#8217;re searching for a job that involves high-performance calculations be ready to hear corresponding questions. And I was surprised knowing that some my colleagues have never heard about the approach and after the short discussion stayed skeptical. In this article I&#8217;ll try to compare traditional <strong>OOP</strong> approach with <strong>DOD</strong> on a real world example.</p>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_what_is_dod">What is DOD?</h5>
+<div class="paragraph">
+<p>This post is an attempt to compare different programming approach without trying to explain them. I assume you know what we&#8217;ll talk about. There&#8217;re a lot of articles on the web about the subject. <a href="https://fuzzyreflection.com/2016/07/14/maximizing-code-performance-by-thinking-data-first-part-1/">This one</a> is good. <a href="https://www.youtube.com/watch?v=rX0ItVEVjHc">This video</a> from <strong>CppCon</strong> also is a <em>must see</em>. But in layman&#8217;s terms, <strong>DOD</strong> is a way to work with data in <em>cache friendly</em> manner. Better see an example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#include &lt;chrono&gt;
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+
+using namespace std;
+using namespace std::chrono;
+
+struct S
+{
+	uint64_t u;
+	double d;
+	int i;
+	float f;
+};
+
+struct Data
+{
+	vector&lt;uint64_t&gt; vu;
+	vector&lt;double&gt; vd;
+	vector&lt;int&gt; vi;
+	vector&lt;float&gt; vf;
+};
+
+int test1(S const &amp; s1, S const &amp; s2)
+{
+	return s1.i + s2.i;
+}
+
+int test2(Data const &amp; data, size_t const ind1, size_t const ind2)
+{
+	return data.vi[ind1] + data.vi[ind2];
+}
+
+int main()
+{
+	size_t const N{ 30000 };
+	size_t const R{ 10 };
+
+	vector&lt;S&gt; v(N);
+	Data data;
+	data.vu.resize(N);
+	data.vd.resize(N);
+	data.vi.resize(N);
+	data.vf.resize(N);
+
+	int result{ 0 };
+
+	cout &lt;&lt; "test #1" &lt;&lt; endl;
+	for (uint32_t i{ 0 }; i &lt; R; ++i)
+	{
+		auto const start{ high_resolution_clock::now() };
+		for (size_t a{ 0 }; a &lt; v.size() - 1; ++a)
+		{
+			for (size_t b{ a + 1 }; b &lt; v.size(); ++b)
+			{
+				result += test1(v[a], v[b]);
+			}
+		}
+		cout &lt;&lt; duration&lt;float&gt;{ high_resolution_clock::now() - start }.count() &lt;&lt; endl;
+	}
+
+	cout &lt;&lt; "test #2" &lt;&lt; endl;
+	for (uint32_t i{ 0 }; i &lt; R; ++i)
+	{
+		auto const start{ high_resolution_clock::now() };
+		for (size_t a{ 0 }; a &lt; v.size() - 1; ++a)
+		{
+			for (size_t b{ a + 1 }; b &lt; v.size(); ++b)
+			{
+				result += test2(data, a, b);
+			}
+		}
+		cout &lt;&lt; duration&lt;float&gt;{ high_resolution_clock::now() - start }.count() &lt;&lt; endl;
+	}
+
+    return result;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The second test runs faster by <code>30%</code> (in VS2017 and gcc7.0.1). But why?</p>
+</div>
+<div class="paragraph">
+<p>The size of the <code>S</code> struct is <code>24</code> bytes. My CPU (Intel Core i7) have <code>32KB</code> L1 cache for each core with <code>64B</code> cache line. That means that when we&#8217;re requesting data from the main memory one cache line can hold only two full <code>S</code> structs at most. In the first test we&#8217;re reading only one <code>int</code> field, i.e. in the best case scenario one cache line can hold only two <code>S::i</code> (ok, sometimes three). In the second test we&#8217;re reading similar <code>int</code> but from the vector of integers. <code>std::vector</code> guarantees sequentiality of the data it holds. That means that one cache line can hold up to <code>16</code> (<code>64KB</code> / <code>sizeof(int)</code> = <code>16</code>) values we need. Obviously, we&#8217;re communicating with the RAM less often. And it&#8217;s known that memory operations are the bottleneck in modern CPUs.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_what_about_real_life">What about real life?</h5>
+<div class="paragraph">
+<p>The example above clearly shows the benefits of <strong>SoA</strong> (<strong>S</strong>truct <strong>o</strong>f <strong>A</strong>rrays) vs <strong>AoS</strong> (<strong>A</strong>rray <strong>o</strong>f <strong>S</strong>tructures). But this example was from the <em>Hello World</em> category, i.e. it&#8217;s very far from real world applications. In reality, the code has lots of dependencies and specific data which probably will not give such performance increase. One more thing - if in our example we&#8217;ll read all fields of the struct there will be no difference in speed.</p>
+</div>
+<div class="paragraph">
+<p>In order to understand possibility to apply <strong>DOD</strong> I decided to write more or less complex program with both (<strong>OOP</strong> and <strong>DOD</strong>) approaches. Let it be a <code>2d</code> rigid body simulation - we&#8217;ll create <strong>N</strong> convex polygons with different parameters - mass, speed etc. - and we&#8217;ll see how many such objects we can simulate staying at <code>30</code> fps.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_array_of_structures">Array of Structures</h5>
+<div class="paragraph">
+<p><strong>Initial program</strong></p>
+</div>
+<div class="paragraph">
+<p>Source code for this version can be found in <a href="https://github.com/nikitablack/cpp-tests/tree/b672ca106ef5c88a23d7f8e2a909e07d6e54ca4a/data_oriented/oop/oop">this</a> commit and we briefly run through the code.</p>
+</div>
+<div class="paragraph">
+<p>For simplicity reasons the program is written in Visual Studio for Windows and uses DirectX11 for rendering.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+I&#8217;m using the latest VS2017 and some features of c++17, namely <a href="http://en.cppreference.com/w/cpp/utility/optional">std::optional</a>. Intersection detector takes two objects and returns by value a struct with intersection information - normal, penetration depth. Previously I used a boolean flag inside that structure that showed was there an intersection at all. With the new <code>std::optional</code> I got rid of that flag and the code became more clear.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The purpose of this article is to show some numbers on CPU so we&#8217;ll not discuss graphics.</p>
+</div>
+<div class="paragraph">
+<p>The <code>Shape</code> class which represents physical body looks like this (simplified):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">class Shape
+{
+public:
+	math::Vec2 position{ 0.0f, 0.0f };
+	math::Vec2 velocity{ 0.0f, 0.0f };
+	math::Vec2 overlapResolveAccumulator{ 0.0f, 0.0f };
+	float massInverse;
+	math::Color color;
+	std::vector&lt;math::Vec2&gt; vertices;
+	math::Bounds bounds;
+};</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>I believe <code>position</code> and <code>velocity</code> fields don&#8217;t need a discussion</p>
+</li>
+<li>
+<p><code>vertices</code> — a random number of polygon vertices</p>
+</li>
+<li>
+<p><code>bounds</code> — shape&#8217;s bounding box. Used for broad collision detection</p>
+</li>
+<li>
+<p><code>massInverse</code> — one over mass (<code>1 / m</code>). We&#8217;ll use only this value so no need to keep mass itself</p>
+</li>
+<li>
+<p><code>color</code> — used for rendering but stored in shape</p>
+</li>
+<li>
+<p><code>overlapResolveAccumulator</code> - see below.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+From the structure, it&#8217;s already seen that <code>color</code> not used for calculations at all. But steel takes place in the cache line.
+</td>
+</tr>
+</table>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/1.png" alt="1" width="400">
+</div>
+</div>
+<div class="paragraph">
+<p>When the triangle intersects shape <code>a</code> we need to move it apart to avoid figures overlapping. Also, we have to recalculate <code>bounds</code>. But now the triangle intersects shape <code>b</code> and we need to repeat the procedure again - move the shape and recalculate bounds. Notice that after the second move the triangle again will be over shape <code>a</code>. To avoid this repetition we&#8217;ll store the value necessary to separate objects in special accumulator - <code>overlapResolveAccumulator</code> - and later will move the shape by this value but only once. Not physically correct at all, but looks ok. Notice also that this field also adds to the total size of the class which is not good for the memory.</p>
+</div>
+<div class="paragraph">
+<p>The heart of our program is a <code>ShapesApp::update()</code> function. Here it&#8217;s simplified form:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">void ShapesApp::update(float const dt)
+{
+	float const dtStep{ dt / NUM_PHYSICS_STEPS };
+	for (uint32_t s{ 0 }; s &lt; NUM_PHYSICS_STEPS; ++s)
+	{
+		updatePositions(dtStep);
+
+		for (size_t i{ 0 }; i &lt; _shapes.size() - 1; ++i)
+		{
+			for (size_t j{ i + 1 }; j &lt; _shapes.size(); ++j)
+			{
+				CollisionSolver::solveCollision(_shapes[i].get(), _shapes[j].get());
+			}
+		}
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Every frame we call a <code>ShapesApp::updatePositions()</code> function that updates every shape&#8217;s <code>position</code> and <code>bounds</code>. Next we check every shape with every other for collision in <code>CollisionSolver::solveCollision()</code> function. I used <a href="https://en.wikipedia.org/wiki/Hyperplane_separation_theorem">Separating Axis Theorem</a> (<strong>SAT</strong>) for that. And we repeat these steps <code>NUM_PHYSICS_STEPS</code> times. This variable serves several purposes - first, the physics becomes more stable, and second, it limits the number of objects on the screen. <strong>c++</strong> is fast, amazingly fast, and without this limitation we&#8217;ll have tens of thosands of objects which will lead to rendering performance issues. In my tests I used <code>NUM_PHYSICS_STEPS = 20</code>.</p>
+</div>
+<div class="paragraph">
+<p>On my humble laptop this version of the program simulates <code>500</code> shapes before fps starts to drop below <code>30</code>. Wat?? Only <code>500</code>?? Even JavaScript can do better. I agree, not a lot, but don&#8217;t forget - we&#8217;re repeating calculations <code>20</code> times per frame.</p>
+</div>
+<div class="paragraph">
+<p>I think I need to add some pictures to make the post not so boring, so here we go:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/2.png" alt="2" width="600">
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Optimization #1. Spatial Grid</strong></p>
+</div>
+<div class="paragraph">
+<p>I mentioned several times that I want to make tests on a program which is as close to real world as possible. Obviously, the code above is not usable - nobody checks each shape with each other - this is veeeery slow. For acceleration usually, some spetial spatial structure being used. We&#8217;ll use simple <code>2d</code> grid - I called it <code>Grid</code> in the code - which consists of <code>NxM</code> cells - <code>struct Cell</code>. At the calculation start we&#8217;ll put each object in the corresponding cell. This way all we have to do is to iterate over cells and check intersection between several pairs of objects. I used the similar code a lot of times in real projects and it behaved very well. Besides, it&#8217;s very easy to implement, easy to debug and understand.</p>
+</div>
+<div class="paragraph">
+<p>The commit for this version can be found <a href="https://github.com/nikitablack/cpp-tests/tree/8364d7c55c8948ab2fc5630e828d44551c6db951/data_oriented/oop/oop">here</a>. We added a new entity - <code>Grid</code> and changed <code>ShapesApp::update()</code> function. Now it calls <code>Grid</code>'s methods for updating and intersections.</p>
+</div>
+<div class="paragraph">
+<p>This version can simulate <code>8000</code> shapes now at <code>30</code> fps (don&#8217;t forget about <code>20</code> repetitions in each frame)! I had to decrease shape&#8217;s sizes in order to fit them in the window.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/3.png" alt="3" width="600">
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Optimization #2. Multithreading.</strong></p>
+</div>
+<div class="paragraph">
+<p>These days, when even cell phones have <code>4</code> cores inside, ignore multithreading is silly. In this, the last optimization we&#8217;ll add a thread pool and will divide main work by equal tasks. For example, <code>ShapesApp::updatePositions()</code> which iterated over all shapes before now iterates only over a part of the shapes on each core. Thread pool class was taken from <a href="https://github.com/progschj/ThreadPool/blob/master/ThreadPool.h">here</a> and the final version of the program you can find <a href="https://github.com/nikitablack/cpp-tests/tree/8d83cb351008a3faf3629279ebaf49ff3fc71b17/data_oriented/oop/oop">in this</a> commit. In my tests, I used <code>4</code> threads (including main).</p>
+</div>
+<div class="paragraph">
+<p>Dividing the work by tasks added some head pain. For example, if a shape crosses cell boundaries it will end in several cells at the same time.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/4.png" alt="4" width="400">
+</div>
+</div>
+<div class="paragraph">
+<p>Here the shape <code>a</code> fully contained in one cell, but <code>b</code> is in <code>4</code> cells at the same time. Because of this, we have to synchronize cell access. Also, we have to synchronize access to some fields inside the <code>Shape</code> class. We can achieve this adding <code>std::mutex</code> to the <code>Shape</code> and <code>Cell</code>.</p>
+</div>
+<div class="paragraph">
+<p>Now I can see <code>13000</code> shapes at <code>30</code> fps. For such amount of objects, I had to increase the window size. And I say it again - in every frame we&#8217;re repeating simulation <code>20</code> times.</p>
+</div>
+<div class="paragraph">
+<p>To be honest this program has bad parallelization possibilities. That&#8217;s why increasing the number of threads will not give us a significant performance boost. But that&#8217;s another story.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/5.png" alt="Teapot" width="600">
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_structure_of_arrays">Structure of Arrays</h5>
+<div class="paragraph">
+<p><strong>Initial program</strong></p>
+</div>
+<div class="paragraph">
+<p>The code we wrote above I call traditional <strong>OOP</strong> approach - I write such code many years and see similar code in general. But now we&#8217;ll modify it a little - we&#8217;ll remove class <code>Shape</code> and replace it with vectors and see can this tiny change affect the performance? To my happiness refactoring wasn&#8217;t hard, even trivial. Instead of the <code>Shape</code> class, we&#8217;ll use a struct with vectors of data.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">struct ShapesData
+{
+	std::vector&lt;math::Vec2&gt; positions;
+	std::vector&lt;math::Vec2&gt; velocities;
+	std::vector&lt;math::Vec2&gt; overlapAccumulators;
+	std::vector&lt;float&gt; massesInverses;
+	std::vector&lt;math::Color&gt; colors;
+	std::vector&lt;std::vector&lt;math::Vec2&gt;&gt; vertices;
+	std::vector&lt;math::Bounds&gt; bounds;
+};</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We pass this struct like this - <code>solveCollision(struct ShapesData &amp; data, std::size_t const indA, std::size_t const indB)</code>. I.e. instead of shapes instances we pass indices and inside function necessary data is taking from the vectors.</p>
+</div>
+<div class="paragraph">
+<p><a href="https://github.com/nikitablack/cpp-tests/tree/8363e60c614377cccb777625805b6aea9e699117/data_oriented/dod/dod">This version</a> of the program can simulate <code>500</code> objects at <code>30</code> fps. As you can see there&#8217;s no difference with the original version. This is because we have relatively small data set and the "heaviest" function uses almost all fields of the struct.</p>
+</div>
+<div class="paragraph">
+<p>Further without pictures since they are the same.</p>
+</div>
+<div class="paragraph">
+<p><strong>Optimization #1. Spatial Grid</strong></p>
+</div>
+<div class="paragraph">
+<p>Everything as before except only we switch to <strong>SoA</strong> instead of <strong>AoS</strong>. The source code is <a href="https://github.com/nikitablack/cpp-tests/tree/f726cec7591a2568ef41fbe53623e5447bfdde45/data_oriented/dod/dod">here</a>. The result is better - <code>9500</code> objects vs <code>8000</code> before, i.e. the performance difference is around <code>15%</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Optimization #2. Multithreading.</strong></p>
+</div>
+<div class="paragraph">
+<p>Again take the old code, switch structs and get <code>15000</code> objects at <code>30</code> fps. Again performance increase is around <code>15%</code>. <a href="https://github.com/nikitablack/cpp-tests/tree/ba57d299a26545d6045bd84797bc69d98ceca7bd/data_oriented/dod/dod">Here&#8217;s</a> the final version of the program.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_conclusion">Conclusion</h5>
+<div class="paragraph">
+<p>I satisfied with the results. As you can see the small change in the code can lead to the quite big performance boost. But not always. It&#8217;s even possible to lose some speed. For example, if we need only one instance of a class then with a traditional approach we read the data from memory once and have an access to all fields. On the other side if we read each field individually via vectors we have cache miss on each reading. Moreover, the general readability and complexity become worse.</p>
+</div>
+<div class="paragraph">
+<p>As usual, it&#8217;s hard to give an unambiguous answer - should everybody switch to the new paradigm? When I worked on a <code>3d</code> game engine <code>10%</code> performance increase was a huge number. But when I worked on game launcher, mostly UI, then usage of this approach would only cause bewilderment of my colleagues. As general advice - profile, measure and decide yourself. Sincirelly yours, Cpt. Obvious.</p>
+</div>
+</div>]]></description><link>https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html</link><guid isPermaLink="true">https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html</guid><category><![CDATA[c++]]></category><category><![CDATA[ dod]]></category><dc:creator><![CDATA[nikitablack]]></dc:creator><pubDate>Thu, 02 Feb 2017 00:00:00 GMT</pubDate></item><item><title><![CDATA[DirectX 12 by example]]></title><description><![CDATA[<div class="sect4">
+<h5 id="_disclaimer">Disclaimer!</h5>
+<div class="paragraph">
+<p>I&#8217;m not an expert, computer graphics is my hobby. When I started to learn directx 12 I already was quite comfortable with directx 11 but it was still difficult to switch. And even after several months of investigations I still have a feeling that I just scratched a surface. I&#8217;m constantly learning and this post is a syncronization of my thoughts. I found that attempts to explain complex things makes me understand these things better. Thought the artile was written by me for me I hope you&#8217;ll find it useful too.</p>
+</div>
+<div class="paragraph">
+<p>Directx 12 is low level, it have many concepts and in order to make your code work well you need to take into account a lot of things. You need to profile a lot. And you need to know a hardware. For example you need to know that changing descriptor heaps is a heavy operation. I have no idea what&#8217;s happening in hardware and why it&#8217;s expensive. I&#8217;m just following guidelines trying to remember and reading gpu specs in parallel.</p>
+</div>
+<div class="paragraph">
+<p>Also I assume that you have an experience with previous directx versions because I&#8217;ll not explain in this post what is swapchain or backbuffer. You should be familar with tesselation - what are tesselation factors, what is a constant function, why do you need hull and domain shaders. Good overview of directx 11 tesselation can be found <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx">here</a>. Also you need to know basic windows programming because we need to create a window and I&#8217;ll not explain how to do it.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_preface">Preface</h5>
+<div class="paragraph">
+<p>In this tutorial we&#8217;ll render a teapot. But not just a static mesh, no. We&#8217;ll render a tesselated teapot. Why did I choose this? Well, because you can find in the web a plenty of different <em>HelloWorld</em> examples. I didn&#8217;t want to create another <em>HelloWorld</em> but somethig that covers different areas of the api and at the same time is simple.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://nikitablack.github.io/images/teapot_tutorial/teapot.png" alt="Teapot" width="400">
+</div>
+</div>
+<div class="paragraph">
+<p>We&#8217;re going to use <code>16</code>-point patches for the teapot. We&#8217;ll provide control points positions in one vertex buffer and patch indicies in one index buffer. For colors and transforms (more on this later) we&#8217;ll use structured buffers.</p>
+</div>
+<div class="paragraph">
+<p>Usually directx tutorials follow the same pattern - initialization, resource creation, rendering. I decided to go slightly different way - first we&#8217;ll create the most important part and later will add different components to support it - one after another as required. And the most important part, by my opinion, are shaders. After all this is what we want the gpu to execute. This approach helped me to tie different parts of the api and undesrtand how they related to each other.</p>
+</div>
+<div class="paragraph">
+<p>In order to write a shader we need to figure out what data it operates on. So let&#8217;s first define it.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_teapot_data">Teapot Data</h5>
+<div class="paragraph">
+<p>Since we&#8217;re going to use tesselation we&#8217;re not interested in <em>"usual"</em> mesh made of triangles. We need patches. Of course somebody already did this for us and we can use ready data. For example <a href="https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot#The_Teapot_DataSet">here</a> is the set of <code>16</code>-point patches that describe a teapot. Unfortunatelly we can&#8217;t use this data as is but we need to adjust it a little. This set doesn&#8217;t have a bottom - it&#8217;s ok, we&#8217;ll not use it either but existing patches describe only parts of the teapot. For example <em>rim</em>, <em>body</em> and <em>lid</em> describe only a quarter of a teapot and <em>handle</em> and <em>spout</em> describe only half of respective parts. So if we&#8217;ll render this set we&#8217;ll get this:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://nikitablack.github.io/images/teapot_tutorial/teapot_quarter.png" alt="Teapot" width="400">
+</div>
+</div>
+<div class="paragraph">
+<p>There&#8217;re several ways to fix it. One way is to use separate draw call for every part. This way we can render rim four times with different transformations. Another way is to draw a part once but use instancing. This way we&#8217;ll have a draw call for every part&#8217;s family (<em>rim</em>, <em>body</em> etc.) but the repeated parts will be instances.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;ll go other way and render everything in one draw call. For this we&#8217;ll duplicate indices required number of times and also provide a transformation for every part. Let&#8217;s take a rim as an example. Instead of having one patch for the quarter we&#8217;ll have <code>4</code> patches for the entire circle, that means <code>16 * 4 = 64</code> indices for this part. In the shader knowing the patch id we can apply a transform. In our case we&#8217;ll rotate initial patch around an axis by <code>0</code>, <code>90</code>, <code>180</code> and <code>270</code> degrees. All that means that together with points positions and indices we need to provide a transformation data as. Additionaly to visually separate patches we&#8217;ll use different colors which also should be provided as a separate data. In total we&#8217;ll have <code>28</code> patches and our data will consist of list of points (some points are shared between patches - that&#8217;s why we need indices), list of indices (<code>28 * 16</code>), list of transforms (<code>28</code> matrices) and list of colors (<code>28</code> randomly generated rgb colors). Final data can be found <a href="https://github.com/nikitablack/directx-12/blob/master/TeapotTutorial/TeapotTutorial/TeapotData.cpp">here</a>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_shaders">Shaders</h5>
+<div class="paragraph">
+<p>In our example we&#8217;ll use vertex, hull, domain and pixel shaders.</p>
+</div>
+<div class="paragraph">
+<p><strong>Vertex shader</strong></p>
+</div>
+<div class="paragraph">
+<p>The first shader in our pipeline is the vertex shader. All it&#8217;s do is accepts control point position from the application and passes it to the hull shader. Because of it&#8217;s simplicity I&#8217;ll not provide it here but you can observe it in <a href="https://github.com/nikitablack/directx-12/blob/master/TeapotTutorial/TeapotTutorial/VertexShader.hlsl">github</a>.</p>
+</div>
+<div class="paragraph">
+<p>Just for the remainder - the vertex shader will be called once for every control point in the patch. For <code>28</code> patches (recall that this is the number of patches used for the model) <code>16</code> points each this is <code>448</code> times.</p>
+</div>
+<div class="paragraph">
+<p><strong>Hull shader</strong></p>
+</div>
+<div class="paragraph">
+<p>This shader, as you already know, receives control point position from the vertex shader and also some data from the application in the form of constants which we&#8217;ll use as tesseltion factors for edge and inside of the patch.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#define NUM_CONTROL_POINTS 16
+
+struct PatchTesselationFactors
+{
+	int edge;
+	int inside;
+};
+ConstantBuffer&lt;PatchTesselationFactors&gt; tessFactors : register(b0);
+
+struct VertexToHull
+{
+	float3 pos : POSITION;
+};
+
+struct PatchConstantData
+{
+	float edgeTessFactor[4] : SV_TessFactor;
+	float insideTessFactor[2] : SV_InsideTessFactor;
+};
+
+struct HullToDomain
+{
+	float3 pos : POSITION;
+};
+
+PatchConstantData calculatePatchConstants()
+{
+	PatchConstantData output;
+
+	output.edgeTessFactor[0] = tessFactors.edge;
+	output.edgeTessFactor[1] = tessFactors.edge;
+	output.edgeTessFactor[2] = tessFactors.edge;
+	output.edgeTessFactor[3] = tessFactors.edge;
+	output.insideTessFactor[0] = tessFactors.inside;
+	output.insideTessFactor[1] = tessFactors.inside;
+
+	return output;
+}
+
+[domain("quad")]
+[partitioning("integer")]
+[outputtopology("triangle_cw")]
+[outputcontrolpoints(NUM_CONTROL_POINTS)]
+[patchconstantfunc("calculatePatchConstants")]
+HullToDomain main(InputPatch&lt;VertexToHull, NUM_CONTROL_POINTS&gt; input, uint i : SV_OutputControlPointID)
+{
+	HullToDomain output;
+	output.pos = input[i].pos;
+
+	return output;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here you can see that the patch outputs the same <code>16</code> control points, uses <code>integer</code> partitioning and <code>quad</code> domain. Also note the new <code>hlsl 5.1</code> syntax for the constant buffer:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">ConstantBuffer&lt;PatchTesselationFactors&gt; tessFactors : register(b0);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Thought you can use the old syntax I like the new one more. Beyond this the shader is a simple pass-through, like a vertex shader.</p>
+</div>
+<div class="paragraph">
+<p>This shader will be invoked <code>28</code> number of times (by the number of patches).</p>
+</div>
+<div class="paragraph">
+<p><strong>Domain shader</strong></p>
+</div>
+<div class="paragraph">
+<p>Finally we arrived to the point of interest. Basically this is the place where all the work is done in our program.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#define NUM_CONTROL_POINTS 16
+
+struct ConstantBufferPerObj
+{
+	row_major float4x4 wvpMat;
+};
+ConstantBuffer&lt;ConstantBufferPerObj&gt; constPerObject : register(b0);
+
+struct PatchTransform
+{
+	row_major float4x4 transform;
+};
+StructuredBuffer&lt;PatchTransform&gt; patchTransforms : register(t0);
+
+struct PatchColor
+{
+	float3 color;
+};
+StructuredBuffer&lt;PatchColor&gt; patchColors : register(t1);
+
+struct PatchConstantData
+{
+	float edgeTessFactor[4] : SV_TessFactor;
+	float insideTessFactor[2] : SV_InsideTessFactor;
+};
+
+struct HullToDomain
+{
+	float3 pos : POSITION;
+};
+
+struct DomainToPixel
+{
+	float4 pos : SV_POSITION;
+	float3 color : COLOR;
+};
+
+float4 bernsteinBasis(float t)
+{
+	float invT = 1.0f - t;
+	return float4(invT * invT * invT, // (1-t)3
+		3.0f * t * invT * invT, // 3t(1-t)2
+		3.0f * t * t * invT, // 3t2(1-t)
+		t * t * t); // t3
+}
+
+float3 evaluateBezier(const OutputPatch&lt;HullToDomain, NUM_CONTROL_POINTS&gt; bezpatch, float4 basisU, float4 basisV)
+{
+	float3 value = float3(0, 0, 0);
+	value = basisV.x * (bezpatch[0].pos * basisU.x + bezpatch[1].pos * basisU.y + bezpatch[2].pos * basisU.z + bezpatch[3].pos * basisU.w);
+	value += basisV.y * (bezpatch[4].pos * basisU.x + bezpatch[5].pos * basisU.y + bezpatch[6].pos * basisU.z + bezpatch[7].pos * basisU.w);
+	value += basisV.z * (bezpatch[8].pos * basisU.x + bezpatch[9].pos * basisU.y + bezpatch[10].pos * basisU.z + bezpatch[11].pos * basisU.w);
+	value += basisV.w * (bezpatch[12].pos * basisU.x + bezpatch[13].pos * basisU.y + bezpatch[14].pos * basisU.z + bezpatch[15].pos * basisU.w);
+
+	return value;
+}
+
+[domain("quad")]
+DomainToPixel main(PatchConstantData input, float2 domain : SV_DomainLocation, const OutputPatch&lt;HullToDomain, NUM_CONTROL_POINTS&gt; patch, uint patchID : SV_PrimitiveID)
+{
+	// Evaluate the basis functions at (u, v)
+	float4 basisU = bernsteinBasis(domain.x);
+	float4 basisV = bernsteinBasis(domain.y);
+
+	// Evaluate the surface position for this vertex
+	float3 localPos = evaluateBezier(patch, basisU, basisV);
+
+	float4x4 transform = patchTransforms[patchID].transform;
+	float4 localPosTransformed = mul(float4(localPos, 1.0f), transform);
+
+	DomainToPixel output;
+	output.pos = mul(localPosTransformed, constPerObject.wvpMat);
+	output.color = patchColors[patchID].color;
+
+	return output;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Going from the top we see that we&#8217;re operating on the same <code>16</code> point patch, we have a constant buffer for the teapot`s world-view-projection transform, structured buffer for the patch transform and structured buffer for the patch color. In practice we can use one structured buffer for both transforms and colors but I deliberately split it in two to show how we can assign resources through the root table (more on this later). This data we&#8217;re receiving from the application.</p>
+</div>
+<div class="paragraph">
+<p>There&#8217;re also structs: <code>PatchConstantData</code> and <code>HullToDomain</code> - data from the hull shader (remember that position is a pass through from the vertex shader which also passes it from the input assembler), <code>DomainToPixel</code> - the data we&#8217;re passing further down the pipeline - to the pixel shader.</p>
+</div>
+<div class="paragraph">
+<p>Next is a pure math - in the <code>main()</code> function we have a list of control points for one patch (<code>16</code> points) and we need to sample it so we can assign a position to the new vertex generated by tesselator. The good overview of the math behind you can find <a href="http://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php">here</a>. Also <a href="http://www.gdcvault.com/play/1012740/direct3d">this presentation</a> is a very good reading about patch tesselation in <code>directx 11</code> (I took the most of the code from there to be honest).</p>
+</div>
+<div class="paragraph">
+<p>So what are we doing in the <code>main()</code> function? The first <code>3</code> function parameters are pretty standard - the constant data which we defined in the hull shader (not used here, but have to be provided), <code>uv</code> coordinates for our point in the quad domain - generated by tesselator, and initial patch information from the hull shader. The last parameter - <code>PatchID</code> with special semantics is worth paying litle attention. As you remember, in our demo we have the total number of patches equal to <code>28</code> and we want to apply some parameters to each patch, for example a color. That means that for every generated vertex in the same patch we need to assign the same color information and pass it to the <code>pixel</code> shader. And this is where <code>SV_PrimitiveID</code> semantics will come to the rescue - for every vertex of the same patch (no matter how many vertices were generated) this value will be the same. The first patch will get id of <code>0</code>, second patch - <code>1</code> and so on. One thing worth to remember - all patches should be rendered in one draw call. Every new draw call resets the id (as well as new instance in instance drawing).</p>
+</div>
+<div class="paragraph">
+<p>First we&#8217;re finding the vertex position in patch space. Next with the help of the patch id we&#8217;re obtaining th patch transform (recall an example - we need to rotate a rim <code>4</code> times) and applying it to the vertex. Next we&#8217;re transforming the vertex to the homogenious space by multiplying it on world-view-projection matrix. In the final step we&#8217;re sampling the color structured buffer and sending this data to our last programmable stage - pixel shader.</p>
+</div>
+<div class="paragraph">
+<p>This function will be called for every generated vertex (generated by tesselator). The number of generated vertices depends on the tesselation factors (edge and inside for the quad patch) and partitioning scheme (<code>[partitioning("integer")]</code> in the hull shader).</p>
+</div>
+<div class="paragraph">
+<p><strong>Pixel shader</strong></p>
+</div>
+<div class="paragraph">
+<p>This is also a very simple shader, don&#8217;t even need to be discussed. You can find the code <a href="https://github.com/nikitablack/directx-12/blob/master/TeapotTutorial/TeapotTutorial/PixelShader.hlsl">here</a>.</p>
+</div>
+<div class="paragraph">
+<p>That&#8217;s basically it - we have a program and we need to make our hardware to run it. All other code just exist for this purpose - to help the gpu execute shaders. To summarize things I drew a diagram that shows shader stages and resources we need.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<a class="image" href="https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/images/teapot_tutorial/shader_res_1.png"><img src="https://nikitablack.github.io/images/teapot_tutorial/shader_res_1.png" alt="Shader Resources" width="800"></a>
+</div>
+</div>
+<div class="paragraph">
+<p>Couple of things to note. Resources are stored in gpu memory. Gpu have no idea what&#8217;s stored inside it and how to interpret it - it&#8217;s just a blob of data. It&#8217;s our task to tell it where the data resides, the size and the format. For vertex buffer and index buffer it&#8217;s pretty easy - we&#8217;re creating these buffers and later tell the gpu to use it with <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn986883(v=vs.85).aspx"><code>ID3D12GraphicsCommandList::IASetVertexBuffers()</code></a> and <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn986882(v=vs.85).aspx"><code>ID3D12GraphicsCommandList::IASetIndexBuffer()</code></a> methods. On the diagram I showed solid a arrow from input to these resources. With other resources things are different. There&#8217;s no such method like <code>DSSetStructuredBufferInSlot()</code> or similar and we need to use a special structure called <code>RootSignature</code> to bind shaders and resources together. That&#8217;s why there&#8217;re question marks between shader and resource. We&#8217;ll find out how to bind resources in the next sections. Also on the diagram I specified the size of our data together with alignment size (for example <code>1416B / 64kB</code> for the <code>vertex buffer</code>). Id directx 12 (and 11) buffers should be aligned by <code>64kB</code>. We can specify this value during resource creation or let the api do it for us. That means if we have a lot of small buffers we&#8217;re wasting a lot of space. But it&#8217;s just an interesting point and we shoudn&#8217;t bother about this in our example.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_briefly_about_descriptors">Briefly about Descriptors</h5>
+<div class="paragraph">
+<p>As I mentioned above gpu can&#8217;t use resource memory directly. How can we say then that some memory is a structured buffer, for example? As you already guessed - with a descriptor (another name is view). This is a small structure that describes the resource - it&#8217;s format, size etc. Since this information used by gpu it&#8217;s convenient to strore it in the gpu itself. We keep descriptors in special place called descriptor heap. We&#8217;ll touch descriptors more closely in later sections but for now you just need to remember that resource stored in memory is just a bunch on bits and bytes. This bunch can be described with descriptors - lightweight data that tells gpu how to interpret particular part of memory. This descriptors are stored in gpu memory in descriptor heaps. Of course directx wouldn&#8217;t be directx if everything would be so easy - there different ways to provide information to the gpu, for example we can bypass descriptor heap and pass descriptor directly or avoid desciptor at all! We&#8217;ll cover this options in the course of this article.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_code_organization">Code Organization</h5>
+<div class="paragraph">
+<p>When I started to write this tutorial I wanted to make it as simple as possible and put everything in one file. But when this file became more than <code>1000</code> lines I decided to split the code on several logic units. <code>Window</code> is a class which encapsulates window creation and accepts a key press callback in the form of <code>std::function</code>. We&#8217;ll use this callback to change demo parameters. <code>Graphics</code> is a base class for our demo. It creates a <code>Window</code> and also initializes d3d. For example it creates device, swap chain, depth buffer, back buffers, command list and so on. <code>TeapotTutorial</code> extends this class and adds functionality related to our demo - resources creation, rendering. I&#8217;ll describe why each method exist and we&#8217;ll start with creation of the root signature.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_root_signature">Root Signature</h5>
+<div class="paragraph">
+<p>At this point we should know that shaders require resources and this resources should be bound to the correct resource slots (<code>b0</code> for constant buffer, <code>t0</code> for structured buffer, for example). In directx 12 we bind with special interface - <code>ID3D12RootSignature</code>. With the help of the interface we can describe which resources a shader needs and in which slot. We can say that signature only declares input parameters, just like usual c++ function signature. For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">void rootSignature(std::array&lt;int, 2&gt; constants, XMFLOAT4X4* wvpMatrix, std::vector&lt;XMFLOAT3*&gt;* colors);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>What we see here is that our function expects <code>3</code> parameters - two ints, copied by value; pointer to a matrix, and a pointer to vector of pointers to some colors. This is what happening if we&#8217;re using these values: the first parameter - two ints - will be copied to registers so accessing them will be extremely fast; for the second parameter we need to dereference a pointer and it will lead to memory read with a potential cache miss, so it&#8217;s slower that the first parameter; the third parameter is the slowest one - to read from the vector we need to dereference it first and then dereference the element we want to access - that means two indirections.</p>
+</div>
+<div class="paragraph">
+<p>Please notice that this is just a signature - it doesn&#8217;t tell us what are the actual parameter values. Basically we can use as many different combinations of parameters as we can imagine with a single signature - the only mandatory is that we need to maintain correct types. Why did I tell all this? Because this is exactly how root signature works! We specify the input parameters and their types and later during runtime we call the function passing the actual data.</p>
+</div>
+<div class="paragraph">
+<p>As you remember we have <code>4</code> resources for our demo - hull constant buffer, domain constant buffer and <code>2</code> domain structured buffers.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+"But there&#8217;re also vertex and index buffers" - somebody can ask. Right, but they are <em>special</em> buffers - we need to create resources and corresponding views and pass this views directly to the pipeline in command list (as we&#8217;ll see later). These views don&#8217;t even need a resource heap!
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Also as we saw previously, the information about this resources should be stored in descriptors which should be stored in descriptor heaps. But I also mentioned that there&#8217;re some other ways to pass data around. That&#8217;s how we&#8217;ll do it in our demo:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Tesselation factors for the hull shader we&#8217;ll pass <strong>directly</strong> in root signature. That means we don&#8217;t need to create descriptor or descriptor heap or even resource itself! This works because we can pass <code>32bit</code> constants in root signature and they appear in shader as a constant buffer. Since we have only <code>2</code> tesselation factors this type of passing looks like a good choice. Moreover, this data will be accessed in a shader without indirection, just like <code>std::array&lt;int, 2&gt;</code> in an example c++ function signature!</p>
+</li>
+<li>
+<p>For domain shader&#8217;s constant buffer we will use a descriptor. But this decriptor will be passed as a part of the root signature. And that means we can bypass a descriptor heap. The descriptor will be inlined in the root signature - that&#8217;s why we don&#8217;t need to store it somewhere else. With root descriptor the shader first will read resource&#8217;s address and than read the actual data. Just like <code>XMFLOAT4X4*</code> in an example c++ function signature!</p>
+</li>
+<li>
+<p>For domain shader&#8217;s structured buffers we will finaly use descriptor and descriptor heaps. That means we need to create a descriptor heap to hold <code>2</code> descriptors (one for every buffer) and desciptors itself. In order to pass information to the root signature we need to pack it to descriptor table. Descriptor table just tells which descriptor heap to use and the number of descriptors. When we need to access a buffer in a shader the runtime will first read the table, next will read the descriptor and finally will read the actual data. Just like <code>std::vector&lt;XMFLOAT3*&gt;*</code> in an example c++ function signature!</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+"Why do we need to use descriptors or tables if we can pass everything as root constants?" Root signature has a very limited size - <code>64DWORD</code> (<code>1DWORD</code> == <code>32bit</code>). That means we can store <code>64</code> ints inside it, or <code>4</code> matrices. If there&#8217;s not enough place the data will be stored somewhere else and it will add one more level of indirection. Root descriptor asks for <code>2DWORD</code> and table only <code>1DWORD</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Interesting note - <a href="https://developer.nvidia.com/dx12-dos-and-donts#roots">Nvidia</a> guys recommend to use root descriptors as much as you can. But <a href="http://gpuopen.com/performance-root-signature-descriptor-sets/">AMD</a> guys recommend to use tables.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Remember that signature doesn&#8217;t define any parameters - it just declares the type and the order. The actual data will be passed later.</p>
+</div>
+<div class="paragraph">
+<p>Knowing all this we can write our first <code>directx 12</code> code.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// TeapotTutorial.h
+Microsoft::WRL::ComPtr&lt;ID3D12RootSignature&gt; rootSignature;
+
+// TeapotTutorial.cpp
+void TeapotTutorial::createRootSignature()
+{
+	// #1
+	D3D12_DESCRIPTOR_RANGE dsTransformAndColorSrvRange;
+	ZeroMemory(&amp;dsTransformAndColorSrvRange, sizeof(dsTransformAndColorSrvRange));
+	dsTransformAndColorSrvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // we're using structured buffers - it's a SRV
+	dsTransformAndColorSrvRange.NumDescriptors = 2; // we have 2 structured buffers and 2 descriptors
+	dsTransformAndColorSrvRange.BaseShaderRegister = 0; // we start from the first register (t0)
+	dsTransformAndColorSrvRange.RegisterSpace = 0; // this allows us to use the same register name if we use different space
+	dsTransformAndColorSrvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	// #2
+	D3D12_ROOT_PARAMETER dsTransformAndColorSrv;
+	ZeroMemory(&amp;dsTransformAndColorSrv, sizeof(dsTransformAndColorSrv));
+	dsTransformAndColorSrv.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	dsTransformAndColorSrv.DescriptorTable = { 1, &amp;dsTransformAndColorSrvRange }; // one range
+	dsTransformAndColorSrv.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN; // only used in domain shader
+
+	//#3
+	D3D12_ROOT_PARAMETER dsObjCb;
+	ZeroMemory(&amp;dsObjCb, sizeof(dsObjCb));
+	dsObjCb.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // constant buffer
+	dsObjCb.Descriptor = { 0, 0 }; // first register (b0) in first register space
+	dsObjCb.ShaderVisibility = D3D12_SHADER_VISIBILITY_DOMAIN; // only used in domain shader
+
+	// #4
+	D3D12_ROOT_PARAMETER hsTessFactorsCb;
+	ZeroMemory(&amp;hsTessFactorsCb, sizeof(hsTessFactorsCb));
+	hsTessFactorsCb.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	hsTessFactorsCb.Constants = { 0, 0, 2 }; // 2 constants in first register (b0) in first register space
+	hsTessFactorsCb.ShaderVisibility = D3D12_SHADER_VISIBILITY_HULL; // only used in hull shader
+
+	vector&lt;D3D12_ROOT_PARAMETER&gt; rootParameters{ dsObjCb, hsTessFactorsCb, dsTransformAndColorSrv };
+
+	// #5
+	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags{
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | // we're using vertex and index buffers
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS
+	};
+
+	// #6
+	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+	ZeroMemory(&amp;rootSignatureDesc, sizeof(rootSignatureDesc));
+	rootSignatureDesc.NumParameters = static_cast&lt;UINT&gt;(rootParameters.size());
+	rootSignatureDesc.pParameters = rootParameters.data();
+	rootSignatureDesc.NumStaticSamplers = 0; // samplers can be stored in root signature separately and consume no space
+	rootSignatureDesc.pStaticSamplers = nullptr; // we're not using texturing
+	rootSignatureDesc.Flags = rootSignatureFlags;
+
+	// #7
+	ComPtr&lt;ID3DBlob&gt; signature;
+	ComPtr&lt;ID3DBlob&gt; error;
+	if (FAILED(D3D12SerializeRootSignature(&amp;rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, signature.ReleaseAndGetAddressOf(), error.ReleaseAndGetAddressOf())))
+	{
+		throw(runtime_error{ "Error serializing root signature" });
+	}
+
+	// finally create the root signature
+	// #8
+	if (FAILED(device-&gt;CreateRootSignature(0, signature-&gt;GetBufferPointer(), signature-&gt;GetBufferSize(), IID_PPV_ARGS(rootSignature.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating root signature" });
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We&#8217;re using <code>3</code> root parameters: root descriptor for domain shader&#8217;s constant buffer, <code>2</code> root constants for hull shader&#8217;s constant buffer and a descriptor table for <code>2</code> structured buffers.</p>
+</div>
+<div class="paragraph">
+<p>First we&#8217;re creating a descriptor table - for this we need to specify the range of descriptors (<strong>#1</strong>) we&#8217;ll use and pass this range to the parameter description (<strong>#2</strong>). Next we&#8217;re creating a root descriptor for the domain constant buffer (<strong>#3</strong>). The final parameter is our root constants (<strong>#4</strong>). Notice how we specified shader visibility for each parameter. The api will validate this input and say us if there&#8217;s something wrong. Also notice how we excluded certain stages from accessing root signature (<strong>#5</strong>) - this is recommended. Next we&#8217;re creating root signature description struct (<strong>#6</strong>) with all the information we have so far and serializing it (<strong>#7</strong>). The last step is necessary because there&#8217;s another way to create a root signature - directly in shader, not c++ app. And finally we&#8217;re creating our root signature.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Directx team kindly provided a helper header that simplifies creation of different structures - <code>d3dx12.h</code>. Thought the header is not a part of <code>directx 12</code> it&#8217;s <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn708058(v=vs.85).aspx">well documented</a> in <code>msdn</code> and pretty solid. The <code>D3D12_DESCRIPTOR_RANGE</code> creation can be replaced with <code>CD3DX12_DESCRIPTOR_RANGE</code>, <code>D3D12_ROOT_PARAMETER</code> with <code>CD3DX12_ROOT_PARAMETER</code> and <code>D3D12_ROOT_SIGNATURE_DESC</code> with <code>CD3DX12_ROOT_SIGNATURE_DESC</code>. Using this helpers allow us to reduce and hence simplify code dramatically. I deliberatelly removed all <code>d3dx12.h</code> dependencies from my code just to show how api works under the hood.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>When we serialize the signature we can get errors which will be writtent to <code>error</code> instance. There&#8217;re a lot of checks happens during serialization - for example if we&#8217;ll overlap registers for the same shader (have two <code>b0</code>) we&#8217;ll get an error. Very handy tool!</p>
+</div>
+<div class="paragraph">
+<p>Now when we know about root signature we can update our diagram:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<a class="image" href="https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/images/teapot_tutorial/shader_res_2.png"><img src="https://nikitablack.github.io/images/teapot_tutorial/shader_res_2.png" alt="Shader Resources" width="800"></a>
+</div>
+</div>
+<div class="paragraph">
+<p>It&#8217;s a little bit messy but if you&#8217;ll follow arrows you&#8217;ll see that it&#8217;s the same as the code. Notice how hull shader constant buffer went away (because we&#8217;re using inlined root constants) and descriptor heap for structured buffers appeared. There&#8217;s still some mistery left, namely the size of the domain constant buffer (you&#8217;ll learn about this later).</p>
+</div>
+<div class="paragraph">
+<p>The last method - <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn899182(v=vs.85).aspx"><code>ID3D12Device::CreateRootSignature</code></a> - uses some <code>device</code> that we don&#8217;t know yet. This is a software representation of the hardware and we&#8217;ll find how to create one in the next section.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_directx_initialization">DirectX Initialization</h5>
+<div class="paragraph">
+<p>As you remember the base initialization is done in the base class called <code>Graphics</code>. This is how we create a device:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Graphics.h
+Microsoft::WRL::ComPtr&lt;ID3D12Device&gt; device;
+
+// Graphics.cpp
+void Graphics::createDevice()
+{
+	if (FAILED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&amp;device))))
+	{
+		throw(runtime_error{ "Error creating device." });
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Simple enough. But what is this <code>adapter</code>? We can use <code>nullptr</code> instead and let the api to choose the default adapter, but let&#8217;s see how we can select among many adapters that exist in our system. <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb174523(v=vs.85).aspx"><code>IDXGIAdapter</code></a> is similar to <code>ID3D12Device</code> interface - it also a presentation of a gpu. It&#8217;s hard for me to tell why do we need two similar interfaces that basically represent the same thing. Let&#8217;s think that <code>dxgi</code> interface provides different information about a gpu itself (vendor, name etc.), but <code>d3d</code> interface allows us to manipulate it - create different resources, change states.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Graphics.h
+Microsoft::WRL::ComPtr&lt;IDXGIAdapter3&gt; adapter;
+
+// Graphics.cpp
+void Graphics::getAdapter()
+{
+	ComPtr&lt;IDXGIAdapter1&gt; adapterTemp;
+
+	for (UINT adapterIndex{ 0 }; factory-&gt;EnumAdapters1(adapterIndex, adapterTemp.ReleaseAndGetAddressOf()) != DXGI_ERROR_NOT_FOUND; ++adapterIndex)
+	{
+		DXGI_ADAPTER_DESC1 desc;
+		ZeroMemory(&amp;desc, sizeof(desc));
+
+		adapterTemp-&gt;GetDesc1(&amp;desc);
+
+		if (desc.Flags &amp; DXGI_ADAPTER_FLAG_SOFTWARE)
+		{
+			continue;
+		}
+
+		if (SUCCEEDED(adapterTemp.As(&amp;adapter)))
+		{
+			break;
+		}
+	}
+
+	if (adapter == nullptr)
+	{
+		throw(runtime_error{ "Error getting an adapter." });
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here we just grab the first adapter that is not software (starting from <code>Windows 8</code> there&#8217;s always a software adapter presented in the system). But you can use different logic - like checking a vendor. For enumerating we&#8217;re using some <code>factory</code> which is <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb174535(v=vs.85).aspx"><code>IDXGIFactory</a></code> interface. So let&#8217;s create it too:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Graphics.h
+Microsoft::WRL::ComPtr&lt;IDXGIFactory4&gt; factory;
+
+// Graphics.cpp
+void Graphics::createFactory()
+{
+#if defined(_DEBUG)
+	ComPtr&lt;ID3D12Debug&gt; debugController;
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&amp;debugController))))
+	{
+		debugController-&gt;EnableDebugLayer();
+	}
+#endif
+
+	UINT factoryFlags{ 0 };
+#if _DEBUG
+	factoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+#endif
+
+	if (FAILED(CreateDXGIFactory2(factoryFlags, IID_PPV_ARGS(factory.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating IDXGIFactory." });
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Finally no more new dependent interfaces! Thought there&#8217;s one which we not depend on - <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn950153(v=vs.85).aspx"><code>ID3D12Debug</code></a>. You should always use it with debug configuration. During an error it writes detailed message to the output.</p>
+</div>
+<div class="paragraph">
+<p>Now we can compile the code we have successfully thought we&#8217;ll not see anything on the screen. That&#8217;s one of the downside of programming with directx - we can&#8217;t have some intermediate results like render only one triangle from the teapot or shade only one pixel. We need to write a lot of code for both cpu and gpu just to find the black screen or artifacts.</p>
+</div>
+<div class="paragraph">
+<p>At this point we have defined shaders and a signature. But the gpu doesn&#8217;t know about our shaders - we only have several text files that are useful for us - not the hardware. As you have guessed we need to load our shaders to the graphics card. But first we need to compile them. Later we&#8217;ll use a new addtition to the api which allows us to send this compiled data (and a lot of other stuff) to the gpu - pipeline state object (or pso for short).</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_pipeline_state_object">Pipeline State Object</h5>
+<div class="paragraph">
+<p>As you know the gpu is a state machine - once it&#8217;s setted up it will do the same actions over and over again until we change a state. In directx 12 the entire gpu state (plus or minus some minor things) is represented by <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn788705(v=vs.85).aspx"><code>ID3D12PipelineState</code></a> interface. This means that if you want to render the same object in wireframe and solid you have to create <code>2</code> such objects which will differ only by fill mode. State creation is a heavy operation that should be avoided in runtime. Instead all states that you need for your scene should be created as a part of initialization.</p>
+</div>
+<div class="paragraph">
+<p>In our demo we&#8217;ll use <code>2</code> states - one for solid rendering and backface culling and another for wireframe rendering and without culling. Creating a state means filling a lot of structures and setting shaders. We&#8217;re compiling our shaders as a build process in Visual Studio. This means that during application start we should have <code>cso</code> files somewhere which we need to load. The loading is very simple and can be done like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// TeapotTutorial.h
+Microsoft::WRL::ComPtr&lt;ID3DBlob&gt; vertexShaderBlob;
+Microsoft::WRL::ComPtr&lt;ID3DBlob&gt; hullShaderBlob;
+Microsoft::WRL::ComPtr&lt;ID3DBlob&gt; domainShaderBlob;
+Microsoft::WRL::ComPtr&lt;ID3DBlob&gt; pixelShaderBlob;
+
+// TeapotTutorial.cpp
+void TeapotTutorial::createShaders()
+{
+	if (FAILED(D3DReadFileToBlob(L"VertexShader.cso", vertexShaderBlob.ReleaseAndGetAddressOf())))
+	{
+		throw(runtime_error{ "Error reading vertex shader." });
+	}
+
+	if (FAILED(D3DReadFileToBlob(L"HullShader.cso", hullShaderBlob.ReleaseAndGetAddressOf())))
+	{
+		throw(runtime_error{ "Error reading hull shader." });
+	}
+
+	if (FAILED(D3DReadFileToBlob(L"DomainShader.cso", domainShaderBlob.ReleaseAndGetAddressOf())))
+	{
+		throw(runtime_error{ "Error reading domain shader." });
+	}
+
+	if (FAILED(D3DReadFileToBlob(L"PixelShader.cso", pixelShaderBlob.ReleaseAndGetAddressOf())))
+	{
+		throw(runtime_error{ "Error reading pixel shader." });
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And now the pipeline state creation (remember - we have <code>2</code> states):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// TeapotTutorial.h
+Microsoft::WRL::ComPtr&lt;ID3D12PipelineState&gt; pipelineStateWireframe;
+Microsoft::WRL::ComPtr&lt;ID3D12PipelineState&gt; pipelineStateSolid;
+Microsoft::WRL::ComPtr&lt;ID3D12PipelineState&gt; currPipelineState;
+
+// TeapotTutorial.cpp
+void TeapotTutorial::createPipelineStateWireframe()
+{
+	pipelineStateWireframe = createPipelineState(D3D12_FILL_MODE_WIREFRAME, D3D12_CULL_MODE_NONE);
+	currPipelineState = pipelineStateWireframe;
+}
+
+void TeapotTutorial::createPipelineStateSolid()
+{
+	pipelineStateSolid = createPipelineState(D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_NONE);
+}
+
+ComPtr&lt;ID3D12PipelineState&gt; TeapotTutorial::createPipelineState(D3D12_FILL_MODE fillMode, D3D12_CULL_MODE cullMode)
+{
+	// #1
+	vector&lt;D3D12_INPUT_ELEMENT_DESC&gt; inputElementDescs
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	};
+
+	// #2
+	D3D12_RASTERIZER_DESC rasterizerDesc;
+	ZeroMemory(&amp;rasterizerDesc, sizeof(rasterizerDesc));
+	rasterizerDesc.FillMode = fillMode;
+	rasterizerDesc.CullMode = cullMode;
+	rasterizerDesc.FrontCounterClockwise = FALSE;
+	rasterizerDesc.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
+	rasterizerDesc.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+	rasterizerDesc.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+	rasterizerDesc.DepthClipEnable = TRUE;
+	rasterizerDesc.MultisampleEnable = FALSE;
+	rasterizerDesc.AntialiasedLineEnable = FALSE;
+	rasterizerDesc.ForcedSampleCount = 0;
+	rasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+
+	// #3
+	D3D12_BLEND_DESC blendDesc;
+	ZeroMemory(&amp;blendDesc, sizeof(blendDesc));
+	blendDesc.AlphaToCoverageEnable = FALSE;
+	blendDesc.IndependentBlendEnable = FALSE;
+	blendDesc.RenderTarget[0] = {
+		FALSE,FALSE,
+		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+		D3D12_LOGIC_OP_NOOP,
+		D3D12_COLOR_WRITE_ENABLE_ALL
+	};
+
+	// #4
+	D3D12_DEPTH_STENCIL_DESC depthStencilDesc;
+	ZeroMemory(&amp;depthStencilDesc, sizeof(depthStencilDesc));
+	depthStencilDesc.DepthEnable = TRUE;
+	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	depthStencilDesc.StencilEnable = FALSE;
+	depthStencilDesc.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
+	depthStencilDesc.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
+	const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp = { D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_COMPARISON_FUNC_ALWAYS };
+	depthStencilDesc.FrontFace = defaultStencilOp;
+	depthStencilDesc.BackFace = defaultStencilOp;
+
+	// #5
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc;
+	ZeroMemory(&amp;pipelineStateDesc, sizeof(pipelineStateDesc));
+	pipelineStateDesc.InputLayout = { inputElementDescs.data(), static_cast&lt;UINT&gt;(inputElementDescs.size()) };
+	pipelineStateDesc.pRootSignature = rootSignature.Get();
+	pipelineStateDesc.VS = { vertexShaderBlob-&gt;GetBufferPointer(), vertexShaderBlob-&gt;GetBufferSize() };
+	pipelineStateDesc.HS = { hullShaderBlob-&gt;GetBufferPointer(), hullShaderBlob-&gt;GetBufferSize() };
+	pipelineStateDesc.DS = { domainShaderBlob-&gt;GetBufferPointer(), domainShaderBlob-&gt;GetBufferSize() };
+	pipelineStateDesc.PS = { pixelShaderBlob-&gt;GetBufferPointer(), pixelShaderBlob-&gt;GetBufferSize() };
+	pipelineStateDesc.RasterizerState = rasterizerDesc;
+	pipelineStateDesc.BlendState = blendDesc;
+	pipelineStateDesc.DepthStencilState = depthStencilDesc;
+	pipelineStateDesc.SampleMask = UINT_MAX;
+	pipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+	pipelineStateDesc.NumRenderTargets = 1;
+	pipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	pipelineStateDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+	pipelineStateDesc.SampleDesc.Count = 1;
+
+	ComPtr&lt;ID3D12PipelineState&gt; pipelineState;
+	if (FAILED(device-&gt;CreateGraphicsPipelineState(&amp;pipelineStateDesc, IID_PPV_ARGS(pipelineState.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating pipeline state." });
+	}
+
+	return pipelineState;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wow, that&#8217;s a lot of code. Let&#8217;s step through the code line by line. First we create input layout (<strong><mark>1</strong>). In vertex shader we&#8217;re expecting only one input - the control point position so we have only one entry in <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn770377(v=vs.85).aspx"><code>D3D12_INPUT_ELEMENT_DESC</code></a> vector. Next we&#8217;re creating a rasterizer state (<strong>#2</strong>). This structure can be replaced with a helper <code>CD3DX12_RASTERIZER_DESC</code> to make it shorter. Next is blend (<strong></mark></strong>) - it can be replaced with <code>CD3DX12_BLEND_DESC</code>. Next is depth stencil (<strong>#4</strong> and <code>CD3DX12_DEPTH_STENCIL_DESC</code>). And finally pipeline state object itself where we assign all the things we created (<strong>#5</strong>). All these structures are pretty simple and I think it should be clear from the names what each field represent so I won&#8217;t describe it in detail.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Interesting thing - thought we assigned a root signature to pso this assignmend done only for validation, i.e. the api will check that shader inputs correspond to signature parameters. After pipeline state creation the information about root signature is lost and we need to assign it again before drawing.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Yay, we have shaders, we have signature! But we still don&#8217;t have resources. Let&#8217;s fix that.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_creating_resources">Creating Resources</h5>
+<div class="paragraph">
+<p>Let&#8217;s recall what resources do we need:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Vertex Buffer</p>
+</li>
+<li>
+<p>Index Buffer</p>
+</li>
+<li>
+<p>Domain Constant Buffer</p>
+</li>
+<li>
+<p>Transforms Structured Buffer</p>
+</li>
+<li>
+<p>Colors Structured Buffer</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Before we start to create this buffers let&#8217;s understand how gpu stores resources. Similar to descriptors resources are stored in a memory called resource heap. There&#8217;re several types of heaps, but we&#8217;ll use only two - <code>D3D12_HEAP_TYPE_DEFAULT</code> and <code>D3D12_HEAP_TYPE_UPLOAD</code>. The first one is entirely gpu resident - once you create it you can&#8217;t access it on cpu side - even upload initial data. This heap type highly optimized and is faster than others. The second one is accessible by both gpu and cpu. We need a default heap when we have a static data - vertex and index buffers are good candidates. The upload heap is good when we change data every frame - for example a constant buffer. But if we can&#8217;t write data to default buffer how can we use it? We can use some intermediate upload buffer, write data there from cpu and give a command to the gpu to copy the data from upload to default. I wrote "give a command" - yes, that&#8217;t how we communicate with the gpu - we write predefined commands to some list and send this list to the graphic card where it executes.</p>
+</div>
+<div class="paragraph">
+<p>All buffer instantiations are in constructor of our demo class.</p>
+</div>
+<div class="paragraph">
+<p><strong>Vertex Buffer</strong></p>
+</div>
+<div class="paragraph">
+<p>This is a special buffer that doesn&#8217;t requires a descriptor heap (but still requires a descriptor/view).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// TeapotTutorial.h
+Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt; controlPointsBuffer;
+
+// TeapotTutorial.cpp
+controlPointsBuffer = teapot_tutorial::createVertexBuffer(device.Get(), TeapotData::points, L"control points");</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Looks simple, but it&#8217;s not. Here we can see a helper function <code>teapot_tutorial::createVertexBuffer()</code> which takes a device (remember, we need it to create almost everything for the application), a data and a buffer name. The last parameter is super helpful during debugging - in visual studio graphics debugger we can easily find our buffer knowing it&#8217;s name. This helper function lives in a helper header called <code>Utils.h</code> (surprise surprise) and this is how it&#8217;s defined:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Utils.h
+template&lt;typename T&gt;
+Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt; createVertexBuffer(ID3D12Device* device, const std::vector&lt;T&gt;&amp; data, std::wstring name = L"")
+{
+	return details::createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, name);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This function calls another helper function - <code>createDefaultBuffer()</code>;</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Utils.h
+template&lt;typename T&gt;
+Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt; createDefaultBuffer(ID3D12Device* device, const std::vector&lt;T&gt;&amp; data, D3D12_RESOURCE_STATES finalState, std::wstring name = L"")
+{
+	UINT elementSize{ static_cast&lt;UINT&gt;(sizeof(T)) };
+	UINT bufferSize{ static_cast&lt;UINT&gt;(data.size() * elementSize) };
+
+    // #1
+	D3D12_HEAP_PROPERTIES heapProps;
+	ZeroMemory(&amp;heapProps, sizeof(heapProps));
+	heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+	heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	heapProps.CreationNodeMask = 1;
+	heapProps.VisibleNodeMask = 1;
+
+	// #2
+	D3D12_RESOURCE_DESC resourceDesc;
+	ZeroMemory(&amp;resourceDesc, sizeof(resourceDesc));
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	resourceDesc.Alignment = 0;
+	resourceDesc.Width = bufferSize;
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.SampleDesc.Quality = 0;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	// #3
+	Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt; defaultBuffer;
+	HRESULT hr{ device-&gt;CreateCommittedResource(
+		&amp;heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&amp;resourceDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(defaultBuffer.ReleaseAndGetAddressOf())) };
+
+	if (FAILED(hr))
+	{
+		throw(runtime_error{ "Error creating a default buffer." });
+	}
+
+	defaultBuffer-&gt;SetName(name.c_str());
+
+	heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+	// #4
+	Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt; uploadBuffer;
+	hr = device-&gt;CreateCommittedResource(
+		&amp;heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&amp;resourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(uploadBuffer.ReleaseAndGetAddressOf()));
+
+	if (FAILED(hr))
+	{
+		throw(runtime_error{ "Error creating an upload buffer." });
+	}
+
+	// #5
+	ComPtr&lt;ID3D12CommandAllocator&gt; commandAllocator;
+	if (FAILED(device-&gt;CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocator.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating a command allocator." });
+	}
+
+	// #6
+	Microsoft::WRL::ComPtr&lt;ID3D12GraphicsCommandList&gt; commandList;
+	if (FAILED(device-&gt;CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(commandList.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating a command list." });
+	}
+
+	// #7
+	D3D12_COMMAND_QUEUE_DESC queueDesc;
+	ZeroMemory(&amp;queueDesc, sizeof(queueDesc));
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	queueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	queueDesc.NodeMask = 0;
+
+	Microsoft::WRL::ComPtr&lt;ID3D12CommandQueue&gt; commandQueue;
+	if (FAILED(device-&gt;CreateCommandQueue(&amp;queueDesc, IID_PPV_ARGS(commandQueue.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating a command queue." });
+	}
+
+	// #8
+	void* pData;
+	if (FAILED(uploadBuffer-&gt;Map(0, NULL, &amp;pData)))
+	{
+		throw(runtime_error{ "Failed map intermediate resource." });
+	}
+
+	memcpy(pData, data.data(), bufferSize);
+	uploadBuffer-&gt;Unmap(0, NULL);
+
+	// #9
+	commandList-&gt;CopyBufferRegion(defaultBuffer.Get(), 0, uploadBuffer.Get(), 0, bufferSize);
+
+	// #10
+	D3D12_RESOURCE_BARRIER barrierDesc;
+	ZeroMemory(&amp;barrierDesc, sizeof(barrierDesc));
+	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrierDesc.Transition.pResource = defaultBuffer.Get();
+	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	barrierDesc.Transition.StateAfter = finalState;
+	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+	commandList-&gt;ResourceBarrier(1, &amp;barrierDesc);
+
+	// #11
+	commandList-&gt;Close();
+	std::vector&lt;ID3D12CommandList*&gt; ppCommandLists{ commandList.Get() };
+	commandQueue-&gt;ExecuteCommandLists(static_cast&lt;UINT&gt;(ppCommandLists.size()), ppCommandLists.data());
+
+	// #12
+	UINT64 initialValue{ 0 };
+	Microsoft::WRL::ComPtr&lt;ID3D12Fence&gt; fence;
+	if (FAILED(device-&gt;CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating a fence." });
+	}
+
+	// #13
+	HANDLE fenceEventHandle{ CreateEvent(nullptr, FALSE, FALSE, nullptr) };
+	if (fenceEventHandle == NULL)
+	{
+		throw(runtime_error{ "Error creating a fence event." });
+	}
+
+	// #14
+	if (FAILED(commandQueue-&gt;Signal(fence.Get(), 1)))
+	{
+		throw(runtime_error{ "Error siganalling buffer uploaded." });
+	}
+
+	// #15
+	if (FAILED(fence-&gt;SetEventOnCompletion(1, fenceEventHandle)))
+	{
+		throw(runtime_error{ "Failed set event on completion." });
+	}
+
+	// #16
+	DWORD wait{ WaitForSingleObject(fenceEventHandle, 10000) };
+	if (wait != WAIT_OBJECT_0)
+	{
+		throw(runtime_error{ "Failed WaitForSingleObject()." });
+	}
+
+	return defaultBuffer;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Looks scary. But going step by step we&#8217;ll get familar with a lot of directx 12 concepts. In the top we&#8217;re creating a couple of structures that describe that we&#8217;re going to create a default heap (<strong>#1</strong>) and a buffer (<strong>#2</strong>). Notice that we&#8217;re not specifying the purpose of the buffer - we&#8217;re just declaring the size. In other words we&#8217;re asking for a certain amount of memory. Among other things notice that <code>Alignment</code> is <code>0</code>. Remember, on previous diagramm we had <code>2</code> numbers for the resource size - the actual data size and the alignement size. We should specify <code>64KB</code> for the buffer or <code>0</code> (which will set it to <code>64KB</code> under the hood). We can use helper structures <code>CD3DX12_HEAP_PROPERTIES</code> and <code>CD3DX12_RESOURCE_DESC</code> here.</p>
+</div>
+<div class="paragraph">
+<p>Next we&#8217;re calling <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn899178(v=vs.85).aspx"><code>ID3D12Device::CreateCommittedResource()</code></a> method that actually reserves a memory (<strong>#3</strong>). This method asks the gpu to find a free space. There&#8217;re other methods for resource creation - for example we can use already reserved memory and create placed resource in it - just like a <code>placement new</code> operator in c++ (we&#8217;ll not use this in our demo).</p>
+</div>
+<div class="paragraph">
+<p>Next we&#8217;re creating an intermediate resource (<strong>#4</strong>). The only difference is that now we&#8217;re asking for upload heap so we can write to it from the cpu.</p>
+</div>
+<div class="paragraph">
+<p>Please note the <code>4th</code> parameter of <code>`ID3D12Device::CreateCommittedResource()</code> method. We used <code>D3D12_RESOURCE_STATE_COPY_DEST</code> for the default buffer and <code>D3D12_RESOURCE_STATE_GENERIC_READ</code> for upload. This are initial states of our resources. For the performance reasons gpu memory should be in some state when it&#8217;s accessed. Upload buffer should be created with <code>D3D12_RESOURCE_STATE_GENERIC_READ</code> state. And in order to copy from the source to destination the destination should be in <code>D3D12_RESOURCE_STATE_COPY_DEST</code>.</p>
+</div>
+<div class="paragraph">
+<p>Now it&#8217;s time to make a step back and understand how cpu and gpu communicate with each other. Cpu tells gpu what to do via commands. There&#8217;s a special interface <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn903537%28v=vs.85%29.aspx"><code>ID3D12GraphicsCommandList</code></a> which have tons of methods and each method is an order to the gpu. Examples of such orders are <code>ClearDepthStencilView()</code> or <code>DrawInstanced()</code>. Command list is a cpu structure meaning that it knows nothing about gpu. The command list doesn&#8217;t create anything. Instead it uses another special interface - <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn770463(v=vs.85).aspx"><code>ID3D12CommandAllocator</code></a> (<strong>#5</strong>). This object manages memory for commands and knows about gpu. This two interfaces work together - first we need to create an allocator and later tell command list to use this allocator for command memory allocation.</p>
+</div>
+<div class="paragraph">
+<p>There&#8217;re several types of command lists - copy, compute, bundle. We&#8217;ll use <code>D3D12_COMMAND_LIST_TYPE_DIRECT</code> - this type can record commands of all mentioned types. As list and allocator tied together - they should have the same type.</p>
+</div>
+<div class="paragraph">
+<p>When we create a list it is in a record state that means it&#8217;s ready to receive commands (<strong>#6</strong>). There&#8217;s also <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn903895(v=vs.85).aspx"><code>ID3D12GraphicsCommandList::Reset()</code></a> method which allow us to use command list with different allocator.</p>
+</div>
+<div class="paragraph">
+<p>When we have a list filled with commands we need to tell gpu to do some work. We do this with <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn788627%28v=vs.85%29.aspx"><code>ID3D12CommandQueue</code></a> interface (<strong>#7</strong>). It should be the same type as our list and allocator.</p>
+</div>
+<div class="paragraph">
+<p>Next we&#8217;re mapping the system memory to the upload buffer (<strong>#8</strong>) and creating out first command with <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn903856(v=vs.85).aspx"><code>ID3D12GraphicsCommandList::CopyBufferRegion()</code></a> (<strong>#9</strong>). It will tell the gpu to copy <code>bufferSize</code> amount of data from upload buffer (which actually points to the system memory) to default buffer.</p>
+</div>
+<div class="paragraph">
+<p>After we finished with a resource update we need to transition default buffer to the state that will allow correct access to it. For different resources this state is different. For example for constant or vertex buffer it should be <code>D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER</code>, for structured buffer - <code>D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE</code>. So we creating a command that tells gpu to put a transition barrier to necessary state (<strong>#10</strong>). During this transition gpu will not touch the resource and will wait when transition is done. As you may guess this is an expensive operation. We can use helper structure <code>CD3DX12_RESOURCE_BARRIER</code> here.</p>
+</div>
+<div class="paragraph">
+<p>Finally we&#8217;re telling gpu to execute our commands with <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn788631(v=vs.85).aspx"><code>ID3D12CommandQueue::ExecuteCommandLists ()</code></a> method. But before we need to close command list or we&#8217;ll get an error.</p>
+</div>
+<div class="paragraph">
+<p>If we&#8217;ll exit <code>createDefaultBuffer()</code> method now we&#8217;ll get an undefined behavior. When we&#8217;re telling the gpu to execute a list it doesn&#8217;t start to do it immediately. Instead the commands are queued and nobody knows when they start or finish. That mean that if we leave now the upload buffer will be destroyed (we&#8217;re not keeping a pointer to it) and when the gpu will be ready to execute a copy command the source will not be valid anymore.</p>
+</div>
+<div class="paragraph">
+<p>Previously we talked about cpu-gpu communication. Now we&#8217;re interested in gpu-cpu talk. We do it with fences. Fence is nothing more than an integer value. After we submitted a command list we can add one more command to the queue that will set the fence to the specified value. All we left to do is to check wherether our fence have a correct value or not and if it not - just wait untill it change. Super simple, isn&#8217;t it? First we&#8217;re creating <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn899188%28v=vs.85%29.aspx"><code>ID3D12Fence</code></a> itself (<strong>#12</strong>) and also some <code>fenceEventHandle</code> (<strong>#13</strong>). This handle is not a part of <code>directx</code> but <code>winapi</code>. We&#8217;re assigning value to the fence on the gpu with <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn899171(v=vs.85).aspx"><code>ID3D12CommandQueue::Signal()</code></a> method (<strong>#14</strong>). The first parameter is a fence object and the second is a desired value we want out fence be after the command list executed. Next we&#8217;re setting an event on completion with <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn899190%28v=vs.85%29.aspx"><code>ID3D12Fence::SetEventOnCompletion()</code></a> method (<strong>#15</strong>). When the fence value will be equal to the first parameter then the event (second parameter) will be raised. In <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms687032(v=vs.85).aspx"><code>WaitForSingleObject()</code></a> (<strong>#16</strong>) we&#8217;re waiting when this happens for specified number of seconds (<code>10</code> seconds in our case but can be up to infinite). If at the moment of calling the fence already have a desired value it will return <code>WAIT_OBJECT_0</code> immediately in other case it will wait.</p>
+</div>
+<div class="paragraph">
+<p>Finally we&#8217;re returning created default buffer to the caller.</p>
+</div>
+<div class="paragraph">
+<p>Now we need to create a view for our resource. Remember that resource is just a bunch of data in memory - we need to describe this data so the gpu can use it correctly.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// TeapotTutorial.h
+D3D12_VERTEX_BUFFER_VIEW controlPointsBufferView;
+
+// TeapotTutorial.cpp
+using PointType = decltype(TeapotData::points)::value_type;
+
+controlPointsBufferView.BufferLocation = controlPointsBuffer-&gt;GetGPUVirtualAddress();
+controlPointsBufferView.StrideInBytes = static_cast&lt;UINT&gt;(sizeof(PointType));
+controlPointsBufferView.SizeInBytes = static_cast&lt;UINT&gt;(controlPointsBufferView.StrideInBytes * TeapotData::points.size());</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Index Buffer</strong></p>
+</div>
+<div class="paragraph">
+<p>Similar to vertex buffer this buffer doesn’t require a descriptor heap.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// TeapotTutorial.h
+Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt; controlPointsIndexBuffer;
+
+// TeapotTutorial.cpp
+controlPointsIndexBuffer = teapot_tutorial::createIndexBuffer(device.Get(), TeapotData::patches, L"patches");</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Utils.h
+template&lt;typename T&gt;
+Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt; createIndexBuffer(ID3D12Device* device, const std::vector&lt;T&gt;&amp; data, std::wstring name = L"")
+{
+	return details::createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_INDEX_BUFFER, name);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here we changed the final state of our buffer to <code>D3D12_RESOURCE_STATE_INDEX_BUFFER</code>. All other code remains the same as for the vertex buffer.</p>
+</div>
+<div class="paragraph">
+<p>The view is also very simple:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// TeapotTutorial.h
+D3D12_INDEX_BUFFER_VIEW controlPointsIndexBufferView;
+
+// TeapotTutorial.cpp
+controlPointsIndexBufferView.BufferLocation = controlPointsIndexBuffer-&gt;GetGPUVirtualAddress();
+controlPointsIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+controlPointsIndexBufferView.SizeInBytes = static_cast&lt;UINT&gt;(TeapotData::patches.size() * sizeof(uint32_t));</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Structured buffers</strong></p>
+</div>
+<div class="paragraph">
+<p>Resource creation for this buffers is also the same as for previous buffers:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// TeapotTutorial.h
+Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt; transformsBuffer;
+Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt; colorsBuffer;
+
+// TeapotTutorial.cpp
+transformsBuffer = teapot_tutorial::createStructuredBuffer(device.Get(), TeapotData::patchesTransforms, L"transforms");
+colorsBuffer = teapot_tutorial::createStructuredBuffer(device.Get(), TeapotData::patchesColors, L"colors");</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Where <code>createStructuredBuffer</code> defined as here:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Utils.h
+template&lt;typename T&gt;
+Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt; createStructuredBuffer(ID3D12Device* device, const std::vector&lt;T&gt;&amp; data, std::wstring name = L"")
+{
+	return details::createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, name);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This buffer finally needs a descriptor heap which we&#8217;re creating with the following code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// TeapotTutorial.h
+Microsoft::WRL::ComPtr&lt;ID3D12DescriptorHeap&gt; transformsAndColorsDescHeap;
+
+// TeapotTutorial.cpp
+void TeapotTutorial::createTransformsAndColorsDescHeap()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
+	ZeroMemory(&amp;heapDesc, sizeof(heapDesc));
+	heapDesc.NumDescriptors = 2;
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	heapDesc.NodeMask = 0;
+
+	if (FAILED(device-&gt;CreateDescriptorHeap(&amp;heapDesc, IID_PPV_ARGS(transformsAndColorsDescHeap.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating descriptor heap." });
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here we&#8217;re specifying that we need a heap for <code>2</code> descriptors. Remember - we have <code>2</code> structured buffers - transforms and colors. Next we&#8217;re telling that we want this heap to be accessible from the shader. Examples of non shader visible heaps are render target view or stream output. Also we&#8217;re defining a type. Constant buffer, srv and uav descriptors can leave in the same heap and this is for good - having many heaps and switching between them is not performance friendly.</p>
+</div>
+<div class="paragraph">
+<p>Now when we have a heap we need to fill it with descriptors.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// TeapotTutorial.cpp
+using TransformType = decltype(TeapotData::patchesTransforms)::value_type;
+using ColorType = decltype(TeapotData::patchesColors)::value_type;
+
+teapot_tutorial::createSrv&lt;TransformType&gt;(device.Get(), transformsAndColorsDescHeap.Get(), 0, transformsBuffer.Get(), TeapotData::patchesTransforms.size());
+teapot_tutorial::createSrv&lt;ColorType&gt;(device.Get(), transformsAndColorsDescHeap.Get(), 1, colorsBuffer.Get(), TeapotData::patchesColors.size());</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here we&#8217;re calling a method from our <code>Utils.h</code> header:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Utils.h
+template&lt;typename T&gt;
+void createSrv(ID3D12Device* device, ID3D12DescriptorHeap* descHeap, int offset, ID3D12Resource* resource, size_t numElements)
+{
+	// #1
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	ZeroMemory(&amp;srvDesc, sizeof(srvDesc));
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Buffer.FirstElement = 0;
+	srvDesc.Buffer.NumElements = static_cast&lt;UINT&gt;(numElements);
+	srvDesc.Buffer.StructureByteStride = static_cast&lt;UINT&gt;(sizeof(T));
+	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+	// #2
+	static UINT descriptorSize{ device-&gt;GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) };
+	D3D12_CPU_DESCRIPTOR_HANDLE d{ descHeap-&gt;GetCPUDescriptorHandleForHeapStart() };
+    // #3
+	d.ptr += descriptorSize * offset;
+    // #4
+	device-&gt;CreateShaderResourceView(resource, &amp;srvDesc, d);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We&#8217;re describing a view with the struct <code>D3D12_SHADER_RESOURCE_VIEW_DESC</code> (<strong>#1</strong>). Since we can have arbitrary stride in structured buffer the format should defined as <code>DXGI_FORMAT_UNKNOWN</code>. <code>Shader4ComponentMapping</code> is a bit confusing for me - it looks like we can force some components be <code>0</code> or <code>1</code>. We don&#8217;t need this so we&#8217;re using default mapping, but if you have information how this can be useful please write in comments. All other parameters are pretty strightforward.</p>
+</div>
+<div class="paragraph">
+<p>Next we&#8217;re creating descriptor in the heap. Descritors for constant buffer, srv and uav have the same size (but can differ in size among hardware vendors) and we&#8217;re requesting this size with <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn899186(v=vs.85).aspx"><code>ID3D12Device::GetDescriptorHandleIncrementSize()</code></a> method (<strong>#2</strong>). We&#8217;re searching the place in the heap where we can create a descriptor (<strong>#3</strong>). The very first descriptor we can put in the heap start but for the next descriptor we need to offset position by the size of the descriptor. And finally we&#8217;re asking the device to create specified descriptor in specified place (<strong>#4</strong>).</p>
+</div>
+<div class="paragraph">
+<p><strong>Constant buffers</strong></p>
+</div>
+<div class="paragraph">
+<p>The last resources left are constant buffers. If you refer back to theroot signature section you&#8217;ll recal that we don&#8217;t need resource and descriptor for tesselation factors for the hull shader since we&#8217;re storing constants directly in the signature. So nothing to do here, moving on to the next buffer.</p>
+</div>
+<div class="paragraph">
+<p>Constant buffer for domain shader stores a matrix. Recall that we store descriptor for this resource in the root signature so no need in descriptor heap. But we still need a resource itself. If you&#8217;ll look at the diagram we drew before you&#8217;ll notice that we still don&#8217;t know the size of the buffer. Let&#8217;s figure out why.</p>
+</div>
+<div class="paragraph">
+<p>As you remember the commands are stored in the queue and don&#8217;t execute immediately after submission. Cpu and gpu have different timelines. Now imagine that we submitted a matrix for frame <code>1</code> to constant buffer. Gpu is not executing yet. Now on cpu we&#8217;re executing frame <code>2</code> and we need to update the matrix. If we&#8217;ll write to the same place we did before the matrix from the frame <code>1</code> will be lost for the gpu. Or even worse - imagine that gpu starts reading the matrix at the moment we&#8217;re updating it. How can we fix this? We can do exactly how we did when we created a default buffer. We can put a fence and stall the cpu until gpu finishes reading the matrix. As you understand this is not the way to go - when the cpu work gpu is idle and vice versa even if cpu and gpu can complete their tasks with the same speed. The solution is to have several buffers - in thi cace the cpu can update buffers safely. This is the same reason why we have several back buffers - we&#8217;re displaying one while writing to another.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Several buffers is not a silver buller. There still can be a situation when the cpu is faster than gpu and we need to syncronize anyway.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>So how much buffers do we need? Usually <code>2</code> or <code>3</code> is enough. In the demo I made this number adjustible but by default using <code>3</code>. That means that we need to create <code>3</code> constant buffers. Or create one big buffer that can fit <code>3</code> matrices (remember that resource is just a blob of memory). This is how we create our resource:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// TeapotTutorial.h
+Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt; constBuffer;
+
+// TeapotTutorial.cpp
+void TeapotTutorial::createConstantBuffer()
+{
+	UINT elementSizeAligned{ (sizeof(XMFLOAT4X4) + 255) &amp; ~255 };
+	UINT64 bufferSize{ elementSizeAligned * bufferCount };
+
+	D3D12_HEAP_PROPERTIES heapProps;
+	ZeroMemory(&amp;heapProps, sizeof(heapProps));
+	heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+	heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	heapProps.CreationNodeMask = 1;
+	heapProps.VisibleNodeMask = 1;
+
+	D3D12_RESOURCE_DESC resourceDesc;
+	ZeroMemory(&amp;resourceDesc, sizeof(resourceDesc));
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	resourceDesc.Alignment = 0;
+	resourceDesc.Width = bufferSize;
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.SampleDesc.Quality = 0;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	HRESULT hr{ device-&gt;CreateCommittedResource(
+		&amp;heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&amp;resourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(constBuffer.ReleaseAndGetAddressOf())
+	) };
+
+	if (FAILED(hr))
+	{
+		throw(runtime_error{ "Error creating constant buffer." });
+	}
+
+	constBuffer-&gt;SetName(L"constants");
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Since constant buffer will be updated every frame there&#8217;s no need to create it with default type. The read of constant buffer in directx 12 should be aligned by <code>256B</code>. If we have <code>4x4</code> matrix of <code>float</code> which requires <code>16 * 4 = 64B</code> we can&#8217;t place the next matrix immediately after it or we&#8217;ll break the alignment rule and will get an error. So our total size for <code>3</code> buffers will be <code>3 * 256 = 768B</code>. And since constant buffer is just a usual buffer it will be aligned by <code>64KB</code>. Finally we can finish our diagram.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<a class="image" href="https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/images/teapot_tutorial/shader_res_3.png"><img src="https://nikitablack.github.io/images/teapot_tutorial/shader_res_3.png" alt="Shader Resources" width="800"></a>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The weird looking line <code>(sizeof(XMFLOAT4X4) + 255) &amp; ~255</code> calculates the next multiple of <code>256</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>One more time, since this is very important - in our case we have <code>1</code> buffer which can hold <code>3</code> matrices. In every frame we can safely update corresponding matrix. Let&#8217;s call this frames <em>buffered frames</em>. But if we have all <code>3</code> frames in flight (i.e. gpu not finished to render any of them yet) we can&#8217;t update out buffer and we have to wait.</p>
+</div>
+<div class="paragraph">
+<p>At this point we have shaders, device and resources but we&#8217;re still not ready to draw. We don&#8217;t have a buffer to draw, a swap chain to present a back buffer and some other things.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_directx_initialization_part_2">DirectX Initialization part 2</h5>
+<div class="paragraph">
+<p>You already know what are command lists, command allocator, fences - we used them when we created our resources. We need the same resources for rendering - after all rendering is just commands to the gpu what to do.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+We could create one command list, allocator, fence for entire application and reuse it for rendering, resource creation but I decided to use more functional approach and for simplicity created an isolated function for resource creation.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Remember when we discussed matrix constant buffer we decided to use multiple buffers to avoid stalls and you know that we should use several resources for buffered frames (we&#8217;re using <code>3</code> frames by default but this number can be changed). So for rendering we need to use <code>3</code> command allocators, <code>3</code> fences but only one command list. This is because when we&#8217;re resetting a list it can be reused immediately - the memory for commands managed by the allocator. So we can reuse the same list with several allocators.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If we would use multiple threads for commands creation submission, we have to use <code>3 * numTheads</code> allocators and <code>numThreads</code> lists. That&#8217;s because when the list is in use with particular allocator it can&#8217;t be used with another until it closed.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This is how we&#8217;re creating necessary data:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Graphics.h
+std::vector&lt;Microsoft::WRL::ComPtr&lt;ID3D12CommandAllocator&gt;&gt; commandAllocators;
+Microsoft::WRL::ComPtr&lt;ID3D12GraphicsCommandList&gt; commandList;
+std::vector&lt;Microsoft::WRL::ComPtr&lt;ID3D12Fence&gt;&gt; fences;
+std::vector&lt;UINT64&gt; fenceValues;
+HANDLE fenceEventHandle;
+
+// Graphics.cpp
+void Graphics::createCommandAllocators()
+{
+	for (UINT i{ 0 }; i &lt; bufferCount; i++)
+	{
+		ComPtr&lt;ID3D12CommandAllocator&gt; commandAllocator;
+		if (FAILED(device-&gt;CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocator.ReleaseAndGetAddressOf()))))
+		{
+			throw(runtime_error{ "Error creating command allocator." });
+		}
+
+		commandAllocators.push_back(commandAllocator);
+	}
+}
+
+void Graphics::createCommandList()
+{
+	if (FAILED(device-&gt;CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators[0].Get(), nullptr, IID_PPV_ARGS(commandList.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating command list." });
+	}
+
+	if (FAILED(commandList-&gt;Close()))
+	{
+		throw(runtime_error{ "Error closing command list." });
+	}
+}
+
+void Graphics::createFences()
+{
+	for (UINT i{ 0 }; i &lt; bufferCount; i++)
+	{
+		UINT64 initialValue{ 0 };
+		ComPtr&lt;ID3D12Fence&gt; fence;
+		if (FAILED(device-&gt;CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.ReleaseAndGetAddressOf()))))
+		{
+			throw(runtime_error{ "Error creating fence." });
+		}
+
+		fences.push_back(fence);
+		fenceValues.push_back(initialValue);
+	}
+}
+
+void Graphics::createFenceEventHandle()
+{
+	fenceEventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (fenceEventHandle == NULL)
+	{
+		throw(runtime_error{ "Error creating fence event." });
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>All this code should be already familar to you. Here we&#8217;re creating allocators, a list and we&#8217;re closing it because we&#8217;re not going to use it now, fences - one for each buffered frame and one handle. We need multiple fences by the same reason we need multiple allocators. Imagine we submitted commands for frame <code>1</code> and told the queue to set a fence after this frame. We do the same for frames <code>2</code> and <code>3</code>. Now when we&#8217;re ready to reuse allocator <code>1</code> we need to check fence value <code>1</code> - not <code>2</code> or <code>3</code> (they still can be in use) and if the value is what we&#8217;re expecting we can safely reuse the memory. In other case we need to wait.</p>
+</div>
+<div class="paragraph">
+<p>Next we&#8217;ll create command queue and  swap chain:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Graphics.h
+Microsoft::WRL::ComPtr&lt;ID3D12CommandQueue&gt; commandQueue;
+Microsoft::WRL::ComPtr&lt;IDXGISwapChain3&gt; swapChain;
+
+// Graphics.cpp
+void Graphics::createCommandQueue()
+{
+	D3D12_COMMAND_QUEUE_DESC queueDesc;
+	ZeroMemory(&amp;queueDesc, sizeof(queueDesc));
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	queueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	queueDesc.NodeMask = 0;
+
+	HRESULT hr{ device-&gt;CreateCommandQueue(&amp;queueDesc, IID_PPV_ARGS(commandQueue.ReleaseAndGetAddressOf())) };
+	if (FAILED(hr))
+	{
+		throw(runtime_error{ "Error creating command queue." });
+	}
+}
+
+void Graphics::createSwapChain()
+{
+	POINT wSize(window-&gt;getSize());
+
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
+	ZeroMemory(&amp;swapChainDesc, sizeof(swapChainDesc));
+	swapChainDesc.Width = static_cast&lt;UINT&gt;(wSize.x);
+	swapChainDesc.Height = static_cast&lt;UINT&gt;(wSize.y);
+	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.Stereo = FALSE;
+	swapChainDesc.SampleDesc = { 1, 0 }; // no anti-aliasing
+	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDesc.BufferCount = bufferCount;
+	swapChainDesc.Scaling = DXGI_SCALING_NONE;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swapChainDesc.Flags = 0;
+
+	ComPtr&lt;IDXGISwapChain1&gt; swapChain1;
+	if (FAILED(factory-&gt;CreateSwapChainForHwnd(commandQueue.Get(), window-&gt;getHandle(), &amp;swapChainDesc, nullptr, nullptr, swapChain1.ReleaseAndGetAddressOf())))
+	{
+		throw(runtime_error{ "Error creating IDXGISwapChain1." });
+	}
+
+	if (FAILED(swapChain1.As(&amp;swapChain)))
+	{
+		throw(runtime_error{ "Error creating IDXGISwapChain3." });
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You should be familar with command queue. The swap chain concept didn&#8217;t change since directx 11 the only interesting thing is that you need to specify command queue during swap chain creation. Here <code>bufferCount</code> variable is a number of buffered frames.</p>
+</div>
+<div class="paragraph">
+<p>Now it&#8217;s time to create back buffers:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Graphics.h
+std::vector&lt;Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt;&gt; swapChainBuffers;
+Microsoft::WRL::ComPtr&lt;ID3D12DescriptorHeap&gt; descHeapRtv;
+
+// Graphics.cpp
+void Graphics::getSwapChainBuffers()
+{
+	for (UINT i{ 0 }; i &lt; bufferCount; i++)
+	{
+		if (FAILED(swapChain-&gt;GetBuffer(i, IID_PPV_ARGS(swapChainBuffers[i].ReleaseAndGetAddressOf()))))
+		{
+			throw(runtime_error{ "Error getting buffer." });
+		}
+	}
+}
+
+void Graphics::createDescriptoprHeapRtv()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
+	ZeroMemory(&amp;heapDesc, sizeof(heapDesc));
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	heapDesc.NumDescriptors = bufferCount;
+	heapDesc.NodeMask = 0;
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	if (FAILED(device-&gt;CreateDescriptorHeap(&amp;heapDesc, IID_PPV_ARGS(descHeapRtv.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating descriptor heap." });
+	}
+
+	UINT rtvStep{ device-&gt;GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) };
+	for (UINT i{ 0 }; i &lt; bufferCount; i++)
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE d = descHeapRtv-&gt;GetCPUDescriptorHandleForHeapStart();
+		d.ptr += i * rtvStep;
+		device-&gt;CreateRenderTargetView(swapChainBuffers[i].Get(), nullptr, d);
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When we specified the number of back buffers in swap chain creation they become created implicitly so we don&#8217;t need to create resources manualy. But we still need to create descriptors for all our back buffers. In <code>Graphics::getSwapChainBuffers()</code> we&#8217;re obtaining pointers to created resources and in <code>Graphics::createDescriptoprHeapRtv()</code> we&#8217;re creating a descriptor heap (recal that descriptors should be stored somewhere) with the type <code>D3D12_DESCRIPTOR_HEAP_TYPE_RTV</code> and big enough to store necessary amount of views. Next we&#8217;re iterating over obtained buffer pointers and for every resource we&#8217;re creating a corresponding view (recal that <code>ID3D12Device::GetDescriptorHandleIncrementSize</code> is a cross vendor way to get descriptor size).</p>
+</div>
+<div class="paragraph">
+<p>For our demo we also need a depth buffer:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Graphics.h
+Microsoft::WRL::ComPtr&lt;ID3D12Resource&gt; depthStencilBuffer;
+Microsoft::WRL::ComPtr&lt;ID3D12DescriptorHeap&gt; descHeapDepthStencil;
+
+// Graphics.cpp
+void Graphics::createDepthStencilBuffer()
+{
+	D3D12_CLEAR_VALUE depthOptimizedClearValue;
+	ZeroMemory(&amp;depthOptimizedClearValue, sizeof(depthOptimizedClearValue));
+	depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+	depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+	POINT wSize(window-&gt;getSize());
+
+	D3D12_HEAP_PROPERTIES heapProps;
+	ZeroMemory(&amp;heapProps, sizeof(heapProps));
+	heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+	heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	heapProps.CreationNodeMask = 1;
+	heapProps.VisibleNodeMask = 1;
+
+	D3D12_RESOURCE_DESC resourceDesc;
+	ZeroMemory(&amp;resourceDesc, sizeof(resourceDesc));
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resourceDesc.Alignment = 0;
+	resourceDesc.Width = wSize.x;
+	resourceDesc.Height = wSize.y;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 0;
+	resourceDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.SampleDesc.Quality = 0;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+	HRESULT hr{ device-&gt;CreateCommittedResource(
+		&amp;heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&amp;resourceDesc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&amp;depthOptimizedClearValue,
+		IID_PPV_ARGS(depthStencilBuffer.ReleaseAndGetAddressOf())
+	) };
+
+	if (FAILED(hr))
+	{
+		throw(runtime_error{ "Error creating depth stencil buffer." });
+	}
+}
+
+void Graphics::createDescriptorHeapDepthStencil()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
+	ZeroMemory(&amp;heapDesc, sizeof(heapDesc));
+	heapDesc.NumDescriptors = 1;
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	if (FAILED(device-&gt;CreateDescriptorHeap(&amp;heapDesc, IID_PPV_ARGS(descHeapDepthStencil.ReleaseAndGetAddressOf()))))
+	{
+		throw(runtime_error{ "Error creating depth stencil descriptor heap." });
+	}
+
+	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+	ZeroMemory(&amp;depthStencilViewDesc, sizeof(depthStencilViewDesc));
+	depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	depthStencilViewDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+	device-&gt;CreateDepthStencilView(depthStencilBuffer.Get(), &amp;depthStencilViewDesc, descHeapDepthStencil-&gt;GetCPUDescriptorHandleForHeapStart());
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Nothing special here - we&#8217;re creating a resource heap with default type (depth buffer used by gpu without cpu access) and a texture resource. Field names are self explanatory - dimension, size, etc. In flags we&#8217;re specifying that we want to use this texture as depth stencil. And as we did million times already we`re creating a descriptor heap and a descriptor inside it.</p>
+</div>
+<div class="paragraph">
+<p>Wow. Finally. We&#8217;re ready to draw!</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_rendering">Rendering</h5>
+<div class="paragraph">
+<p>We have everything for our demo - all resources and infrastructure. Now we&#8217;ll call <code>TeapotTutorial::render()</code> method every frame where we&#8217;ll tell gpu to use resources and run shaders.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// TeapotTutorial.cpp
+void TeapotTutorial::render()
+{
+	// #1
+	UINT frameIndex{ swapChain-&gt;GetCurrentBackBufferIndex() };
+
+	// #2
+	ComPtr&lt;ID3D12CommandAllocator&gt; commandAllocator{ commandAllocators[frameIndex] };
+
+	if (FAILED(commandAllocator-&gt;Reset()))
+	{
+		throw(runtime_error{ "Error resetting command allocator." });
+	}
+
+	if (FAILED(commandList-&gt;Reset(commandAllocator.Get(), nullptr)))
+	{
+		throw(runtime_error{ "Error resetting command list." });
+	}
+
+	// #3
+	commandList-&gt;SetPipelineState(currPipelineState.Get());
+	commandList-&gt;SetGraphicsRootSignature(rootSignature.Get());
+	commandList-&gt;RSSetViewports(1, &amp;viewport);
+	commandList-&gt;RSSetScissorRects(1, &amp;scissorRect);
+
+	// #4
+	ID3D12Resource* currBuffer{ swapChainBuffers[frameIndex].Get() };
+
+	// #5
+	D3D12_RESOURCE_BARRIER barrierDesc;
+	ZeroMemory(&amp;barrierDesc, sizeof(barrierDesc));
+	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierDesc.Transition.pResource = currBuffer;
+	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	commandList-&gt;ResourceBarrier(1, &amp;barrierDesc);
+
+	// #6
+	static UINT descriptorSize{ device-&gt;GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) };
+	D3D12_CPU_DESCRIPTOR_HANDLE descHandleRtv(descHeapRtv-&gt;GetCPUDescriptorHandleForHeapStart());
+	descHandleRtv.ptr += frameIndex * descriptorSize;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE descHandleDepthStencil(descHeapDepthStencil-&gt;GetCPUDescriptorHandleForHeapStart());
+
+	commandList-&gt;OMSetRenderTargets(1, &amp;descHandleRtv, FALSE, &amp;descHandleDepthStencil);
+
+	// #7
+	static float clearColor[]{ 0.1f, 0.1f, 0.1f, 1.0f };
+	commandList-&gt;ClearRenderTargetView(descHandleRtv, clearColor, 0, nullptr);
+	commandList-&gt;ClearDepthStencilView(descHeapDepthStencil-&gt;GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	commandList-&gt;IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_16_CONTROL_POINT_PATCHLIST);
+
+	// #8
+	vector&lt;D3D12_VERTEX_BUFFER_VIEW&gt; myArray{ controlPointsBufferView };
+	commandList-&gt;IASetVertexBuffers(0, static_cast&lt;UINT&gt;(myArray.size()), myArray.data());
+
+	// #9
+	vector&lt;int&gt; rootConstants{ tessFactor, tessFactor };
+	commandList-&gt;SetGraphicsRoot32BitConstants(1, static_cast&lt;UINT&gt;(rootConstants.size()), rootConstants.data(), 0);
+
+	// #10
+	ID3D12DescriptorHeap* ppHeaps[] = { transformsAndColorsDescHeap.Get() };
+	commandList-&gt;SetDescriptorHeaps(1, ppHeaps);
+	D3D12_GPU_DESCRIPTOR_HANDLE d { transformsAndColorsDescHeap-&gt;GetGPUDescriptorHandleForHeapStart() };
+	d.ptr += 0;
+	commandList-&gt;SetGraphicsRootDescriptorTable(2, d);
+
+	// #11
+	POINT windowSize(window-&gt;getSize());
+	float ratio{ static_cast&lt;float&gt;(windowSize.x) / static_cast&lt;float&gt;(windowSize.y) };
+	XMMATRIX projMatrixDX{ XMMatrixPerspectiveFovLH(XMConvertToRadians(45), ratio, 1.0f, 100.0f) };
+
+	XMVECTOR camPositionDX(XMVectorSet(0.0f, 0.0f, -10.0f, 0.0f));
+	XMVECTOR camLookAtDX(XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f));
+	XMVECTOR camUpDX(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
+	XMMATRIX viewMatrixDX{ XMMatrixLookAtLH(camPositionDX, camLookAtDX, camUpDX) };
+
+	XMMATRIX viewProjMatrixDX{ viewMatrixDX * projMatrixDX };
+	UINT constDataSizeAligned{ (sizeof(XMFLOAT4X4) + 255) &amp; ~255 };
+
+	POINT mousePoint(window-&gt;getMousePosition());
+	float pitch{ -XMConvertToRadians((mousePoint.x - (static_cast&lt;float&gt;(windowSize.x) / 2.0f)) / (static_cast&lt;float&gt;(windowSize.x) / 2.0f) * 180.0f) };
+	float roll{ XMConvertToRadians((mousePoint.y - (static_cast&lt;float&gt;(windowSize.y) / 2.0f)) / (static_cast&lt;float&gt;(windowSize.y) / 2.0f) * 180.0f) };
+
+	XMMATRIX modelMatrixRotationDX{ XMMatrixRotationRollPitchYaw(roll, pitch, 0.0f) };
+	XMMATRIX modelMatrixTranslationDX{ XMMatrixTranslation(0.0f, -1.0f, 0.0f) };
+	XMMATRIX modelMatrixDX{ modelMatrixRotationDX * modelMatrixTranslationDX };
+	XMFLOAT4X4 mvpMatrix;
+	XMStoreFloat4x4(&amp;mvpMatrix, modelMatrixDX * viewProjMatrixDX);
+
+	// #12
+	D3D12_RANGE readRange = {0, 0};
+	uint8_t* cbvDataBegin;
+	constBuffer-&gt;Map(0, &amp;readRange, reinterpret_cast&lt;void**&gt;(&amp;cbvDataBegin));
+	memcpy(&amp;cbvDataBegin[frameIndex * constDataSizeAligned], &amp;mvpMatrix, sizeof(mvpMatrix));
+	constBuffer-&gt;Unmap(0, nullptr);
+
+	// #13
+	commandList-&gt;SetGraphicsRootConstantBufferView(0, constBuffer-&gt;GetGPUVirtualAddress() + frameIndex * constDataSizeAligned);
+
+	// #14
+	commandList-&gt;IASetIndexBuffer(&amp;controlPointsIndexBufferView);
+
+	// #15
+	uint32_t numIndices{ controlPointsIndexBufferView.SizeInBytes / sizeof(uint32_t) };
+	commandList-&gt;DrawIndexedInstanced(numIndices, 1, 0, 0, 0);
+
+	// #16
+	ZeroMemory(&amp;barrierDesc, sizeof(barrierDesc));
+	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierDesc.Transition.pResource = currBuffer;
+	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+	barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	commandList-&gt;ResourceBarrier(1, &amp;barrierDesc);
+
+	// #17
+	if (FAILED(commandList-&gt;Close()))
+	{
+		throw(runtime_error{ "Failed closing command list." });
+	}
+
+	// #18
+	ID3D12CommandList* cmdList{ commandList.Get() };
+	commandQueue-&gt;ExecuteCommandLists(1, &amp;cmdList);
+
+	// #19
+	if (FAILED(swapChain-&gt;Present(1, 0)))
+	{
+		throw(runtime_error{ "Failed present." });
+	}
+
+	// #20
+	UINT64&amp; fenceValue{ fenceValues[frameIndex] };
+	++fenceValue;
+	ComPtr&lt;ID3D12Fence&gt; fence{ fences[frameIndex] };
+	if (FAILED(commandQueue-&gt;Signal(fence.Get(), fenceValue)))
+	{
+		throw(runtime_error{ "Failed signal." });
+	}
+
+	// #21
+	waitFrameComplete(swapChain-&gt;GetCurrentBackBufferIndex());
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As usual we&#8217;ll go step by step.</p>
+</div>
+<div class="paragraph">
+<p><code>IDXGISwapChain3</code> have a very handy method <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn903675(v=vs.85).aspx">IDXGISwapChain3::GetCurrentBackBufferIndex()</a> (<strong>#1</strong>). It shows the index of the current back buffer. In the beginnig the index is <code>0</code> and after calling <code>IDXGISwapChain::Present()</code> it will change to <code>2</code> (if we have more than <code>1</code> buffer of course). So we don&#8217;t need to track manually the current frame.</p>
+</div>
+<div class="paragraph">
+<p>Using current frame index we can obtain a corresponding allocator (<strong>#2</strong>). We need to reset it before we can start to work with it. Remember that we need to be sure that there&#8217;re no more commands in flight from this allocator so we&#8217;ll not break anything. Also we need to tell our command list that we&#8217;re going to use this allocator with it.</p>
+</div>
+<div class="paragraph">
+<p>Next we&#8217;re setting pso, signature, viewport and scissor rect (<strong>#3</strong>). We didn&#8217;t discuss the last two objects. They&#8217;re pretty strightforward and created with other resources in constructor (please refer to <a href="https://github.com/nikitablack/directx-12/blob/master/TeapotTutorial/TeapotTutorial/TeapotTutorial.cpp">github</a>).</p>
+</div>
+<div class="paragraph">
+<p>Also we need to get a pointer to the current back buffer (<strong>#4</strong>) since we&#8217;ll use it several times.</p>
+</div>
+<div class="paragraph">
+<p>Now when we have a back buffer we need to move it to the correct state. Since we&#8217;re going to render a teapot into it the state should be <code>D3D12_RESOURCE_STATE_RENDER_TARGET</code> (<strong>#5</strong>).</p>
+</div>
+<div class="paragraph">
+<p>Next we need to say gpu that we want to use this back buffer as a render target. But we can&#8217;t do it directly. Instead we need to set the view that describes this buffer. As you know all views are stored in descriptor heap. All we need to do is to calculate the correct offset from the heap start (<strong>#6</strong>). And we&#8217;re doing the same for the depth buffer (we have only one depth buffer so the descriptor and heap have same addreses).</p>
+</div>
+<div class="paragraph">
+<p>Next we&#8217;re clearing render target and depth buffer to some initial values and also specifying the topology we&#8217;re going to use in this draw - <code>D3D_PRIMITIVE_TOPOLOGY_16_CONTROL_POINT_PATCHLIST</code> (<strong>#7</strong>).</p>
+</div>
+<div class="paragraph">
+<p>Next we need to specify a vertex buffer. Again, we&#8217;re doing it with a view (<strong>#8</strong>).</p>
+</div>
+<div class="paragraph">
+<p>Do you remember how we created our root signature? The second parameter were <code>2</code> root constants for the hull shader. We&#8217;re using single <code>tessFactor</code> constant for both edge and inside factors and we&#8217;re setting this constant with <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn903910(v=vs.85).aspx"><code>ID3D12GraphicsCommandList::SetGraphicsRoot32BitConstants()</code></a> method specifying the position in the root signature (<strong>#9</strong>).</p>
+</div>
+<div class="paragraph">
+<p>Third parameter in the root signature was a descriptor table. Recall that the table points to a continious range of descriptors in descriptor heap. During parameter creation we specified that we&#8217;ll use <code>2</code> descriptors. All we have to do is to pass an address of the first descriptor in <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn903912(v=vs.85).aspx"><code>ID3D12GraphicsCommandList&#8594;SetGraphicsRootDescriptorTable()</code></a> method (<strong>#10</strong>). But before we need to set a correct descriptor heap or we&#8217;ll get an error.</p>
+</div>
+<div class="paragraph">
+<p>Next we&#8217;re doing some math (<strong>#11</strong>) - creating a projection matrix, view matrix, rotating our model depending on mouse position. And updating our upload constant buffer with <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn788712%28v=vs.85%29.aspx"><code>ID3D12Resource&#8594;Map()</code></a> method (<strong>#12</strong>). As you remember our constant buffer store data for all our buffered frames. In order to write to the correct place we need to use a correct offset from the start of the buffer (don&#8217;t forget about <code>256B</code> alignment).</p>
+</div>
+<div class="paragraph">
+<p>Now when we have updated constant buffer we&#8217;re ready to finish with the root signature. We&#8217;re setting the last parameter - root descriptor as a first parameter not forgetting the correct offset from descriptor heap start (<strong>#13</strong>).</p>
+</div>
+<div class="paragraph">
+<p>Next we&#8217;re setting index buffer via view (<strong>#14</strong>) and drawing (<strong>#15</strong>).</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re thinking that after drawing we can relax - I&#8217;ll upset you. We still need some work to do. Remember that before drawing to a back buffer we set it&#8217;s state as <code>D3D12_RESOURCE_STATE_RENDER_TARGET</code>. In order to be presented the buffer have to be in <code>D3D12_RESOURCE_STATE_PRESENT</code> state (<strong>#16</strong>).</p>
+</div>
+<div class="paragraph">
+<p>Now when we&#8217;re done with command list we need to close it (<strong>#17</strong>) and send it to the command queue for execution (<strong>#18</strong>).</p>
+</div>
+<div class="paragraph">
+<p>After calling <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb174576(v=vs.85).aspx"><code>IDXGISwapChain&#8594;Present()</code></a> (<strong>#19</strong>) we need to tell the gpu to increment corresponding fence after frame will finish (<strong>#20</strong>). Exactly how we did during default buffer creation. For example if we rendered a frame <code>0</code> we need to update a fence <code>0</code> for this frame and store the updated value (also with index <code>0</code>) on cpu. This way we can anytime check the current value of fence <code>0</code> and say for sure if it&#8217;s done or not. And we&#8217;re doing it in <code>waitFrameComplete()</code> function (<strong>#21</strong>):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Graphics.cpp
+void Graphics::waitFrameComplete(UINT frameIndex)
+{
+	UINT64 fenceValue{ fenceValues[frameIndex] };
+	ComPtr&lt;ID3D12Fence&gt; fence{ fences[frameIndex] };
+
+	if (FAILED(fence-&gt;SetEventOnCompletion(fenceValue, fenceEventHandle)))
+	{
+		throw(runtime_error{ "Failed set event on completion." });
+	}
+
+	DWORD wait{ WaitForSingleObject(fenceEventHandle, 10000) };
+	if (wait != WAIT_OBJECT_0)
+	{
+		throw(runtime_error{ "Failed WaitForSingleObject()." });
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One more time - imagine we just finished a frame with index <code>2</code>. Since we have <code>3</code> buffered frames total the next index will be <code>0</code>. In <code>waitFrameComplete()</code> we&#8217;re checking the status of frame <code>0</code> - if it&#8217;s still in flight we have to stall and wait until fence will be equal to the expected value.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_cleanup">Cleanup</h5>
+<div class="paragraph">
+<p>One thing we didn&#8217;t mention is cleaning. But it&#8217;s pretty simple - since we used smart pointers we don&#8217;t need to delete pointers manually. The only thing we need to take care of is to be sure that during resources desctruction gpu finished with them. We can do it with good old fences:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Graphics.cpp
+Graphics::~Graphics()
+{
+	for (UINT i{ 0 }; i &lt; bufferCount; i++)
+	{
+		waitFrameComplete(i);
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here I just iterate over all buffered frames and check that all they are done.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_conclusion">Conclusion</h5>
+<div class="paragraph">
+<p>Wow, that&#8217;s was a really long journey. As you can see there&#8217;s a lot of code for such a simple application but most of this code can be abstracted with reusable structures like ones in <code>d3dx12.h</code>.</p>
+</div>
+<div class="paragraph">
+<p>What we did today is just scratched a surface - directx12 api is very complex and still evolving. But I encourage you to continue investigation - after all it&#8217;s so fun :)</p>
+</div>
+<div class="paragraph">
+<p>The video below shows the result of work we done. And <a href="https://github.com/nikitablack/directx-12/tree/master/TeapotTutorial/TeapotTutorial">here</a> is the full source.</p>
+</div>
+<div class="videoblock">
+<div class="content">
+<iframe width="480" height="300" src="https://www.youtube.com/embed/m5Lac8TNsc0?rel=0" frameborder="0" allowfullscreen></iframe>
+</div>
+</div>
+</div>]]></description><link>https://nikitablack.github.io/2016/07/23/Direct-X-12-by-example.html</link><guid isPermaLink="true">https://nikitablack.github.io/2016/07/23/Direct-X-12-by-example.html</guid><category><![CDATA[c++]]></category><category><![CDATA[ directx12]]></category><dc:creator><![CDATA[nikitablack]]></dc:creator><pubDate>Sat, 23 Jul 2016 00:00:00 GMT</pubDate></item><item><title><![CDATA[std::function - to bind or not to bind?]]></title><description><![CDATA[<div class="paragraph">
+<p>In my <a href="https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html">previous post</a> about delegates I wrote how to bind a member function to <code>std::function</code>. There was a lot of template magic involved in order to pass the correct number of <a href="http://en.cppreference.com/w/cpp/utility/functional/placeholders">placeholders</a>. Shortly after I published I received a lot of feedback and I&#8217;m very grateful for this. One advice was not to use <a href="http://en.cppreference.com/w/cpp/utility/functional/bind"><code>std::bind()</code></a> at all. I&#8217;ll paste directly the code from one of the comments and will make some time measurements:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template &lt;class T, class R, class ... Args&gt;
+auto make_function(T t, R(T::*mem_fn)(Args...))
+{
+  return [t, mem_fn] (Args ... args) mutable -&gt; R { return ((t).*(mem_fn))(args...); };
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you can see - it&#8217;s usual lambda that can be converted to <a href="http://en.cppreference.com/w/cpp/utility/functional/function"><code>std::function</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>My first thoughts were that lambda should be slower - we have a function call and a lambda call over it. To be honest, I don&#8217;t know how <code>std::bind</code> works, maybe it also creates some wrappers? Anyway, let&#8217;s benchmark:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">struct S
+{
+	int foo(int a, int b)
+	{
+		return a + b;
+	}
+};
+
+int main()
+{
+	const uint32_t NUM_TESTS{ 10 };
+	const uint32_t NUM_ITERATIONS{ 100000000 };
+
+	volatile int res{ 0 };
+
+	S s;
+	function&lt;int(int, int)&gt; f{ bind(&amp;S::foo, &amp;s, placeholders::_1, placeholders::_2) }; // passing an object's pointer as I did in previous article
+
+	{
+		uint64_t t{ 0 };
+		for (int i{ 0 }; i &lt; NUM_TESTS; ++i)
+		{
+			auto start = chrono::high_resolution_clock::now();
+			for (int j{ 0 }; j &lt; NUM_ITERATIONS; ++j)
+			{
+				res += f(5, 10);
+			}
+			auto end = chrono::high_resolution_clock::now();
+			auto time = chrono::duration_cast&lt;chrono::milliseconds&gt;(end - start);
+			t += time.count();
+		}
+
+		cout &lt;&lt; t / NUM_TESTS &lt;&lt; "\n";
+	}
+
+	auto* ptr = &amp;s;
+	auto fPtr = &amp;S::foo;
+	function&lt;int(int, int)&gt; f2 = [ptr, fPtr](int a, int b){ return ((ptr)-&gt;*(fPtr))(a, b); }; // capture pointers by copy
+
+	res = 0;
+	{
+		uint64_t t{ 0 };
+		for (int i{ 0 }; i &lt; NUM_TESTS; ++i)
+		{
+			auto start = chrono::high_resolution_clock::now();
+			for (int j{ 0 }; j &lt; NUM_ITERATIONS; ++j)
+			{
+				res += f2(5, 10);
+			}
+			auto end = chrono::high_resolution_clock::now();
+			auto time = chrono::duration_cast&lt;chrono::milliseconds&gt;(end - start);
+			t += time.count();
+		}
+
+		cout &lt;&lt; t / NUM_TESTS &lt;&lt; "\n";
+	}
+
+	cin.get();
+
+	return 0;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On my machine I have around <code>400ms</code> for <strong>both</strong> <code>std::bind()</code> and lambda. Not bad. My previous code can be simplified dramatically now -there&#8217;s no need in <code>std::bind()</code> and accompanying template tricks.</p>
+</div>]]></description><link>https://nikitablack.github.io/2016/05/24/stdfunction-to-bind-or-not-to-bind.html</link><guid isPermaLink="true">https://nikitablack.github.io/2016/05/24/stdfunction-to-bind-or-not-to-bind.html</guid><category><![CDATA[c++]]></category><dc:creator><![CDATA[nikitablack]]></dc:creator><pubDate>Tue, 24 May 2016 00:00:00 GMT</pubDate></item><item><title><![CDATA[Get sizes of arbitrary types]]></title><description><![CDATA[<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The more I work with c++ and template programming in particular, the more I love it. No, seriously - we have a language inside another language which allows us to create beautiful constructs. One of my recent problems was the finding of types sizes. I.e. I have a number of types, say <code>char, float, double</code> and I need to get their sizes and place them in a vector. The number of types can be different and in any combination. That sounds like a work for <a href="http://en.cppreference.com/w/cpp/language/parameter_pack">variadic templates</a>. Using templates allow us to write generic code that will work the same on all platforms.</p>
+</div>
+<div class="paragraph">
+<p>I like to write template code that requires several steps in back order or from outside. Let me show this on example. Since in the end I need to query the size of a type and put the value into the container the last function is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename T&gt;
+void assignImpl(vector&lt;int&gt;&amp; v)
+{
+	v.push_back(sizeof(T));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Very simple and straightforward. We have a type as a template argument, we take it&#8217;s size and put it in a vector. Since we have <code>N</code> number of types this function should be called <code>N</code> times. We can&#8217;t directly call some function several times during <a href="http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion">variadic parameter pack expansion</a> but we can use a trick:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template &lt;typename... Args&gt;
+void assign(vector&lt;int&gt;&amp; v)
+{
+	vector&lt;int&gt; temp{(assignImpl&lt;Args&gt;(v), 0)...};
+	(void)temp;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here <code>(assignImpl&lt;Args&gt;(v), 0)</code> <a href="http://en.cppreference.com/w/cpp/language/operator_other#Built-in_comma_operator">will return</a> <code>0</code> and the <code>assignImpl()</code> function call result will be discarded. But the function will be called anyway! And <code>&#8230;&#8203;</code> repeats this statement by the number of <code>Args</code>. For example, for <code>char, float, double</code> it will be expanded to:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">(assignImpl&lt;char&gt;(v), 0), (assignImpl&lt;float&gt;(v), 0), (assignImpl&lt;double&gt;(v), 0)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Also by the <a href="http://en.cppreference.com/w/cpp/language/eval_order#Rules">rules</a> functions calls inside initializer list will be <strong>sequenced in order</strong> from left to right (rule #10). That&#8217;s why we chose <code>std::vector</code> - because of it&#8217;s initializer list. And we can be sure that sizes will be placed in a vector in a correct order. Of course we are free to use something different. Again - the key here is initializer list. <code>(void)temp</code> simply tells the compiler to not report a warning because of unused object. So, after the expansion for <code>char, float, double</code> the entire function will turn into:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename char, typename float, typename double&gt;
+void assign(vector&lt;int&gt;&amp; v)
+{
+	vector&lt;int&gt; temp{(assignImpl&lt;char&gt;(v), 0), (assignImpl&lt;float&gt;(v), 0), (assignImpl&lt;double&gt;(v), 0)};
+	(void)temp;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The vector <code>temp</code>, as you already guessed, will hold three zeroes.</p>
+</div>
+<div class="paragraph">
+<p>Having all this we can write the <code>calcSizes()</code> function which is an entry point for our code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename... Args&gt;
+vector&lt;int&gt; calcSizes()
+{
+	vector&lt;int&gt; v;
+	assign&lt;Args...&gt;(v);
+
+	return v;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We can check it&#8217;s work:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">vector&lt;int&gt; v{calcSize&lt;char, float, double&gt;()};
+
+for(int i{0}; i &lt; v.size(); ++i)
+{
+	cout &lt;&lt; v[i] &lt;&lt; "\n"; // 1 4 8
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you can see nothing really difficult here. But it&#8217;s extremely interesting to get familar with c++ tiny details. After all that makes us better programmers.</p>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_update">UPDATE:</h5>
+<div class="paragraph">
+<p>After I posted an article I received a very constructive feedback and fixes to my post. In simple words - all I wrote is bullshit. The same can be achieved much easier. For example funcion <code>assign()</code> can be rewritten as:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename... Args&gt;
+void assign(vector&lt;int&gt;&amp; v)
+{
+    (void)vector&lt;int&gt;{ (v.push_back(sizeof(Args)),0)... };
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Moreover we don&#8217;t even need this. All the code can be done in a single function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename... Args&gt;
+vector&lt;size_t&gt; calcSizes()
+{
+    return { sizeof( Args )... };
+}</code></pre>
+</div>
+</div>
+</div>]]></description><link>https://nikitablack.github.io/2016/05/11/Get-sizes-of-arbitrary-types.html</link><guid isPermaLink="true">https://nikitablack.github.io/2016/05/11/Get-sizes-of-arbitrary-types.html</guid><category><![CDATA[c++]]></category><dc:creator><![CDATA[nikitablack]]></dc:creator><pubDate>Wed, 11 May 2016 00:00:00 GMT</pubDate></item><item><title><![CDATA[std::function as delegate]]></title><description><![CDATA[<div class="paragraph">
+<p>After my <a href="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html">previous</a> post some people asked why did I invent what was invented already? Why did I try to write another <a href="http://en.cppreference.com/w/cpp/utility/functional/function"><code>std::function</code></a>? Well, from the begining I planed to compare custom and standard approach. So here we are.</p>
+</div>
+<div class="paragraph">
+<p>Thought <code>stl</code> provides a great way to store functions and call them later it simply not fulfils my requirement - function callbacks should be added and removed runtime. Also the same function shouldn&#8217;t be added twice. <code>std::function</code> doesn&#8217;t have a comparison operator. You can say that there&#8217;s the <a href="http://en.cppreference.com/w/cpp/utility/functional/function/target"><code>std::function::target()</code></a> method that returns a pointer to a callable type. But can we use it with member functions? Recall that in order to create a wrapper around a member function we need to bind it with <a href="http://en.cppreference.com/w/cpp/utility/functional/bind"><code>std::bind()</code></a>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">function&lt;void()&gt; f{ bind(&amp;SomeStruct::someMemberFunc) };</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And <code>std::bind()</code> returns an <strong>unspecified type</strong>. That means that each compiler will have different implementation for this type. Also the standard doesn&#8217;t say that instances of this type should be comparable.  Take a look at the following code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">SomeStruct obj;
+
+// same function binded twice
+function&lt;void()&gt; f{ bind(&amp;SomeStruct::someMemberFunc, obj) };
+function&lt;void()&gt; f2{ bind(&amp;SomeStruct::someMemberFunc, obj) };
+
+// get the type of underlying callable object
+using RetType = decltype(bind(&amp;SomeStruct::someMemberFunc));
+
+auto a = f.target&lt;T&gt;();
+auto b = f2.target&lt;T&gt;();
+
+bool b{ a == b }; // false</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here I binded the same function of the same object to different wrappers. Though can&#8217;t compare <code>std::function</code> objects directly, but I can get the underlying callable objects. With Visual Studio I can compare this objects but anyway they are not equal!</p>
+</div>
+<div class="paragraph">
+<p>Since I can&#8217;t compare <code>std::function</code> objects directly I decided to use some sort of hashing. Let&#8217;s look at the example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;void(*funcPtr)()&gt;
+void add()
+{
+	uintptr_t ptr{ reinterpret_cast&lt;uintptr_t&gt;(funcPtr) };
+	string hash{ to_string(ptr) };
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I took a pointer to a function and converted it to the string - now I have unique key which I can compare. The <a href="http://en.cppreference.com/w/cpp/language/reinterpret_cast">documentation</a> says:</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>"Any pointer can be converted to any integral type large enough to hold the value of the pointer (e.g. to std::uintptr_t)".</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>Sounds easy, right? But cplusplus wouldn&#8217;t be cplusplus if it was so easy. The pointer to member is not an usual pointer and <code>reinterpret_cast</code> doesn&#8217;t work with it, i.e. the following code is incorrect:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename T, void(T::*funcPtr)()&gt;
+void add()
+{
+	uintptr_t ptr{ reinterpret_cast&lt;uintptr_t&gt;(funcPtr) }; // cannot convert to 'uintptr_t'
+	string hash{ to_string(ptr) };
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In other words - there&#8217;s no simple way to get a pointer to member as <code>uintptr_t</code> and even <code>void*</code>. But we can do some hack:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename T, void(T::*funcPtr)()&gt;
+void add()
+{
+	auto ptr = funcPtr;
+	void* ptr2 = &amp;ptr; // get address of the pointer
+	char arr[sizeof(uintptr_t)];
+	memcpy(arr, ptr2, sizeof(uintptr_t)); // copy the contents of pointer (which is the address to the function)
+	uintptr_t ptr3 = *(reinterpret_cast&lt;uintptr_t*&gt;(arr)); // cast to necessary type
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It <strong>can</strong> work. But it&#8217;s not <a href="http://stackoverflow.com/a/36837375/1341942">guaranteed</a>. All this looks like I should forget about hash string. At least at that moment I don&#8217;t know how to get string representation of member function robustly. While I&#8217;m searching for the way to do it I decided to take the dumbest approach - pass a string tag together with data:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;void(*funcPtr)()&gt;
+void add(const string&amp; tag)
+{
+}
+
+template&lt;typename T, void(T::*funcPtr)()&gt;
+void add(const string&amp; tag)
+{
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It&#8217;s not elegant and it adds some complexity to a code but at least it&#8217;s robust, haha. Now I can start to implement the <code>Dispatcher</code> class (remember <a href="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html">previous post</a>) with <code>std::function</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename T&gt;
+class Dispatcher;
+
+template&lt;typename Ret, typename ...Args&gt;
+class Dispatcher&lt;Ret(Args...)&gt;
+{
+public:
+	template&lt;Ret(*funcPtr)(Args...)&gt;
+	bool add(const string&amp; tag)
+	{
+		addImpl(tag, funcPtr);
+		return true;
+	}
+
+	template&lt;typename T&gt;
+	bool add(const string&amp; tag, shared_ptr&lt;T&gt; t)
+	{
+		addImpl(tag, *t.get());
+		return true;
+	}
+
+	bool remove(const string&amp; tag)
+	{
+		auto it = find(tags.begin(), tags.end(), tag);
+		if (it == tags.end())
+		{
+			return false;
+		}
+
+		auto index{ distance(tags.begin(), it) };
+		tags.erase(it);
+
+		delegates.erase(delegates.begin() + index);
+
+		return true;
+	}
+
+	void operator()(Args... args)
+	{
+		for (auto&amp; delegate : delegates)
+		{
+			delegate(args...);
+		};
+	}
+
+private:
+	bool addImpl(const string&amp; tag, function&lt;Ret(Args...)&gt; delegate)
+	{
+		if (find(tags.begin(), tags.end(), tag) != tags.end())
+		{
+			return false;
+		}
+
+		delegates.push_back(delegate);
+		tags.push_back(tag);
+
+		return true;
+	}
+
+private:
+	vector&lt;function&lt;Ret(Args...)&gt;&gt; delegates;
+	vector&lt;string&gt; tags;
+};</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>addImpl()</code> function accepts a <code>std::function</code> as a second parameter. In different <code>add()</code> functions we&#8217;re passing a callable object to it which will be converted to <code>std::function</code> implicitly. Curious reader already noticed that I didn&#8217;t provide an implementation for a member function. Why? Because it&#8217;s not trivial. Let&#8217;s find out why:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">struct UserStruct
+{
+	int member(int a, float b)
+	{
+		return a + static_cast&lt;int&gt;(b);
+	}
+};
+
+UserStruct us;
+function&lt;int(int, float)&gt; f{ bind(&amp;UserStruct::member, us, placeholders::_1, placeholders::_2) };
+f(5, 10.0f);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That&#8217;s how we bind and call a member function. Have you noticed <code>std::placeholders</code>? If we don&#8217;t know what parameters we&#8217;re going to pass to a wrapper - we have to use this stubs. Remember that we&#8217;re trying to build "generic" system and we chose to use variadic parameter pack for arguments. Because of this we don&#8217;t know the number of placeholders beforehand. And as you have guessed we need to generate them!</p>
+</div>
+<div class="paragraph">
+<p>After some search we can end up in this <a href="http://en.cppreference.com/w/cpp/utility/functional/is_placeholder">documentation</a> and it looks like what we need. And even with an example! It states that we can use our own custom placeholder if we&#8217;ll follow certain rules. Let&#8217;s try:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;size_t&gt;
+struct MyPlaceholder{};
+
+namespace std
+{
+	template&lt;&gt;
+	struct is_placeholder&lt;MyPlaceholder&lt;1&gt;&gt; : public integral_constant&lt;size_t, 1&gt;{};
+
+	template&lt;&gt;
+	struct is_placeholder&lt;MyPlaceholder&lt;2&gt;&gt; : public integral_constant&lt;size_t, 2&gt;{};
+}
+
+function&lt;int(int, float)&gt; f{ bind(&amp;UserStruct::member, us, MyPlaceholder&lt;1&gt;{}, MyPlaceholder&lt;2&gt;{}) };
+f(5, 10.0f)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wow, it works! But we don&#8217;t like this enumeration in <code>std</code> namespace, do we?</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;size_t&gt;
+struct MyPlaceholder{};
+
+namespace std
+{
+	template&lt;size_t N&gt;
+	struct is_placeholder&lt;MyPlaceholder&lt;N&gt;&gt; : public integral_constant&lt;size_t, N&gt;{};
+}
+
+function&lt;int(int, float)&gt; f{ bind(&amp;UserStruct::member, us, MyPlaceholder&lt;1&gt;{}, MyPlaceholder&lt;2&gt;{}) };
+f(5, 10.0f)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Much better. Now we need to remove placeholder&#8217;s manual instantiation in <code>std::bind()</code> function. In one of my <a href="https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html">previous</a> posts I wrote about <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence">integer sequence</a> and it seems we can use it here too. Let&#8217;s wrap <code>std::bind()</code> and replace our placeholders with a function-generator:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template &lt;size_t N&gt;
+MyPlaceholder&lt;N + 1&gt; getPlaceholder()
+{
+	return {};
+}
+
+template &lt;typename T, typename Ret, size_t... Idx, typename... Args&gt;
+auto bindImpl(T* obj, Ret(T::*funcPtr)(Args...), index_sequence&lt;Idx...&gt;)
+{
+    return bind(funcPtr, obj, getPlaceholder&lt;Idx&gt;()...); // getPlaceholder() will be expanded
+}
+
+function&lt;int(int, float)&gt; f{ bindImpl(&amp;us, &amp;UserStruct::member, index_sequence_for&lt;int, float&gt;{}) };
+f(5, 10.0f)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>getPlaceholder()</code> will receive an integer (starting from <code>0</code>) as template argument and will be called the number of times equal to the number of callback&#8217;s arguments. Exactly as in my <a href="https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html">previous</a> post. Since placeholders should start from <code>1</code> we&#8217;re adding <code>+1</code> in the argument - <code>MyPlaceholder&lt;N + 1&gt;</code>. In our case this code will be generated:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">MyPlaceholder&lt;0 + 1&gt; getPlaceholder()
+{
+	return {};
+}
+
+MyPlaceholder&lt;1 + 1&gt; getPlaceholder()
+{
+	return {};
+}
+
+auto bindImpl(UserStruct* obj, int(UserStruct::*funcPtr)(int, float), index_sequence&lt;0, 1&gt;)
+{
+    return bind(funcPtr, obj, getPlaceholder&lt;0&gt;(), getPlaceholder&lt;1&gt;());
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Done! Now let&#8217;s put it in our <code>Dispatcher</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;size_t&gt;
+struct MyPlaceholder{};
+
+namespace std
+{
+	template&lt;size_t N&gt;
+	struct is_placeholder&lt;MyPlaceholder&lt;N&gt;&gt; : public integral_constant&lt;size_t, N&gt;{};
+}
+
+template&lt;typename T&gt;
+class Dispatcher;
+
+template&lt;typename Ret, typename ...Args&gt;
+class Dispatcher&lt;Ret(Args...)&gt;
+{
+public:
+	// ... other code ...
+
+	template&lt;typename T, Ret(T::*funcPtr)(Args...)&gt;
+	bool add(const string&amp; tag, shared_ptr&lt;T&gt; obj)
+	{
+		addImpl(tag, bindImpl(obj.get(), funcPtr, index_sequence_for&lt;Args...&gt;{}));
+		return true;
+	}
+
+	// ... other code ...
+
+private:
+	// ... other code ...
+
+	template &lt;typename T, size_t... Idx&gt;
+	function&lt;Ret(Args...)&gt; bindImpl(T* obj, Ret(T::*funcPtr)(Args...), index_sequence&lt;Idx...&gt;)
+	{
+		return bind(funcPtr, obj, getPlaceholder&lt;Idx&gt;()...);
+	}
+
+	template &lt;size_t N&gt;
+	MyPlaceholder&lt;N + 1&gt; getPlaceholder()
+	{
+		return {};
+	}
+
+	// ... other code ...
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Noe we can use our dispatcher this way:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">Dispatcher&lt;int(int, float)&gt; dispatcher;
+
+auto ptr = make_shared_lambda([](int a, float b)-&gt;int
+{
+	return a + static_cast&lt;int&gt;(b);
+});
+
+dispatcher.add("lambda", ptr);
+dispatcher.add("lambda", ptr); // will not add because wrapper with this name already binded
+
+auto ptr2 = make_shared&lt;UserStruct&gt;();
+dispatcher.add&lt;UserStruct, &amp;UserStruct::member&gt;("member", ptr2);
+
+dispatcher(5, 10.0f);
+
+dispatcher.remove("lambda");
+dispatcher.remove("member");</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See my <a href="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html">previous</a> post for <code>make_shared_lambda()</code> implementation.</p>
+</div>
+<div class="paragraph">
+<p>Now when we have two implemenations we can compare their performance. I binded a lambda, global function and a member function to both dispatchers and call them <code>10'000'000</code> times while measuring the time needed to make this amount of calls. Also I added "raw" function call (direct call without any wrappers). I ran this test <code>10</code> times and averaged the result. This is what I got with Visual Studio 2015 (release mode, optimizations):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">lambda raw: 21
+lambda dispatcher: 235
+lambda function dispatcher: 31
+
+global raw: 21
+global dispatcher: 85
+global function dispatcher: 38
+
+member raw: 22
+member dispatcher: 233
+member function dispatcher: 38</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Sorry, no fancy charts today. The results are interesting and unexpected for me. Delegate version I wrote is incredibly slow but <code>std::function</code> is pretty fast though 50% slower than the raw function call. For me the choice is obvious - I can live with managing unique identifiers for <code>std::function</code>, the speed for me (as a game developer) is much more important.</p>
+</div>
+<div class="paragraph">
+<p>The source code for both implementations and tests can be found <a href="https://github.com/nikitablack/cpp-tests/tree/master/Delegate">here</a>.</p>
+</div>]]></description><link>https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html</link><guid isPermaLink="true">https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html</guid><category><![CDATA[c++]]></category><dc:creator><![CDATA[nikitablack]]></dc:creator><pubDate>Tue, 26 Apr 2016 00:00:00 GMT</pubDate></item><item><title><![CDATA[Generic C++ delegates]]></title><description><![CDATA[<div class="paragraph">
+<p>I like modular programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow. We can pass callbacks to each other but in that case we can create dependencies - for example, a pointer to member function in C++ looks like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">int(SomeClass::*ptr)(float);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here <code>ptr</code> is an actual pointer and <code>SomeClass</code> is the name of the class - owner of this function. As you can imagine, if some class needs to accept a function pointer to another class, then using raw function pointers creates a coupling between them. We can use global or static functions - in that case we don&#8217;t need to specify a class name (because there&#8217;s no one). But using this types of functions will complicate the code.</p>
+</div>
+<div class="paragraph">
+<p>The problem can be solved if instead of passing function pointers we&#8217;ll pass some generic wrapper - a delegate. Later this wrapper can be called and a call will be delegated to the actual function which delegate wraps. Sounds easy, right? And in fact it&#8217;s easy and there many many ready solutions. My favorites are <a href="http://www.codeproject.com/Articles/11015/The-Impossibly-Fast-C-Delegates">The Impossibly Fast Delegates</a>, <a href="https://blog.molecular-matters.com/2011/09/19/generic-type-safe-delegates-and-events-in-c">Generic type-safe delegates</a> and <a href="http://blog.coldflake.com/posts/C++-delegates-on-steroids/">Delegates On Steroids</a>. And basically my implementation is a mix of aforementioned code with small additions. So, let&#8217;s start.</p>
+</div>
+<div class="paragraph">
+<p>First, let&#8217;s found how can we pass a function and call it later. One way is to pass a function pointer as a function argument, store this pointer and call it later. In following example I&#8217;m not storing it but call immediately:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">int foo(int(*funcPtr)(int))
+{
+  return funcPtr(10);
+}
+
+int test(int a)
+{
+  return a;
+}
+
+foo(&amp;test);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Another option is to pass function pointer as <a href="http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter">non-type template parameter</a>. In this case we don&#8217;t need to keep a pointer - the whole function was created around specified pointer:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;int(*FuncPtr)(int)&gt;
+int foo()
+{
+  return FuncPtr(10);
+}
+
+int test(int a)
+{
+  return a;
+}
+
+foo&lt;&amp;test&gt;();</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>But which us better? What to use? Of cource there&#8217;s no answer. It depends. If you don&#8217;t know before which function you need to use as a callback, then passing a function pointer is the only option. But if you know, then passing it as template argument can be a good choice. Check this example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">int call1(int(*funcPtr)(int))
+{
+  return funcPtr(10);
+}
+
+template&lt;int(*F)(int)&gt;
+int call2()
+{
+  return (F)(10);
+}
+
+int test(int a)
+{
+  return a;
+}
+
+int main()
+{
+  int i{0};
+
+  i += test(5);
+  i += call1(&amp;test);
+  i += call2&lt;&amp;test&gt;();
+
+  return i;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I used <a href="https://gcc.godbolt.org/">https://gcc.godbolt.org/</a> to compile it. Thought it&#8217;s hard to get useful output - compilers are damn smart and produce optimized code - with <strong>gcc</strong> compiler and <strong>O1</strong> optimization I got the following assembly output.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">test(int):
+        mov     eax, edi
+        ret
+call1(int (*)(int)):
+        sub     rsp, 8
+        mov     rax, rdi
+        mov     edi, 10
+        call    rax
+        add     rsp, 8
+        ret
+main:
+        sub     rsp, 8
+        mov     edi, OFFSET FLAT:test(int)
+        call    call1(int (*)(int))
+        add     eax, 15
+        add     rsp, 8
+        ret
+        sub     rsp, 8
+        mov     edi, OFFSET FLAT:std::__ioinit
+        call    std::ios_base::Init::Init()
+        mov     edx, OFFSET FLAT:__dso_handle
+        mov     esi, OFFSET FLAT:std::__ioinit
+        mov     edi, OFFSET FLAT:std::ios_base::Init::~Init()
+        call    __cxa_atexit
+        add     rsp, 8
+        ret
+----</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You don&#8217;t need to know an assembly to find one interesting thing - the call to <code>call2()</code> was <strong>completely</strong> optimized out. And the only call here is a call to <code>call1()</code> function which calls the supplied callback. In other words - the template wrapper was replaced by the compiler to the actual callback invokation (here it also optimized out)! It&#8217;s hard to tell will the compiler optimize in the same way in real big project but at least this output gives some hope that it will.</p>
+</div>
+<div class="paragraph">
+<p>Knowing this we can start to implement our delegate. In c++ we have a bunch of callable objects and we can split them in three categories:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>global functions - functions declared globally and static functions. The pointer to such a function will be passed to our delegate. For example <code>&amp;globalFunction</code> will return the address of a function (<code>&amp;</code> is optional). We can be sure we will not have problems calling it later, because this functions are always exist during program lifetime.</p>
+</li>
+<li>
+<p>member functions - members of a class or a struct. The pointer to this function should be called on valid object and it&#8217;s developer&#8217;s  responsibility to keep an object alive. The member function pointer can be written, for example, <code>int(SomeObj::*funcPtr)(int)</code> and called <code>obj&#8594;*funcPtr(42)</code>, where <code>obj</code> is a pointer.</p>
+</li>
+<li>
+<p>different callable objects that are not fitting in previous categories. This can be functors, lambdas, <code>std::function</code> objects. Thought lambda can be casted to a function pointer and treated as global/static function such a pointer can&#8217;t be used as template argument. Moreover, only lambdas without capture can be casted. This is why I put lambdas in this category.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>All that means that we should manage 3 cases in our delegate implementation. So let&#8217;s do it.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename T&gt;
+class Delegate;
+
+template&lt;typename Ret, typename ...Args&gt;
+class Delegate&lt;Ret(Args...)&gt;
+{
+	using CallbackType = Ret(*)(shared_ptr&lt;void&gt;, Args...);
+
+public:
+	Ret operator()(Args... args)
+	{
+		return callback(callee, args...);
+	}
+
+    bool operator==(const Delegate&amp; other)
+	{
+		return callee == other.callee &amp;&amp; callback == other.callback;
+	}
+
+private:
+	shared_ptr&lt;void&gt; callee{ nullptr };
+	CallbackType callback{ nullptr };
+
+private:
+	Delegate(shared_ptr&lt;void&gt; obj, CallbackType funcPtr) : callee{ obj }, callback{ funcPtr }
+	{
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here we created an incomplete base template class and a specialization. This is simply a cosmetic stuff - I like more <code>Delegate&lt;int(int, float)&gt;</code> signature than <code>Delegate&lt;int, int, float&gt;</code>. Next we declared a callback type <code>Ret(*)(shared_ptr&lt;void&gt;, Args&#8230;&#8203;)</code> - the function that accepts arguments that should be passed to supplied callback and an object - the <code>callee</code> - which we&#8217;ll use to call supplied callback on. This <code>callee</code> will be a pointer to a class/struct instance or a pointer to a lambda/functor and <code>nullptr</code> for global/static functions. Let <code>shared_ptr&lt;void&gt;</code> type scare you not - it will be casted to correct type in elegant manner. Also there&#8217;re a private constructor - mainly because constructors in c++ can&#8217;t be called with explicit template parameters and for ceation we&#8217;ll use a factory function, comparison operator - for having only single callback of the same time and for removing of a callback, and a call operator, so our delegate can be called as a functor or even be passed to another delegate!</p>
+</div>
+<div class="paragraph">
+<p>Now let&#8217;s add some meat to our skeleton. The simplest case is a static/global function case:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">public:
+	template&lt;Ret(*funcPtr)(Args...)&gt;
+	static Delegate create()
+	{
+		return Delegate{ nullptr, &amp;globalCaller&lt;funcPtr&gt; }; // nullptr as first parameter because static/global functions can be called directly
+	}
+
+private:
+	template&lt;Ret(*funcPtr)(Args...)&gt;
+	static Ret globalCaller(shared_ptr&lt;void&gt;, Args... args)
+	{
+		return funcPtr(args...);
+	}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Nothing really complicated here - we just defined a static <code>create</code> function (which calls the private constructor) and a wrapper for the callback. This wrapper is stored for later use. I&#8217;ll repeat it here - the standard doesn&#8217;t allow to call a constructor with explicit template arguments. That&#8217;s why we need <code>create</code> factory function.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The downside of template here is that we need to manually type template argument - it can&#8217;t be deduced.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Now we can create and call our first delegate:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">int global(int a, float b)
+{
+	return a + static_cast&lt;int&gt;(b);
+}
+
+Delegate&lt;int(int, float)&gt; d{ Delegate&lt;int(int, float)&gt;::create&lt;&amp;global&gt;() };
+d(10, 5.0f);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Member function case is slightly more difficult:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">public:
+	template&lt;typename T, Ret(T::*funcPtr)(Args...)&gt;
+	static Delegate create(shared_ptr&lt;T&gt; obj)
+	{
+		return Delegate{ obj, &amp;memberCaller&lt;T, funcPtr&gt; };
+	}
+
+private:
+	template&lt;typename T, Ret(T::*funcPtr)(Args...)&gt;
+	static Ret memberCaller(shared_ptr&lt;void&gt; callee, Args... args)
+	{
+		return (static_cast&lt;T*&gt;(callee.get())-&gt;*funcPtr)(args...);
+	}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here we have <strong>overloaded</strong> <code>create()</code> function. And here we need to pass a pointer to existing object which will be stored for later use as well as a wrapper. I decided to use <code>shared_ptr</code> because I want to be sure that object is valid when I call a delegate. With <code>shared_ptr</code> I have this guarantee. The <code>memberCaller()</code> wrapper casts the <code>void*</code> pointer to the provided type so we can say we have some sort of type safety here.</p>
+</div>
+<div class="paragraph">
+<p>And that&#8217;s how it can be created and called:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">struct UserStruct
+{
+	int member(int a, float b)
+	{
+		return a + static_cast&lt;int&gt;(b);
+	}
+};
+
+Delegate&lt;int(int, float)&gt; d{ Delegate&lt;int(int, float)&gt;::create&lt;UserStruct, &amp;UserStruct::member&gt;(make_shared&lt;UserStruct&gt;()) };
+d(10, 5.0f);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The final case is a functor case. Here we don&#8217;t have a function pointer but only the callable object.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">public:
+	template&lt;typename T&gt;
+	static Delegate create(shared_ptr&lt;T&gt; t)
+	{
+		return Delegate{ t, &amp;functorCaller&lt;T&gt; };
+	}
+
+private:
+	template&lt;typename T&gt;
+	static Ret functorCaller(shared_ptr&lt;void&gt; functor, Args... args)
+	{
+		return (*static_cast&lt;T*&gt;(functor.get()))(args...);
+	}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We have another <strong>overloaded</strong> <code>create</code> function. We can go wild here and add different compile time checks (for example the check that passed parameter is a callable object) and add readable error message if requirements are violated. But this signature will report about the problems anyway, maybe not in a friendly manner. As in the case with a member function we cast our functor to right type in a <code>functorCaller()</code> wrapper, so no type problems here.</p>
+</div>
+<div class="paragraph">
+<p>The tricky part is to create a lambda shared pointer. As you may know there&#8217;s no strict type for lambda. Instead, on every lambda creation new type will be introduced. And this code <code>typeid([](){}).name() == typeid([](){}).name()</code> will return <code>false</code>. In order to create a necessary <code>shared_ptr</code> I created this function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template &lt;typename T, typename L = typename std::decay&lt;T&gt;::type&gt;
+shared_ptr&lt;L&gt; make_shared_lambda(T&amp;&amp; t)
+{
+	return make_shared&lt;L&gt;(forward&lt;T&gt;(t));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It&#8217;s not ideal - the underlying lambda will be copied/moved. Anyway, now we can use functors with a delegate:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">auto ptr = make_shared_lambda([](int a, float b)-&gt;int
+{
+	return a + static_cast&lt;int&gt;(b);
+});
+
+Delegate&lt;int(int, float)&gt; d{ Delegate&lt;int(int, float)&gt;::create(ptr) };
+d(10, 5.0f);</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The main point of a delegate - call underlying function later. And we want to be sure that callable object exist. That&#8217;s why we need to track the object&#8217;s lifetime.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>As you probably noticed - the declaration of the delegate is pretty verbose. Can it be simplified? I beleive it can with macros and template magic, but I prefer to have a helper class. This class will handle adding and removing of delegates. I call it - <code>Dispatcher</code>. Imagine some abstract <code>Button</code> class. It can have a <code>Dispatcher</code> for some event - a <code>click</code>, for example. Now every entity that want to listen for this <code>click</code> event can add a delegate to this <code>Dispatcher</code>. And when the real event triggers this <code>Dispatcher</code> will invoke all callbacks that was added to it. Here&#8217;s a simple implementation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename T&gt;
+class Dispatcher;
+
+template&lt;typename Ret, typename ...Args&gt;
+class Dispatcher&lt;Ret(Args...)&gt;
+{
+public:
+	template&lt;Ret(*funcPtr)(Args...)&gt;
+	bool add()
+	{
+		return add(Delegate&lt;Ret(Args...)&gt;::create&lt;funcPtr&gt;());
+	}
+
+	template&lt;Ret(*funcPtr)(Args...)&gt;
+	bool remove()
+	{
+		return remove(Delegate&lt;Ret(Args...)&gt;::create&lt;funcPtr&gt;());
+	}
+
+	template&lt;typename T, Ret(T::*funcPtr)(Args...)&gt;
+	bool add(shared_ptr&lt;T&gt; obj)
+	{
+		return add(Delegate&lt;Ret(Args...)&gt;::create&lt;T, funcPtr&gt;(obj));
+	}
+
+	template&lt;typename T, Ret(T::*funcPtr)(Args...)&gt;
+	bool remove(shared_ptr&lt;T&gt; obj)
+	{
+		return remove(Delegate&lt;Ret(Args...)&gt;::create&lt;T, funcPtr&gt;(obj));
+	}
+
+	template&lt;typename T&gt;
+	bool add(shared_ptr&lt;T&gt; t)
+	{
+		return add(Delegate&lt;Ret(Args...)&gt;::create(t));
+	}
+
+	template&lt;typename T&gt;
+	bool remove(shared_ptr&lt;T&gt; t)
+	{
+		return remove(Delegate&lt;Ret(Args...)&gt;::create(t));
+	}
+
+	void operator()(Args... args)
+	{
+		for (auto&amp; delegate : delegates)
+		{
+			delegate(args...);
+		};
+	}
+
+	bool add(Delegate&lt;Ret(Args...)&gt; delegate)
+	{
+    		// if we already added same delegate - don't add it again
+		if (find(delegates.begin(), delegates.end(), delegate) != delegates.end())
+		{
+			return false;
+		}
+
+		delegates.push_back(delegate);
+
+		return true;
+	}
+
+	bool remove(Delegate&lt;Ret(Args...)&gt; delegate)
+	{
+    		// remove delegate only if it exist
+		auto it = find(delegates.begin(), delegates.end(), delegate);
+
+		if (it == delegates.end())
+		{
+			return false;
+		}
+
+		delegates.erase(it);
+
+		return true;
+	}
+private:
+	vector&lt;Delegate&lt;Ret(Args...)&gt;&gt; delegates;
+};</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Mostly it&#8217;s a wrappers around delegate creation functions. Couple of notes here.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>When we want to add a delegate - the new one will be created. If we want to remove it - we also need to create it to be able to compare. But that&#8217;s the price we need to pay in order to have compact delegates, without storing callback pointer and different comparing logic.</p>
+</li>
+<li>
+<p>During call of <code>operator()</code> the callback function will be called. And if in this callback we remove the delegate from the dispatcher - bad things can happen. In other words in this implementation it&#8217;s possible to remove an item from the vector while iterating over this vector. This will lead to crash/corruption and additional logic needed here to avoid this situation.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>We can use new <code>Dispatcher</code> class like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">Dispatcher&lt;int(int, float)&gt; dispatcher;
+
+dispatcher.add&lt;&amp;global&gt;();
+
+auto ptr = make_shared&lt;UserStruct&gt;();
+dispatcher.add&lt;UserStruct, &amp;UserStruct::member&gt;(ptr);
+
+dispatcher(10, 5.0f);
+
+dispatcher.remove&lt;&amp;global&gt;();
+dispatcher.remove&lt;UserStruct, &amp;UserStruct::member&gt;(ptr);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Things that can be improved:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Maybe it would be better to return some delegate handle after adding the delegate to the dispatcher. Keeping this handle will act the same as keeping <code>Delegate</code> instance, but it&#8217;s more compact and simple. Later we can use the handle to remove a delegate and there will be no need to create a new <code>Delegate</code> instance for comparison.</p>
+</li>
+<li>
+<p>The parameters passed to <code>Dispatcher::operator()</code> and <code>Delegate::operator()</code> are passed by copy. It would better to use perfect forwarding. But the problem is that we have <code>typename &#8230;&#8203;Args</code> parameter pack in class definition but usage of it - <code>Args&#8230;&#8203; args</code> in the function. In other words we have a templated class but not a function. And <a href="http://en.cppreference.com/w/cpp/utility/forward#Example">perfect forwarding</a> with <a href="http://en.cppreference.com/w/cpp/language/reference">reference collapsing rules</a> applies only to function templates. I believe we can fix this templating a function with another parameter pack and comparing this pack with one declared in class template.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The source code can be found <a href="https://github.com/nikitablack/cpp-tests/blob/master/Delegate/Delegate.h">here</a>.</p>
+</div>]]></description><link>https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html</link><guid isPermaLink="true">https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html</guid><category><![CDATA[c++]]></category><dc:creator><![CDATA[nikitablack]]></dc:creator><pubDate>Tue, 12 Apr 2016 00:00:00 GMT</pubDate></item><item><title><![CDATA[Call a function from the string name and arguments]]></title><description><![CDATA[<div class="paragraph">
+<p>Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments with different types. In other words the system should be able to call a function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">bool foo(int, float);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>with a console command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>foo 42 10.5</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I&#8217;ll not describe how I&#8217;m receiving this string as well how I&#8217;m parsing it. Let&#8217;s assume that we&#8217;re operating with a vector of strings where the first element - the name of the function and the rest - function parameters. So at some point er have this vector:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">{ "foo", "42", "10.5" }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And we need somehow call a correct function and pass a correct number of parameters with a correct type.</p>
+</div>
+<div class="paragraph">
+<p>There&#8217;s no way to call an unknown function just knowing it&#8217;s name in C++. At least I don&#8217;t know such a way. So in order to call something we first need register it. By registration I mean storing of a function pointer together with it&#8217;s name. The <code>std::map</code> is a good candidate for that. But I don&#8217;t store raw pointer. Instead, I have a wrapper class, called <code>Cheat</code>, for my function. Cheat is a templated class with function arguments types as template parameters. It&#8217;s declaration looks like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename ...Args&gt;
+class Cheat : public CheatBase
+{
+	Cheat(void(* const funcPtr)(Args...)) : func{ funcPtr }
+	{
+
+	}
+	// ...
+private:
+	void(* const func)(Args...);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here <code>func</code> is our pointer to function which we need to call later.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+For simplcity the only functions that can be passed are global or static functions or lambdas without capture (such a lambda can be casted to function pointer). But member functions can be added with additional template argument and a little bit of code.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>As you already guessed, it&#8217;s not possible to store instances of this class directly in <code>std::map</code> because for every new function with a new signature the <code>Cheat</code> class type will be different. For example <code>Cheat&lt;int&gt;</code> for the function taking one <code>int</code> parameter and  <code>Cheat&lt;int, float&gt;</code> for the function takind an <code>int</code> and a <code>float</code>. Therefore they all should have common base class. It&#8217;s very simple:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">class CheatBase
+{
+public:
+	virtual ~CheatBase() {};
+	virtual bool call(const std::vector&lt;std::string&gt;&amp; cheatParams) = 0;
+};</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It&#8217;s an abstract class with pure virtual function which takes an array of parameters as strings which will be converted to corresponding types.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Instead of <code>call()</code> function we could use <code>operator()</code> function.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Now we can create cheats like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">CheatBase* cheat{new Cheat&lt;int, float&gt;};</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Or with a helper:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename ...Args&gt;
+std::shared_ptr&lt;CheatBase&gt; makeCheat(void(*funcPtr)(Args... arguments))
+{
+	return std::make_shared&lt;Cheat&lt;Args...&gt;&gt;(funcPtr);
+}
+
+myMap["foo"] = makeCheat(&amp;foo);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Thanks to type deduction we don&#8217;t need to type template parameters for the function.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Here for simplcity I&#8217;m passing arguments by value. The better approach is to use <a href="http://en.cppreference.com/w/cpp/utility/forward">perfect forwarding</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Btw, the strange looking <code>template&lt;typename &#8230;&#8203;Args&gt;</code> is called a <a href="http://en.cppreference.com/w/cpp/language/parameter_pack">parameter pack</a>. And together with templated class it&#8217;s called <strong>variadic template</strong>. This is one of the amazing features of modern C++. I highly recommend you to investigate this topic. It&#8217;s really really cool! I can recommend for the start this great posts - <a href="http://eli.thegreenplace.net/2014/variadic-templates-in-c/">one</a>, <a href="https://jguegant.github.io/blogs/tech/thread-safe-multi-type-map.html">two</a>.</p>
+</div>
+<div class="paragraph">
+<p>That was pretty standard and boring. And now the interesting part - the actual cheat implementation!</p>
+</div>
+<div class="paragraph">
+<p>The heart of the <code>Cheat</code> class is a <code>call()</code> function override:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">bool call(const std::vector&lt;std::string&gt;&amp; cheatParams) override
+{
+	if (sizeof...(Args) != cheatParams.size()) // <i class="conum" data-value="1"></i><b>(1)</b>
+	{
+		// if a number of passed arguments is not equal to a number of parameters declared in cheat return false - this is an error.
+		return false;
+	}
+
+	callHelper(cheatParams, std::index_sequence_for&lt;Args...&gt;{});
+
+	return true;
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><a href="http://en.cppreference.com/w/cpp/language/sizeof&#8230;&#8203;"><code>sizeof&#8230;&#8203;(Args)</code></a> return a number of arguments of the parameter pack that was used during <code>Cheat</code> class instantiation.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>First we check that we passed correct number of arguments. In the number is wrong simply do nothing and return. And all the magic happens in <code>callHelper()</code> function. Don&#8217;t think about <code>index_sequence_for&lt;Args&#8230;&#8203;&gt;</code> for now, we&#8217;ll come to this later:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template &lt;std::size_t... Idx&gt;
+void callHelper(const std::vector&lt;std::string&gt;&amp; strArgs, std::index_sequence&lt;Idx...&gt;)
+{
+	(func)(fromString&lt;Args&gt;(getStringFromArray&lt;Idx&gt;(strArgs))...);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wow! Looks scary. Actually, not. <code>callHelper()</code> is a variadic templated function which accepts a vector with string arguments (and which should be converted to appropriate types) and a <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence">sequence of integers</a>. What are this integers? Why? I can better explain it if we&#8217;ll start from the end. Let&#8217;s stick to <code>foo(int, type)</code> function signature for the rest of this post.</p>
+</div>
+<div class="paragraph">
+<p>In the very very end I need to call this function with correct parameters, for example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">foo(42, 10.5);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>But I have only a vector of strings <code>{"42", "10.5"}</code>. I need some conversion function that will return a correct type from the corresponding string. Moreover I need to call this function several times - once for each parameter. Let&#8217;s call this conversion function <code>fromString</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">foo(fromString("42"), fromString("10.5"));</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In order to convert to correct type we&#8217;ll use templated function with overload for <strong>every</strong> type I need. For the case with <code>int</code> the overload is (for the <code>float</code> it&#8217;s similar, just replace <code>int</code> to <code>float</code> and <code>std::stoi()</code> to <code>std::stof()</code>):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;typename T&gt;
+typename std::enable_if&lt;std::is_same&lt;T, int&gt;::value, int&gt;::type fromString(const std::string&amp; str)
+{
+	return std::stoi(str);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <a href="http://en.cppreference.com/w/cpp/language/sfinae">SFINAE</a> technique is used here. Good explanation of what it is can be found <a href="http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html">in this awesome blog</a>. In short - <code>std::is_same&lt;T, int&gt;::value</code> will return <code>true</code> if <code>T</code> is <code>int</code> and <code>false</code> overwise. Next, <code>std::enable_if&lt;true, int&gt;::type</code> will return <code>int</code> and <code>std::enable_if&lt;false, int&gt;::type</code> simply will not compile. After substitution we&#8217;ll have:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template&lt;int&gt;
+int fromString(const std::string&amp; str)
+{
+	return std::stoi(str);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And additional feature of it is that we&#8217;ll get a <strong>compile time</strong> error if we&#8217;ll use a type for which there&#8217;s no overload exist! Awesome, this type of error is much much better than an exception during runtime.</p>
+</div>
+<div class="paragraph">
+<p>Having all this we can create a first version of our <code>callHelper()</code> function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">void callHelper(const std::vector&lt;std::string&gt;&amp; strArgs)
+{
+	foo(fromString&lt;Args&gt;(getStringFromArray(strArgs))...);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you remember, <code>Args</code> is a parameter pack. And <code>fromString&lt;Args&gt;()&#8230;&#8203;</code> is a parameter pack expansion. There&#8217;re <a href="http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion">strict rules</a> how parameter pack is expanded. For our case with <code>int</code> and <code>float</code> it will be expanded to:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">void callHelper(const std::vector&lt;std::string&gt;&amp; strArgs)
+{
+	foo(fromString&lt;int&gt;(getStringFromArray(strArgs)), fromString&lt;float&gt;(getStringFromArray(strArgs)));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We already have two <code>fromString()</code> overloads for our types. Now the trick is to pass the correct string from the vector to them, i.e. implement <code>getStringFromArray()</code> function. The naive approach would be to remove <code>getStringFromArray()</code> completely and just use <code>strArgs</code> vector together with some counter which will be incremented every time we access a vector element:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">void callHelper(const std::vector&lt;std::string&gt;&amp; strArgs)
+{
+	size_t counter{0};
+	foo(fromString&lt;int&gt;(strArgs[counter++], fromString&lt;float&gt;(strArgs[counter++]));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Unfortunately this will not work. The C++ standard does not specify the <a href="http://en.cppreference.com/w/cpp/language/eval_order">order of function arguments eveluation</a>. That means it can differ from compiler to compiler. And it&#8217;s absolutelly possible to have this setup (remember - we have <code>{ "42", "10.5" }</code> in our vector):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">foo(fromString&lt;int&gt;(strArgs[1]), fromString&lt;float&gt;(strArgs[0])); // notice how we're passing wrong arguments</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We need instead a robust solution that will work across compilers. Let&#8217;s rewrite <code>callHelper</code> slightly:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">void callHelper(const std::vector&lt;std::string&gt;&amp; strArgs)
+{
+	foo(fromString&lt;int&gt;(getStringFromArray&lt;0&gt;(strArgs)), fromString&lt;float&gt;(getStringFromArray&lt;1&gt;(strArgs)));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Notice the extra template parameters <code>&lt;0&gt;</code> and <code>&lt;1&gt;</code>. And here the definition of <code>getStringFromArray()</code> function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template &lt;std::size_t N&gt;
+std::string getStringFromArray(const std::vector&lt;std::string&gt;&amp; strArgs)
+{
+	return strArgs[N];
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now no matter what is the evaluation order our function will return correct string, since <code>&lt;0&gt;</code> and <code>&lt;1&gt;</code> are template parameters and will always be in right sequence. And this order is guaranteed by <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence">sequence of integers</a> that we will use. For the moment let&#8217;s not think how we create one but see what happens when the function receives it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template &lt;std::size_t... Idx&gt;
+void callHelper(const std::vector&lt;std::string&gt;&amp; strArgs, std::index_sequence&lt;Idx...&gt;)
+{
+	foo(fromString&lt;Args&gt;(getStringFromArray&lt;Idx&gt;(strArgs))...);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The function itself templated with <a href="http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter">non-type</a> parameter pack, in simple words the template parameters are integers and their number is equal to the number of <code>Args</code> (<code>Cheat</code> class parameter pack). This <code>Idx</code> sequence will be deduced from the function&#8217;s second unnamed argument <code>std::index_sequence&lt;Idx&#8230;&#8203;&gt;</code>. Do you see, we even don&#8217;t have the name for it, because we don&#8217;t use this parameter in the function&#8217;s body! The sole reason for this argument is to provide compile-time integers <code>&#8230;&#8203;Idx</code>. In the function&#8217;s body the two parameter packs - <code>Args</code> and <code>Idx</code> will be expanded together simultaneously according to <a href="http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion">aforementioned rules</a>. In our case everything will be expanded to:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">template &lt;0, 1&gt; // this is deduced from the function's second argument
+void callHelper(const std::vector&lt;std::string&gt;&amp; strArgs, std::index_sequence&lt;0, 1&gt;)
+{
+	foo(fromString&lt;int&gt;(getStringFromArray&lt;0&gt;(strArgs)), fromString&lt;float&gt;(getStringFromArray&lt;1&gt;(strArgs)));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Amazing, isn&#8217;t it?</p>
+</div>
+<div class="paragraph">
+<p>There&#8217;s a last piece of puzzle left - how to get this integer sequence? The bad news - in C++11 this should be done manually.  <a href="https://ngathanasiou.wordpress.com/2015/02/19/compile-time-integer-sequences">Here</a> the great explanation how to do this. And actually on my work I have to use this solution.</p>
+</div>
+<div class="paragraph">
+<p>But the happy owners of C++14 compliant compiler (and me in this post) can use <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence">standard sequence of integers</a>. I&#8217;ll put here explanation directly from the link:</p>
+</div>
+<div class="paragraph">
+<p><em>
+A helper alias template std::index_sequence_for is defined to convert any type parameter pack into an index sequence of the same length.
+</em></p>
+</div>
+<div class="paragraph">
+<p>In other words, <code>&lt;&#8230;&#8203;Args&gt;</code> which, for example, can be <code>&lt;int, float, std::string, double&gt;</code> will be converted to <code>std::index_sequence&lt;0, 1, 2, 3&gt;</code>.</p>
+</div>
+<div class="paragraph">
+<p>Putting it all together we can call our helper like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">callHelper(cheatParams, std::index_sequence_for&lt;Args...&gt;{});</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Where, again, <code>Args&#8230;&#8203;</code> is a <code>Cheat</code> class parameter pack.</p>
+</div>
+<div class="paragraph">
+<p>The source code together with usage example can be found <a href="https://github.com/nikitablack/cpp-tests/blob/master/StringArgsFunction/StringArgsFunction.cpp">here</a>.</p>
+</div>]]></description><link>https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html</link><guid isPermaLink="true">https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html</guid><category><![CDATA[c++]]></category><dc:creator><![CDATA[nikitablack]]></dc:creator><pubDate>Sun, 21 Feb 2016 00:00:00 GMT</pubDate></item><item><title><![CDATA[Shiny new blog]]></title><description><![CDATA[<div class="paragraph">
+<p>I like programming. Really like. I like how you can combine words in your favorite programming language and put a life into software. I programm a lot - on my work, in my free time. That&#8217;s why I feel competent to start to write about it. But this blog is created for me. I found that when I&#8217;m trying to explain some topic with simple words I&#8217;m understanding it better. So basically things I&#8217;m gonna to write about here is for future me - nothing should be lost and nothing should be left without understanding. Though somebody can find it usefull too.</p>
+</div>
+<div class="paragraph">
+<p>I have <a href="http://volgogradetzzz.blogspot.com/">another blog</a> already but I moved away from flash (thought still love it and always read latest news about the platform) and it&#8217;s time to write about something different, more advanced maybe. My current language is <code>c++</code> and I like it. A lot. I like computer graphics also and I&#8217;ll try to cover this topics mostly.</p>
+</div>
+<div class="paragraph">
+<p>I don&#8217;t like <a href="https://www.blogger.com/home">Blogger</a> platform that&#8217;s why I decided to move to another blog engine. <a href="https://pages.github.com/">Github pages</a> and static pages are great. It&#8217;s fast and simple. With <a href="http://hubpress.io/">Hubpress</a> you can create good looking blog in minutes. <a href="http://asciidoctor.org/">AsciiDoc</a> looks good so I think I made my choice. Welcome!</p>
+</div>]]></description><link>https://nikitablack.github.io/2016/02/14/Shiny-new-blog.html</link><guid isPermaLink="true">https://nikitablack.github.io/2016/02/14/Shiny-new-blog.html</guid><category><![CDATA[other]]></category><dc:creator><![CDATA[nikitablack]]></dc:creator><pubDate>Sun, 14 Feb 2016 00:00:00 GMT</pubDate></item></channel></rss>
