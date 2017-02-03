@@ -137,9 +137,9 @@ NOTE: From the structure, it's already seen that `color` not used for calculatio
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/1.png["Teapot", 400]
 
-Когда треугольник пересекается с фигурой a, мы должны подвинуть его немного, чтобы исключить наложение фигур друг на друга. Также мы должны пересчитать bounds. Но после перемещения треугольник пересекает другую фигуру — b, и мы снова должны переместить его и снова пересчитать bounds. Заметьте, что после второго перемещения треугольник снова окажется над фигурой a. Чтобы избежать повторных вычислений мы будем хранить величину, на которую нужно переместить треугольник в специальном аккумуляторе — overlapResolveAccumulator — и позже будем перемещать фигуру на это значение, но только один раз.
+When the triangle intersects shape `a` we need to move it apart to avoid figures overlapping. Also, we have to recalculate `bounds`. But now the triangle intersects shape `b` and we need to repeat the procedure again - move the shape and recalculate bounds. Notice that after the second move the triangle again will be over shape `a`. To avoid this repetition we'll store the value necessary to separate objects in special accumulator - `overlapResolveAccumulator` - and later will move the shape by this value but only once. Not physically correct at all, but looks ok. Notice also that this field also adds to the total size of the class which is not good for memory.
 
-Сердце нашей программы — это метод ShapesApp::update(). Вот его упрощенный вариант:
+The heart of our program is `ShapesApp::update()` function. Here it's simplified form:
 
 [source,cpp]
 ----
