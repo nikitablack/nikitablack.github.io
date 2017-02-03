@@ -161,11 +161,11 @@ void ShapesApp::update(float const dt)
 }
 ----
 
-Каждый кадр мы вызываем ShapesApp::updatePositions() метод, который меняет положение каждой фигуры и рассчитывает новый Shape::bounds. Затем мы проверяем каждую фигуру с каждой другой на пересечение — CollisionSolver::solveCollision(). Я использовал Separating Axis Theorem (SAT). Все эти проверки мы делаем NUM_PHYSICS_STEPS раз. Эта переменная служит нескольким целям — во-первых, физика получается более стабильная, во-вторых, она ограничивает количество объектов на экране. с++ быстр, очень быстр, и без этой переменной у нас будут десятки тысяч фигур, что замедлит отрисовку. Я использовал NUM_PHYSICS_STEPS = 20
+Every frame we call `ShapesApp::updatePositions()` function that updates every shape `position` and `bounds`. Next we check every shape with every other for collision in `CollisionSolver::solveCollision()` function. I used https://en.wikipedia.org/wiki/Hyperplane_separation_theorem[Separating Axis Theorem] (*SAT*) for that. And we repeat these steps `NUM_PHYSICS_STEPS` times. This variable serves several purposes - first, the physics becomes more stable, and second, it limits the number of objects on the screen. *c+\+* is fast, amazingly fast, and without this limitation we'll have tens of thosands of objects which will lead to rendering performance decrease. In my tests I used `NUM_PHYSICS_STEPS = 20`.
 
-На моем стареньком ноутбуке эта программа рассчитывает 500 фигур максимум, перед тем, как fps начинает падать ниже 30. Фуууу, всего 500???! Согласен, немного, но не забывайте, что каждый кадр мы повторяем рассчеты 20 раз.
+On my humble laptop this version of the program simulates `500` shapes before fps starts to drop below 30. Wat?? Only 500?? Even JavaScript can do better. I agree, not a lot, but don't forget - we're repeating calculations `20` times per frame.
 
-Думаю, что стоит разбавить статью скриншотами, поэтому вот:
+I think I need to add some screenshots, so here we go:
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/2.png["Teapot", 600]
 
