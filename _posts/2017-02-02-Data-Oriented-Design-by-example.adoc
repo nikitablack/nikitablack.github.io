@@ -135,7 +135,7 @@ public:
 
 NOTE: From the structure, it's already seen that `color` not used for calculations at all. But steel takes place in the cache line.
 
-image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/1.png["Teapot", 400]
+image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/1.png["1", 400]
 
 When the triangle intersects shape `a` we need to move it apart to avoid figures overlapping. Also, we have to recalculate `bounds`. But now the triangle intersects shape `b` and we need to repeat the procedure again - move the shape and recalculate bounds. Notice that after the second move the triangle again will be over shape `a`. To avoid this repetition we'll store the value necessary to separate objects in special accumulator - `overlapResolveAccumulator` - and later will move the shape by this value but only once. Not physically correct at all, but looks ok. Notice also that this field also adds to the total size of the class which is not good for memory.
 
@@ -167,7 +167,7 @@ On my humble laptop this version of the program simulates `500` shapes before fp
 
 I think I need to add some pictures to make the post not so boring, so here we go:
 
-image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/2.png["Teapot", 600]
+image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/2.png["2", 600]
 
 *Optimisation #1. Spatial Grid*
 
@@ -177,7 +177,7 @@ The commit for this version can be found https://github.com/nikitablack/cpp-test
 
 This version can simulate `8000` shapes now at `30` fps (don't forget about `20` repetitions in each frame)! I had to decrease shape's sizes in order to fit them in the window.
 
-image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/3.png["Teapot", 600]
+image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/3.png["3", 600]
 
 *Оптимизация номер 2. Multithreading.*
 
@@ -185,11 +185,13 @@ These days when even cell phones have `4` cores inside ignore multithreading is 
 
 Dividing the work by tasks added some head pain. For example, if a shape crosses cell boundaries it will be in several cells at the same time.
 
-image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/4.png["Teapot", 400]
+image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/4.png["4", 400]
 
-Здесь фигура a находится в одной ячейке, тогда как b сразу в четырех. Поэтому доступ к этим ячейкам необходимо синхронизировать. Также нужно синхронизировать доступ к некоторым полям класса Shape. Для этого мы добавили std::mutex в Shape и Cell.
+Here the shape `a` fully contained in one cell, but `b` is in `4` cells at the same time. Because of this, we have to synchronize cell access. Also, we have to synchronize access to some fields inside the `Shape` class. We can achieve this adding `std::mutex` to the `Shape` and `Cell`.
 
-Запустив эту версию я могу наблюдать 13000 фигур при 30 fps. Для такого количества объектов пришлось увеличить окно! И снова — в каждом кадре мы повторяем симуляцию 20 раз.
+Now I can see `13000` shapes at 30 fps. For such amount of objects, I had to increase the window size. And I repeat it again - in every frame we're repeating simulation `20` times.
+
+To be honest this program has bad parallelization possibilities. That's why increasing the number of threads will not give us a significant performance boost. But that's another story.
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/5.png["Teapot", 400]
 
