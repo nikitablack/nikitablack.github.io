@@ -169,7 +169,7 @@ I think I need to add some pictures to make the post not so boring, so here we g
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/2.png["2", 600]
 
-*Optimisation #1. Spatial Grid*
+*Optimization #1. Spatial Grid*
 
 I mentioned several times that I want to make tests on a program which is as close to real world as possible. Obviously, the code above is not usable - nobody checks each shape with each other - this is veeeery slow. For acceleration usually, some spetial spatial structure being used. We'll use simple `2d` grid - I called it `Grid` in the code - which consists of `NxM` cells - `struct Cell`. On the calculation start we'll put each object in the corresponding cell. This way all we have to do is to iterate over cells and check intersection between several pairs of objects. I used the similar code a lot of times in real projects and it behaved very well. Besides, it's very easy to implement, easy to debug and understand.
 
@@ -179,7 +179,7 @@ This version can simulate `8000` shapes now at `30` fps (don't forget about `20`
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/3.png["3", 600]
 
-*Оптимизация номер 2. Multithreading.*
+*Optimization #2. Multithreading.*
 
 These days when even cell phones have `4` cores inside ignore multithreading is silly. In this, the last optimization we'll add a thread pool and will divide main work by equal tasks. For example, `ShapesApp::updatePositions()` which iterated over all shapes before now iterates only over a part of the shapes in each core. Thread pool class was taken from https://github.com/progschj/ThreadPool/blob/master/ThreadPool.h[here] and the final version of the program you can find https://github.com/nikitablack/cpp-tests/tree/8d83cb351008a3faf3629279ebaf49ff3fc71b17/data_oriented/oop/oop[in this] commit. In my tests, I used `4` cores.
 
@@ -197,9 +197,9 @@ image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_b
 
 ===== Structure of Arrays
 
-*Первая версия программы*
+*Initial program*
 
-То, что мы писали выше я называю традиционным подходом — я пишу такой код много лет и читаю, в основном, похожий код. Но теперь мы убем стуктуру Shape и посмотрим — сможет ли эта небольшая модификация повлиять на производительность. Ко всеобщей радости рефакторинг оказался не сложным, даже тривиальным. Вместо Shape мы будем использовать структуру с векторами:
+The code we wrote above I call traditional *OOP* approach - I write such code many years and see similar code in general. But now we'll modify it a little - we'll remove class `Shape` and see can this tiny change affect the performance? To my happiness refactoring wasn't hard, even trivial. Instead of the `Shape` class, we'll use a struct with vectors of data.
 
 [source,cpp]
 ----
