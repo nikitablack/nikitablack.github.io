@@ -189,7 +189,7 @@ image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_b
 
 Here the shape `a` fully contained in one cell, but `b` is in `4` cells at the same time. Because of this, we have to synchronize cell access. Also, we have to synchronize access to some fields inside the `Shape` class. We can achieve this adding `std::mutex` to the `Shape` and `Cell`.
 
-Now I can see `13000` shapes at 30 fps. For such amount of objects, I had to increase the window size. And I repeat it again - in every frame we're repeating simulation `20` times.
+Now I can see `13000` shapes at `30` fps. For such amount of objects, I had to increase the window size. And I repeat it again - in every frame we're repeating simulation `20` times.
 
 To be honest this program has bad parallelization possibilities. That's why increasing the number of threads will not give us a significant performance boost. But that's another story.
 
@@ -215,8 +215,9 @@ struct ShapesData
 };
 ----
 
-И передаем мы эту структуру так `solveCollision(struct ShapesData & data, std::size_t const indA, std::size_t const indB);`. Т.е. вместо конкретных фигур передаются их индексы и в методе из нужных векторов берутся нужные данные.
+We pass this struct like this - `solveCollision(struct ShapesData & data, std::size_t const indA, std::size_t const indB);`. I.e. instead of shapes instances we pass indices and inside function necessary data is taking from the vectors.
 
+https://github.com/nikitablack/cpp-tests/tree/8363e60c614377cccb777625805b6aea9e699117/data_oriented/dod/dod[This version] of the program can simulate `500` objects at `30` fps. As you can see there's no difference with the original version.
 https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[Эта версия программы] выдает 500 фигур при 30 fps, т.е. не отличается от самой первой версии. Связано это с тем, что измерения проводятся на малом количестве данных и к тому же самый тяжелый метод использует почти все поля структуры.
 
 Далее без картинок, т.к. они точно такие же, как были ранее.
