@@ -181,9 +181,9 @@ image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_b
 
 *Оптимизация номер 2. Multithreading.*
 
-Сегодня, когда даже на телефонах устанавливаются процессоры с четырьмя ядрами, игнорировать многопоточность просто глупо. В этой, последней, оптимизации мы добавим пул потоков и разделим основные задачи на равные таски. Так, например, метод ShapesApp::updatePositions, который раньше пробегал по всем фигурам, устанавливая новую позицию и пересчитывая bounds, теперь пробегает только по части фигур, уменьшая, тем самым, нагрузку на одно ядро. Класс пула был честно скопипастен отсюда. В тестах я использую четыре потока (считая основной). Готовую версию можно найти https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[здесь].
+These days when even cell phones have `4` cores inside ignore multithreading is silly. In this, the last optimization we'll add a thread pool and will divide main work by equal tasks. For example, `ShapesApp::updatePositions()` which iterated over all shapes before now iterates only over a part of the shapes in each core. Thread pool class was taken from https://github.com/progschj/ThreadPool/blob/master/ThreadPool.h[here] and the final version of the program you can find https://github.com/nikitablack/cpp-tests/tree/8d83cb351008a3faf3629279ebaf49ff3fc71b17/data_oriented/oop/oop[in this] commit. In my tests, I used `4` cores.
 
-Разделение основных задач добавило немного головной боли. Так например, если фигура пересекает границу ячейки в сетке, то она будет находится одновременно в нескольких ячейках:
+Dividing the work by tasks added some head pain. For example, if a shape crosses cell boundaries it will be in several cells at the same time.
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/4.png["Teapot", 400]
 
