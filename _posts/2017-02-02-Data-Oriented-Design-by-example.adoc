@@ -217,16 +217,15 @@ struct ShapesData
 
 We pass this struct like this - `solveCollision(struct ShapesData & data, std::size_t const indA, std::size_t const indB);`. I.e. instead of shapes instances we pass indices and inside function necessary data is taking from the vectors.
 
-https://github.com/nikitablack/cpp-tests/tree/8363e60c614377cccb777625805b6aea9e699117/data_oriented/dod/dod[This version] of the program can simulate `500` objects at `30` fps. As you can see there's no difference with the original version.
-https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[Эта версия программы] выдает 500 фигур при 30 fps, т.е. не отличается от самой первой версии. Связано это с тем, что измерения проводятся на малом количестве данных и к тому же самый тяжелый метод использует почти все поля структуры.
+https://github.com/nikitablack/cpp-tests/tree/8363e60c614377cccb777625805b6aea9e699117/data_oriented/dod/dod[This version] of the program can simulate `500` objects at `30` fps. As you can see there's no difference with the original version. This is because we have relatively small data set and the "heaviest" function uses almost all fields of the struct.
 
-Далее без картинок, т.к. они точно такие же, как были ранее.
+Further without pictures since they are the same.
 
-*Оптимизация номер 1. Spatial Grid*
+*Optimization #1. Spatial Grid*
 
-Все как и раньше, меняем только AoS на SoA. Код здесь. Результат лучше, чем был ранее — 9500 фигур (было 8000), т.е. разница в производительности около 15%.
+Everything as before except only we switch to *SoA* instead of *AoS*. The source code is https://github.com/nikitablack/cpp-tests/tree/f726cec7591a2568ef41fbe53623e5447bfdde45/data_oriented/dod/dod[here]. The result is better - `9500` objects vs `8000` before, i.e. the performance difference is around `15%`.
 
-*Оптимизация номер 2. Multithreading.*
+*Optimization #2. Multithreading.*
 
 Снова берем старый код, меняем структуры и получаем 15000 фигур при 30 fps. Т.е. прирост производительности около 15%. Исходный код финальной версии лежит https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[здесь].
 
