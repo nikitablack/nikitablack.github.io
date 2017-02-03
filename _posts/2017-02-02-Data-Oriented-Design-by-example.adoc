@@ -227,10 +227,10 @@ Everything as before except only we switch to *SoA* instead of *AoS*. The source
 
 *Optimization #2. Multithreading.*
 
-Снова берем старый код, меняем структуры и получаем 15000 фигур при 30 fps. Т.е. прирост производительности около 15%. Исходный код финальной версии лежит https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[здесь].
+Again take the old code, switch structs and get `15000` objects at `30` fps. Again performance increase is around `15%`. https://github.com/nikitablack/cpp-tests/tree/ba57d299a26545d6045bd84797bc69d98ceca7bd/data_oriented/dod/dod[Here's] the final version of the program.
 
-===== Заключение
+===== Conclusion
 
-Изначально код писался для себя с целью проверить различные подходы, их производительность и удобство. Как показали результаты, небольшое изменение в коде может дать довольно ощутимый прирост. А может и не дать, может быть даже наоборот — производительность будет хуже. Так например, если нам нужна всего один экземпляр, то используя стандартный подход мы прочитаем его из памяти только один раз и будем иметь доступ ко всем полям. Используя же структуру векторов, мы вынуждены будем запрашивать каждое поле индивидуально, имея cache-miss при каждом запросе. Плюс ко всему немного ухудшается читабельность и усложняется код. 
+I satisfied with the results. As you can see the small change in the code can lead to the quite big performance boost. But not always. It's even possible to lose some speed. For example, if we need only one instance of a class then with a traditional approach we read the data from memory once and have an access to all fields. On the other side if we read each field individually via vectors we have cache miss on each reading. Moreover, the general readability and complexity become worse.
 
-Поэтому однознано ответить — стоит ли переходить на новую парадигму всем и каждому — невозможно. Когда я работал в геймдеве над игровым движком, 10% прироста производительности — внушительная цифра. Когда я писал пользовательские утилиты типа лаунчера, то применение DOD подхода вызвало бы только недоумение коллег. В общем, профилируйте, измеряйте и делайте выводы сами :).
+As usual, it's hard to give an unambiguous answer - should everybody switch to the new paradigm? When I worked on a `3d` game engine `10%` performance increase was a huge number. But when I worked on game launcher, mostly UI, then usage of this approach would only cause bewilderment of my colleagues. As general advice - profile, measure and decide yourself. Sincirelly yours, Cpt. Obvious.
