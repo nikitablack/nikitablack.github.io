@@ -126,11 +126,14 @@ public:
 };
 ----
 
-* Назначение position и velocity, думаю, очевидно. vertices — вершины фигуры заданные рандомно.
-* bounds — это ограничивающий прямоугольник, который полностью содержит фигуру — используется для предварительной проверки пересечений.
-* massInverse — единица, разделенная на массу — мы будем использовать только это значение, поэтому будем хранить его, вместо массы.
-* color — цвет — используется только при рендеринге, но хранится в экземляре фигуры, задается рандомно.
-* overlapResolveAccumulator см. пояснение ниже.
+* I believe `position` and `velocity` fields don't need a discussion
+* vertices — a random number of polygon vertices
+* bounds — shape's bounding box. Used for broad collision detection
+* massInverse — one over mass (`1 / m`). We'll use only this value so no need to keep mass itself
+* color — used for rendering but stored in shape
+* overlapResolveAccumulator - see below.
+
+NOTE: From the structure, it's already seen that `color` not used for calculations at all. But steel takes place in the cache line.
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/1.png["Teapot", 400]
 
