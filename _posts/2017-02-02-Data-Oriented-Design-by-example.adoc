@@ -1,11 +1,11 @@
 = Data Oriented Design by example
 :hp-tags: c++, dod
 
-The last couple of years interesting but not so popular paradigm appears more often. I'm talking about *Data Oriented Design* (*DOD*). If you're searching for a job that involves high-performance calculations be ready to hear corresponding questions. And I was surprised knowing that some my colleagues never hear about the approach and after short discussion stayed skeptical. In this article I'll try to compare traditional *OOP* approach with *DOD* on a real world example.
+The last couple of years interesting but not so popular paradigm appears more often. I'm talking about *Data Oriented Design* (*DOD*). If you're searching for a job that involves high-performance calculations be ready to hear corresponding questions. And I was surprised knowing that some my colleagues have never heard about the approach and after the short discussion stayed skeptical. In this article I'll try to compare traditional *OOP* approach with *DOD* on a real world example.
 
 ===== What is DOD?
 
-This post is an attempt to compare different programming approach without trying to explain them. I assume you should know what we'll talk about. There're a lot of articles on the web about the subject. https://fuzzyreflection.com/2016/07/14/maximizing-code-performance-by-thinking-data-first-part-1/[This one] is good. https://www.youtube.com/watch?v=rX0ItVEVjHc[This video] from *CppCon* also is a _must see_.But in layman's terms, *DOD* is a way to work with data in _cache friendly_ manner. Better see an example:
+This post is an attempt to compare different programming approach without trying to explain them. I assume you know what we'll talk about. There're a lot of articles on the web about the subject. https://fuzzyreflection.com/2016/07/14/maximizing-code-performance-by-thinking-data-first-part-1/[This one] is good. https://www.youtube.com/watch?v=rX0ItVEVjHc[This video] from *CppCon* also is a _must see_. But in layman's terms, *DOD* is a way to work with data in _cache friendly_ manner. Better see an example:
 
 [source,cpp]
 ----
@@ -88,7 +88,7 @@ int main()
 }
 ----
 
-The second test runs faster by 30% (in VS2017 and gcc7.0.1). But why?
+The second test runs faster by `30%` (in VS2017 and gcc7.0.1). But why?
 
 The size of the `S` struct is `24` bytes. My CPU (Intel Core i7) have `32KB` L1 cache for each core with `64B` cache line. That means that when we're requesting data from the main memory one cache line can hold only two full `S` structs at most. In the first test we're reading only one `int` field, i.e. in the best case scenario one cache line can hold only two `S::i` (ok, sometimes three). In the second test we're reading similar `int` but from the vector of integers. `std::vector` guarantees sequentiality of the data it holds. That means that one cache line can hold up to `16` (`64KB` / `sizeof(int)` = `16`) values we need. Obviously, we're communicating with the RAM less often. And it's known that memory operations are the bottleneck in modern CPUs.
 
@@ -96,12 +96,12 @@ The size of the `S` struct is `24` bytes. My CPU (Intel Core i7) have `32KB` L1 
 
 The example above clearly shows the benefits of *SoA* (**S**truct **o**f **A**rrays) vs *AoS* (**A**rray **o**f **S**tructures). But this example was from the _Hello World_ category, i.e. it's very far from real world applications. In reality, the code has lots of dependencies and specific data which probably will not give such performance increase. One more thing - if in our example we'll read all fields of the struct there will be no difference in speed.
 
-In order to understand possibility to apply *DOD* I decided to write more or less complex program with both (*OOP* and *DOD*) approaches. Let it be a 2d rigid body simulation - we'll create *N* convex polygons with different parameters - mass, speed etc. - and we'll see how many such objects we can simulate staying on 30 fps.
+In order to understand possibility to apply *DOD* I decided to write more or less complex program with both (*OOP* and *DOD*) approaches. Let it be a `2d` rigid body simulation - we'll create *N* convex polygons with different parameters - mass, speed etc. - and we'll see how many such objects we can simulate staying at `30` fps.
 
 ===== Array of Structures
 *Initial program*
 
-Source code for this version can be found in https://github.com/nikitablack/cpp-tests/tree/b672ca106ef5c88a23d7f8e2a909e07d6e54ca4a/data_oriented/oop/oop[this] commit. Now we briefly run through the code.
+Source code for this version can be found in https://github.com/nikitablack/cpp-tests/tree/b672ca106ef5c88a23d7f8e2a909e07d6e54ca4a/data_oriented/oop/oop[this] commit and we briefly run through the code.
 
 For simplicity reasons the program is written in Visual Studio for Windows and uses DirectX11 for rendering.
 
@@ -127,19 +127,19 @@ public:
 ----
 
 * I believe `position` and `velocity` fields don't need a discussion
-* vertices — a random number of polygon vertices
-* bounds — shape's bounding box. Used for broad collision detection
-* massInverse — one over mass (`1 / m`). We'll use only this value so no need to keep mass itself
-* color — used for rendering but stored in shape
-* overlapResolveAccumulator - see below.
+* `vertices` — a random number of polygon vertices
+* `bounds` — shape's bounding box. Used for broad collision detection
+* `massInverse` — one over mass (`1 / m`). We'll use only this value so no need to keep mass itself
+* `color` — used for rendering but stored in shape
+* `overlapResolveAccumulator` - see below.
 
 NOTE: From the structure, it's already seen that `color` not used for calculations at all. But steel takes place in the cache line.
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/1.png["1", 400]
 
-When the triangle intersects shape `a` we need to move it apart to avoid figures overlapping. Also, we have to recalculate `bounds`. But now the triangle intersects shape `b` and we need to repeat the procedure again - move the shape and recalculate bounds. Notice that after the second move the triangle again will be over shape `a`. To avoid this repetition we'll store the value necessary to separate objects in special accumulator - `overlapResolveAccumulator` - and later will move the shape by this value but only once. Not physically correct at all, but looks ok. Notice also that this field also adds to the total size of the class which is not good for memory.
+When the triangle intersects shape `a` we need to move it apart to avoid figures overlapping. Also, we have to recalculate `bounds`. But now the triangle intersects shape `b` and we need to repeat the procedure again - move the shape and recalculate bounds. Notice that after the second move the triangle again will be over shape `a`. To avoid this repetition we'll store the value necessary to separate objects in special accumulator - `overlapResolveAccumulator` - and later will move the shape by this value but only once. Not physically correct at all, but looks ok. Notice also that this field also adds to the total size of the class which is not good for the memory.
 
-The heart of our program is `ShapesApp::update()` function. Here it's simplified form:
+The heart of our program is a `ShapesApp::update()` function. Here it's simplified form:
 
 [source,cpp]
 ----
@@ -161,7 +161,7 @@ void ShapesApp::update(float const dt)
 }
 ----
 
-Every frame we call `ShapesApp::updatePositions()` function that updates every shape `position` and `bounds`. Next we check every shape with every other for collision in `CollisionSolver::solveCollision()` function. I used https://en.wikipedia.org/wiki/Hyperplane_separation_theorem[Separating Axis Theorem] (*SAT*) for that. And we repeat these steps `NUM_PHYSICS_STEPS` times. This variable serves several purposes - first, the physics becomes more stable, and second, it limits the number of objects on the screen. *c+\+* is fast, amazingly fast, and without this limitation we'll have tens of thosands of objects which will lead to rendering performance decrease. In my tests I used `NUM_PHYSICS_STEPS = 20`.
+Every frame we call a `ShapesApp::updatePositions()` function that updates every shape's `position` and `bounds`. Next we check every shape with every other for collision in `CollisionSolver::solveCollision()` function. I used https://en.wikipedia.org/wiki/Hyperplane_separation_theorem[Separating Axis Theorem] (*SAT*) for that. And we repeat these steps `NUM_PHYSICS_STEPS` times. This variable serves several purposes - first, the physics becomes more stable, and second, it limits the number of objects on the screen. *c++* is fast, amazingly fast, and without this limitation we'll have tens of thosands of objects which will lead to rendering performance issues. In my tests I used `NUM_PHYSICS_STEPS = 20`.
 
 On my humble laptop this version of the program simulates `500` shapes before fps starts to drop below `30`. Wat?? Only `500`?? Even JavaScript can do better. I agree, not a lot, but don't forget - we're repeating calculations `20` times per frame.
 
@@ -171,9 +171,9 @@ image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_b
 
 *Optimization #1. Spatial Grid*
 
-I mentioned several times that I want to make tests on a program which is as close to real world as possible. Obviously, the code above is not usable - nobody checks each shape with each other - this is veeeery slow. For acceleration usually, some spetial spatial structure being used. We'll use simple `2d` grid - I called it `Grid` in the code - which consists of `NxM` cells - `struct Cell`. On the calculation start we'll put each object in the corresponding cell. This way all we have to do is to iterate over cells and check intersection between several pairs of objects. I used the similar code a lot of times in real projects and it behaved very well. Besides, it's very easy to implement, easy to debug and understand.
+I mentioned several times that I want to make tests on a program which is as close to real world as possible. Obviously, the code above is not usable - nobody checks each shape with each other - this is veeeery slow. For acceleration usually, some spetial spatial structure being used. We'll use simple `2d` grid - I called it `Grid` in the code - which consists of `NxM` cells - `struct Cell`. At the calculation start we'll put each object in the corresponding cell. This way all we have to do is to iterate over cells and check intersection between several pairs of objects. I used the similar code a lot of times in real projects and it behaved very well. Besides, it's very easy to implement, easy to debug and understand.
 
-The commit for this version can be found https://github.com/nikitablack/cpp-tests/tree/8364d7c55c8948ab2fc5630e828d44551c6db951/data_oriented/oop/oop[here]. We added a new entity - `Grid` and changed `ShapesApp::update()` function. Now it calls `Grid`'s methods for updating and intersections.
+The commit for this version can be found https://github.com/nikitablack/cpp-tests/tree/8364d7c55c8948ab2fc5630e828d44551c6db951/data_oriented/oop/oop[here]. We added a new entity - `Grid` and changed `ShapesApp::update()` function. Now it calls ``Grid``'s methods for updating and intersections.
 
 This version can simulate `8000` shapes now at `30` fps (don't forget about `20` repetitions in each frame)! I had to decrease shape's sizes in order to fit them in the window.
 
@@ -181,25 +181,25 @@ image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_b
 
 *Optimization #2. Multithreading.*
 
-These days when even cell phones have `4` cores inside ignore multithreading is silly. In this, the last optimization we'll add a thread pool and will divide main work by equal tasks. For example, `ShapesApp::updatePositions()` which iterated over all shapes before now iterates only over a part of the shapes in each core. Thread pool class was taken from https://github.com/progschj/ThreadPool/blob/master/ThreadPool.h[here] and the final version of the program you can find https://github.com/nikitablack/cpp-tests/tree/8d83cb351008a3faf3629279ebaf49ff3fc71b17/data_oriented/oop/oop[in this] commit. In my tests, I used `4` cores.
+These days, when even cell phones have `4` cores inside, ignore multithreading is silly. In this, the last optimization we'll add a thread pool and will divide main work by equal tasks. For example, `ShapesApp::updatePositions()` which iterated over all shapes before now iterates only over a part of the shapes on each core. Thread pool class was taken from https://github.com/progschj/ThreadPool/blob/master/ThreadPool.h[here] and the final version of the program you can find https://github.com/nikitablack/cpp-tests/tree/8d83cb351008a3faf3629279ebaf49ff3fc71b17/data_oriented/oop/oop[in this] commit. In my tests, I used `4` threads (including main).
 
-Dividing the work by tasks added some head pain. For example, if a shape crosses cell boundaries it will be in several cells at the same time.
+Dividing the work by tasks added some head pain. For example, if a shape crosses cell boundaries it will end in several cells at the same time.
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/4.png["4", 400]
 
 Here the shape `a` fully contained in one cell, but `b` is in `4` cells at the same time. Because of this, we have to synchronize cell access. Also, we have to synchronize access to some fields inside the `Shape` class. We can achieve this adding `std::mutex` to the `Shape` and `Cell`.
 
-Now I can see `13000` shapes at `30` fps. For such amount of objects, I had to increase the window size. And I repeat it again - in every frame we're repeating simulation `20` times.
+Now I can see `13000` shapes at `30` fps. For such amount of objects, I had to increase the window size. And I say it again - in every frame we're repeating simulation `20` times.
 
 To be honest this program has bad parallelization possibilities. That's why increasing the number of threads will not give us a significant performance boost. But that's another story.
 
-image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/5.png["Teapot", 400]
+image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/5.png["Teapot", 600]
 
 ===== Structure of Arrays
 
 *Initial program*
 
-The code we wrote above I call traditional *OOP* approach - I write such code many years and see similar code in general. But now we'll modify it a little - we'll remove class `Shape` and see can this tiny change affect the performance? To my happiness refactoring wasn't hard, even trivial. Instead of the `Shape` class, we'll use a struct with vectors of data.
+The code we wrote above I call traditional *OOP* approach - I write such code many years and see similar code in general. But now we'll modify it a little - we'll remove class `Shape` and replace it with vectors and see can this tiny change affect the performance? To my happiness refactoring wasn't hard, even trivial. Instead of the `Shape` class, we'll use a struct with vectors of data.
 
 [source,cpp]
 ----
@@ -215,7 +215,7 @@ struct ShapesData
 };
 ----
 
-We pass this struct like this - `solveCollision(struct ShapesData & data, std::size_t const indA, std::size_t const indB);`. I.e. instead of shapes instances we pass indices and inside function necessary data is taking from the vectors.
+We pass this struct like this - `solveCollision(struct ShapesData & data, std::size_t const indA, std::size_t const indB)`. I.e. instead of shapes instances we pass indices and inside function necessary data is taking from the vectors.
 
 https://github.com/nikitablack/cpp-tests/tree/8363e60c614377cccb777625805b6aea9e699117/data_oriented/dod/dod[This version] of the program can simulate `500` objects at `30` fps. As you can see there's no difference with the original version. This is because we have relatively small data set and the "heaviest" function uses almost all fields of the struct.
 
