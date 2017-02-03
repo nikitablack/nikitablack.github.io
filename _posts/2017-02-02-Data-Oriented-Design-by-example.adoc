@@ -163,19 +163,19 @@ void ShapesApp::update(float const dt)
 
 Every frame we call `ShapesApp::updatePositions()` function that updates every shape `position` and `bounds`. Next we check every shape with every other for collision in `CollisionSolver::solveCollision()` function. I used https://en.wikipedia.org/wiki/Hyperplane_separation_theorem[Separating Axis Theorem] (*SAT*) for that. And we repeat these steps `NUM_PHYSICS_STEPS` times. This variable serves several purposes - first, the physics becomes more stable, and second, it limits the number of objects on the screen. *c+\+* is fast, amazingly fast, and without this limitation we'll have tens of thosands of objects which will lead to rendering performance decrease. In my tests I used `NUM_PHYSICS_STEPS = 20`.
 
-On my humble laptop this version of the program simulates `500` shapes before fps starts to drop below 30. Wat?? Only 500?? Even JavaScript can do better. I agree, not a lot, but don't forget - we're repeating calculations `20` times per frame.
+On my humble laptop this version of the program simulates `500` shapes before fps starts to drop below `30`. Wat?? Only `500`?? Even JavaScript can do better. I agree, not a lot, but don't forget - we're repeating calculations `20` times per frame.
 
-I think I need to add some screenshots, so here we go:
+I think I need to add some pictures to make the post not so boring, so here we go:
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/2.png["Teapot", 600]
 
-*Оптимизация номер 1. Spatial Grid*
+*Optimisation #1. Spatial Grid*
 
-Я упоминал, что хочу провести тесты на как можно более приближенной к реальности программе. То, что мы написали выше в реальности не используется — проверять каждую фигуру с каждой ооочень медленно. Для ускорения рассчетов обычно используется специальная структура. Предлагаю использовать обыкновенную 2d сетку — я назвал ее Grid — которая состоит из NxM ячеек — Cell. В начале рассчетов мы будем записывать в каждую ячейку объекты, которые находятся в ней. Тогда нам нужно будет всего лишь пробежаться по всем ячейкам и проверить пересечения нескольких пар объектов. Я неоднократно использовал этот подход в релизах и он зарекомедовал себя — пишется очень быстро, легко отлаживается, прост в понимании.
+I mentioned several times that I want to make tests on a program which is as close to real world as possible. Obviously, the code above is not usable - nobody checks each shape with each other - this is veeeery slow. For acceleration usualy some spetial spatial structure being used. We'll use simple `2d` grid - I called it `Grid` in the code - which consists of `NxM` cells - `struct Cell`. On the calculation start we'll put each object in the corresponding cell. This way all we have to do is to iterate over cells and check intersection between several pairs of objects. I used similar code a lot of times in real projects and it behave very well. Besides it's very easy to implement, easy to debug and understand.
 
-Коммит второй версии программы можно посмотреть https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[здесь]. Появился новый класс Grid и немного изменился метод ShapesApp::update() — теперь он вызывает методы сетки для проверки пересечений.
+The commit for this version can be found https://github.com/nikitablack/cpp-tests/tree/8364d7c55c8948ab2fc5630e828d44551c6db951/data_oriented/oop/oop[here]. We added a new entity - `Grid` and changed `ShapesApp::update()` function. Now it calls `Grid`'s methods for updating and intersections.
 
-Эта версия держит уже 8000 фигур при 30 fps (не забываем про 20 итераций в каждом кадре)! Пришлось уменьшить фигуры в 10 раз, чтобы они поместились в окне.
+This vrsion can simulate `8000` shapes now at `30` fps (don't forget about `20` repetitions in each frame)! I had to decrease shape's sizes in order to fit them in the window.
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/3.png["Teapot", 600]
 
