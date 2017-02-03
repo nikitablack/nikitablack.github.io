@@ -171,11 +171,11 @@ image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_b
 
 *Optimisation #1. Spatial Grid*
 
-I mentioned several times that I want to make tests on a program which is as close to real world as possible. Obviously, the code above is not usable - nobody checks each shape with each other - this is veeeery slow. For acceleration usualy some spetial spatial structure being used. We'll use simple `2d` grid - I called it `Grid` in the code - which consists of `NxM` cells - `struct Cell`. On the calculation start we'll put each object in the corresponding cell. This way all we have to do is to iterate over cells and check intersection between several pairs of objects. I used similar code a lot of times in real projects and it behave very well. Besides it's very easy to implement, easy to debug and understand.
+I mentioned several times that I want to make tests on a program which is as close to real world as possible. Obviously, the code above is not usable - nobody checks each shape with each other - this is veeeery slow. For acceleration usually, some spetial spatial structure being used. We'll use simple `2d` grid - I called it `Grid` in the code - which consists of `NxM` cells - `struct Cell`. On the calculation start we'll put each object in the corresponding cell. This way all we have to do is to iterate over cells and check intersection between several pairs of objects. I used the similar code a lot of times in real projects and it behaved very well. Besides, it's very easy to implement, easy to debug and understand.
 
 The commit for this version can be found https://github.com/nikitablack/cpp-tests/tree/8364d7c55c8948ab2fc5630e828d44551c6db951/data_oriented/oop/oop[here]. We added a new entity - `Grid` and changed `ShapesApp::update()` function. Now it calls `Grid`'s methods for updating and intersections.
 
-This vrsion can simulate `8000` shapes now at `30` fps (don't forget about `20` repetitions in each frame)! I had to decrease shape's sizes in order to fit them in the window.
+This version can simulate `8000` shapes now at `30` fps (don't forget about `20` repetitions in each frame)! I had to decrease shape's sizes in order to fit them in the window.
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/dod_by_example/3.png["Teapot", 600]
 
