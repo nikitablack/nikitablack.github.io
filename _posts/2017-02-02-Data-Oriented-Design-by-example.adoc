@@ -90,18 +90,16 @@ int main()
 
 The second test runs faster by 30% (in VS2017 and gcc7.0.1). But why?
 
-The size of the `S` struct is `24` bytes. My CPU (Intel Core i7) have `32KB` L1 cache for each core with `64B` cache line. That means that when we're requesting data from the main memory one cache line can hold only two full `S` structs at most. In the first test we're reading only one `int` field, i.e. in the best case scenario one cache line can hold only two `S::i` (ok, sometimes three). In the second test we're reading similar `int` but from the vector of integers. `std::vector` guarantees sequentiality of the data it holds. That means that one cache line can hold up to `16` (`64KB` / `sizeof(int)` = `16`) values we need. Obviously we're communicating with the RAM less often. And it's known that memory operations are the bottleneck in modern CPUs.
+The size of the `S` struct is `24` bytes. My CPU (Intel Core i7) have `32KB` L1 cache for each core with `64B` cache line. That means that when we're requesting data from the main memory one cache line can hold only two full `S` structs at most. In the first test we're reading only one `int` field, i.e. in the best case scenario one cache line can hold only two `S::i` (ok, sometimes three). In the second test we're reading similar `int` but from the vector of integers. `std::vector` guarantees sequentiality of the data it holds. That means that one cache line can hold up to `16` (`64KB` / `sizeof(int)` = `16`) values we need. Obviously, we're communicating with the RAM less often. And it's known that memory operations are the bottleneck in modern CPUs.
 
-Размер структуры S равен 24 байтам. Мой процессор (Intel Core i7) имеет 32KB кэш на ядро с 64B кэш-линией (cache line). Это значит, что при запросе данных из памяти в одну кэш-линию полностью поместятся только две структуры S. В первом тесте я читаю только одно int поле, т.е. при одном обращении к памяти в одной кэш-линии будет только 2 (иногда 3) нужных нам поля. Во втором тесте я читаю такое же int значение, но из вектора. std::vector гарантирует последоватеьность данных. Это означает, что при обращении к памяти в одной кэш-линии будет 16 (64KB / sizeof(int) = 16) нужных нам значений. Получается, что во втором тесте мы обращаемся к памяти реже. A обращение к памяти, как известно, является слабым звеном в современных процессорах.
+===== What about real life?
 
-===== Как дела обстоят на практике?
+The example above clearly shows the benefits of *SoA* (**S**truct **o**f **A**rrays) vs *AoS* (**A**rray **o**f **S**tructures). But this example was from the _Hello World_ category, i.e. it's very far from real world applications. In reality, the code has lots of dependencies and specific data which probably will not give such performance increase. One more thing - if in our example we'll read all fields of the struct there will be no difference in speed.
 
-Пример выше наглядно показывает преимущества использования SoA (Struct of Arrays) вместо AoS (Array of Structs), но этот пример из разряда Hello World, т.е. далек от реальной жизни. В реальном коде много зависимостей и специфических данных, которые, возможно не дадут прироста производительности. К тому же, если в тестах мы будем обращаться ко всем полям структуры, разницы в производительности не будет.
-
-Чтобы понять реальность применения подхода я решил написать более-менее комплексный код, используя обе техники и сравнить результаты. Пускай это будет 2d симуляция твердых тел — мы создадим N выпуклых многоугольников, зададим параметры — массу, скорость и т.п. и посмотрим, сколько объектов мы сможем симулировать оставаясь на отметке 30 fps.
+In order to understand possibility to apply *DOD* I decided to write more or less complex program with both (*OOP* and *DOD*) approaches. Let it be a 2d rigid body simulation - we'll create *N* convex polygons with different parameters - mass, speed etc. - and we'll see how many such objects we can simulate staying on 30 fps.
 
 ===== Array of Structures
-*Первая версия программы*
+*Initial program*
 
 Исходный код для первой версии программы можно взять из https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx[этого коммита]. Сейчас мы кратко пробежимся по коду.
 
