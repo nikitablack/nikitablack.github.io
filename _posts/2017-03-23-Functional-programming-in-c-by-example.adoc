@@ -20,3 +20,43 @@ The source code can be found https://github.com/nikitablack/cpp-tests/tree/maste
 In the `main()` function we create shapes (`struct Shape`) and start an infinite loop where we'll update the simulation. It's worth to mention the code organization - every function resides in a separate cpp file and in place of it's use it have to be declared as `extern`. Using this approach there's no need to create a header which plausibly affects compilation time. Moreover, it makes the code more clear: one function - one file.
 
 After the creation of initial data, we need to pass it further to `updateSimulation()` function.
+
+===== Update Simulation
+
+This function is the heart of our program. This is the signature:
+
+[source,cpp]
+----
+vector<Shape> updateSimulation(float const dt, vector<Shape> const shapes, float const width, float const height);
+----
+
+We're taking the data by value and return a copy of modified data. But why a copy and not a const reference? Earlier I wrote that one of the principles of *FP* is data immutability and `const reference` guarantees that. That's right, but there's another important principle - the function should be pure, i.e. it shouldn't introduce side effects and with the same input data output should be always the same. But taking a reference function can't have that guarantee. Let's look at the example:
+
+[source,cpp]
+----
+int foo(vector<int> const & data)
+{
+    return accumulate(data.begin(), data.end(), 0);
+}
+
+vector<int> data{1, 1, 1};
+int result{foo(data)};
+----
+
+Though `foo()` takes input by const reference the data itself is not constant. That means it can be changed before or during the call to `accumulate()` for example by another thread. On the other side if we'll obey the rule of passing data by copy the modification of data excluded.
+
+Moreover, in order to maintain data immutability principle, all fields of all user types should be const. This is, for example, `Vec2` type:
+
+[source,cpp]
+----
+struct Vec2
+{
+	float const x;
+	float const y;
+
+	Vec2(float const x = 0.0f, float const y = 0.0f) : x{ x }, y{ y }
+	{}
+
+	// member functions - all const
+}
+----
