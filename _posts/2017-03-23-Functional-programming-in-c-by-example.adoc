@@ -157,3 +157,15 @@ vector<Shape> calculatePositionsAndBounds(float const dt, vector<Shape> const sh
 ----
 
 Instead of one function, we have two. And what is more important the readability became worse (at least for me - the guy who grown up on traditional *OOP*). In this approach, we used so-called tail recursion. In theory, in this case, the stack should be cleared on every recursion entrance. However, I couldn't find in c++ standard the correct behavior. Because of this, I can't guarantee that there will be no stack overflow. Taking all this into account I decided not to use recursion in my code.
+
+===== Calculate Cells Ranges
+
+For acceleration 2D grid was used. A shape can be in multiple cells, as can bee seen on the picture:
+
+image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/functional_by_example/1.png["1", 400]
+
+Function `calculateCellsRanges()` runs through each shape and calculates rows and columns in the grid where a shape resides.
+
+===== Fill Grid
+
+Each cell in the grid represented as a vector of shapes. If it's free during some frame vector size will be zero. Obviously. In function `fillGrid()` we again run through all shapes and put them in corresponding cells (vectors). Later we'll check shapes inside each cell for an intersection. But on the picture above we can see that the shapes `a` and `b` are both resides in cell `2` and `5`. This means that we'll check these two shapes twice. In order to fix this we need to add special code that will say - do we need to make a check. Knowing rows and columns of the grid for the shape makes this task trivial.
