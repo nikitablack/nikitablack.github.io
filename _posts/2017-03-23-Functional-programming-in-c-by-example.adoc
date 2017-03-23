@@ -12,3 +12,11 @@ I'm not an expert, so take all my words with a grain of salt. From all of the fu
 ===== Introduction
 
 I'll not touch *FP* theory at all - you can find a way better sources around. Thought I tried to write the program in the pure functional style I couldn't achieve it by 100%. Sometimes because there's no sense because the language doesn't support a feature (pattern matching, for example), sometimes because of lack of experience. For example, rendering is done in usual *OOP* style. Why? Because one of the *FP* principles is data immutability and absence of a state. But for DirectX (API I'm using), it's necessary to keep buffers, textures, devices. Though it's possible to recreate everything every frame it'll be too long (we'll talk about performance later). Also, you'll not find here lazy evaluations - because I couldn't find a place where I could use it.
+
+The source code can be found https://github.com/nikitablack/cpp-tests/tree/master/functional/almost_pure_functional[here].
+
+===== Main
+
+In the `main()` function we create shapes (`struct Shape`) and start an infinite loop where we'll update the simulation. It's worth to mention the code organization - every function resides in a separate cpp file and in place of it's use it have to be declared as `extern`. Using this approach there's no need to create a header which plausibly affects compilation time. Moreover, it makes the code more clear: one function - one file.
+
+After the creation of initial data, we need to pass it further to `updateSimulation()` function.
