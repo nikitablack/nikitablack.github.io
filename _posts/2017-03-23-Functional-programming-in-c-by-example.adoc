@@ -1,0 +1,6 @@
+= Functional programming in c++ by example
+:hp-tags: c++, functional
+
+Functional programming (*FP*) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I'll take a code from my https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html[previous article] so the example will be a 2D physics simulation.
+
+The Russian version of the post is https://habrahabr.ru/post/324518/[here].
