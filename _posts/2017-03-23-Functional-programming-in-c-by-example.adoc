@@ -60,3 +60,100 @@ struct Vec2
 	// member functions - all const
 }
 ----
+
+As you can see, the state is set during object creation and never changes. It's even hard to call this a state - it's just the data.
+
+Let's go back to the function `updateSimulation()`. It's called the following way:
+
+[source,cpp]
+----
+shapes = updateSimulation(dtStep, move(shapes), wSize.x, wSize.y);
+----
+
+Since `shapes` is not constant here we can move the data (`std::move()`) - potentially this can avoid unnecessary copying. In our case, however, there's no effect - we're working with primitive types and moving is equal to copying.
+
+One more interesting thing - the function returns a new data which assigned to the old variable `shapes`. By theory, this violates the rule of state absence. However, by my humble opinion, we can use local variable freely since it has no effect on the result, i.e. the state encapsulated inside the function.
+
+This is function's body:
+
+[source,cpp]
+----
+vector<Shape> updateSimulation(float const dt, vector<Shape> const shapes, float const width, float const height)
+{
+	// step 1 - update calculate current positions
+	vector<Shape> const updatedShapes1{ calculatePositionsAndBounds(dt, shapes) };
+
+	// step 2 - for each shape calculate cells it fits in
+	uint32_t rows;
+	uint32_t columns;
+	tie(rows, columns) = getNumberOfCells(width, height); // auto [rows, columns] = getNumberOfCells(width, height); - c++17 structured bindings - not supported in vs2017 at the moment of writing
+
+	vector<Shape> const updatedShapes2{ calculateCellsRanges(width, height, rows, columns, updatedShapes1) };
+
+	// step 3 - put shapes in corresponding cells
+	vector<vector<Shape>> const cellsWithShapes{ fillGrid(width, height, rows, columns, updatedShapes2) };
+
+	// step 4 - calculate collisions
+	vector<VelocityAfterImpact> const velocityAfterImpact{ solveCollisions(cellsWithShapes, columns) };
+
+	// step 5 - apply velocities
+	vector<Shape> const updatedShapes3{ applyVelocities(updatedShapes2, velocityAfterImpact) };
+
+	return updatedShapes3;
+}
+----
+
+As always we take the data by copy and return the copy. This code is easy to understand - we call a function after function passing data from one stage to another - just like a pipeline.
+
+Next, we'll run through the algorithm and will see what we have to do to make it work with *FP*.
+
+===== Сalculate Positions And Bounds
+
+[source,cpp]
+----
+vector<Shape> calculatePositionsAndBounds(float const dt, vector<Shape> const shapes)
+{
+	vector<Shape> updatedShapes;
+	updatedShapes.reserve(shapes.size());
+
+	transform(shapes.begin(), shapes.end(), back_inserter(updatedShapes), [dt](Shape const shape)
+	{
+		Shape const newShape{ shape.id, shape.vertices, calculatePosition(shape, dt), shape.velocity, shape.bounds, shape.cellsRange, shape.color, shape.massInverse };
+		return Shape{ newShape.id, newShape.vertices, newShape.position, newShape.velocity, calculateBounds(newShape), newShape.cellsRange, newShape.color, newShape.massInverse };
+	});
+
+	return updatedShapes;
+}
+----
+
+The standard library supports *FP* for many years. Algorithm `transform()` is a high-order function, i.e. the function that accepts other functions as parameters. *STL* have tons of interesting algorithms and it's very important to know them if you're writing in functional style.
+
+There's interesting thing in this example. In pure *FP* there're no loops, since loop counter is a state. Instead of loops *FP* uses recursion. Let's try to rewrite our function with it:
+
+[source,cpp]
+----
+vector<Shape> updateOne(float const dt, vector<Shape> shapes, vector<Shape> updatedShapes)
+{
+	if (shapes.size() > 0)
+	{
+		Shape shape{ shapes.back() };
+		shapes.pop_back();
+
+		Shape const newShape{ shape.id, shape.vertices, calculatePosition(shape, dt), shape.velocity, shape.bounds, shape.cellsRange, shape.color, shape.massInverse };
+		updatedShapes.emplace_back(newShape.id, newShape.vertices, newShape.position, newShape.velocity, calculateBounds(newShape), newShape.cellsRange, newShape.color, newShape.massInverse);
+	}
+	else
+	{
+		return updatedShapes;
+	}
+
+	return updateOne(dt, move(shapes), move(updatedShapes));
+}
+
+vector<Shape> calculatePositionsAndBounds(float const dt, vector<Shape> const shapes)
+{
+	return updateOne(dt, move(shapes), {});
+}
+----
+
+Instead of one function, we have two. And what is more important the readability became worse (at least for me - the guy who grown up on traditional *OOP*). In this approach, we used so-called tail recursion. In theory, in this case, the stack should be cleared on every recursion entrance. However, I couldn't find in c++ standard the correct behavior. Because of this, I can't guarantee that there will be no stack overflow. Taking all this into account I decided not to use recursion in my code.
