@@ -8,6 +8,14 @@
     <atom:link href="https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/rss/feed.rss" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Functional programming in c++ by example</title>
+      <link>https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html</link>
+      <pubDate>Fri, 24 Mar 2017 12:00:00 +0000</pubDate>
+      <guid isPermaLink="true">https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html</guid>
+      <description>Functional programming (FP) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach.</description>
+    </item>
+    
+    <item>
       <title>Data Oriented Design by example</title>
       <link>https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html</link>
       <pubDate>Sat, 4 Feb 2017 12:00:00 +0000</pubDate>
