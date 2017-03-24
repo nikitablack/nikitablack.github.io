@@ -70,7 +70,7 @@ Let's go back to the function `updateSimulation()`. It's called the following wa
 shapes = updateSimulation(dtStep, move(shapes), wSize.x, wSize.y);
 ----
 
-Since `shapes` is not constant here we can move the data (`std::move()`) - potentially this can avoid unnecessary copying and increase the performance. In our case, however, there's no effect - we're working with primitive types and moving is equal to copying.
+Since `shapes` is not constant here we can move the data (`std::move()`) and save on copies.
 
 One more interesting thing - the function returns a new data which is assigned to the old variable `shapes`. By theory, this violates the rule of state absence. However, by my humble opinion, we can use local variable freely since it has no effect on the result, i.e. the state encapsulated inside the function.
 
