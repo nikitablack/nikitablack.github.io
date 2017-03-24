@@ -169,3 +169,22 @@ Function `calculateCellsRanges()` runs through each shape and calculates rows an
 ===== Fill Grid
 
 Each cell in the grid represented as a vector of shapes. If it's free during some frame vector size will be zero. Obviously. In function `fillGrid()` we again run through all shapes and put them in corresponding cells (vectors). Later we'll check shapes inside each cell for an intersection. But on the picture above we can see that the shapes `a` and `b` are both resides in cell `2` and `5`. This means that we'll check these two shapes twice. In order to fix this we need to add special code that will say - do we need to make a check. Knowing rows and columns of the grid for the shape makes this task trivial.
+
+===== Solve Collisions
+
+In my https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html[previous article] we used the following algorithm for collision resolution: if objects were overlapped we moved them apart:
+
+image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/functional_by_example/2.png["1", 400]
+
+This added a lot of complexity - we had to recalculate bounding box every time we moved a shape. In order to reduce the number of recalculations, we added a special accumulator which accumulated all necessary position changes and later applied it to the shape only once. Anyway, we had to add mutexes for synchronization, the code was difficult to understand and wasn't ready for use with *FP*.
+
+In the new attempt, we'll not move objects to solve overlap at all. Moreover, we'll make calculations only if it really necessary. On the picture, for example, there's no need to solve collision at all - the shape *b* moves faster than the shape *a* and they moving apart from each other. Sooner or later they will stop to overlap by themselves - without our intervention. Of course, this is physically inaccurate, but if velocities and the simulation step are small then it looks ok. When the calculations are necessary we calculate velocities change and store them together with the shape id.
+
+===== Apply Velocities
+
+Having velocity changes we pass them to the `applyVelocities()` function which just sums them up and applies to the shape. Again, there's no physical meaning at all and probably there can be artifacts. But the purpose of this experiment was different from simulation correctness.
+
+===== Result
+
+After these simple steps, we have new data which is ready to be passed to the renderer. After rendering we're repeating everything from the beginning again and again. Here's a short video in order to prove that all this works:
+
