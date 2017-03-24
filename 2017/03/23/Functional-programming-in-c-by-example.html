@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title>Functional programming in c++ by example</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="https://nikitablack.github.io/favicon.ico">
+
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:400,700,400italic,700italic|Open+Sans:400italic,700italic,700,400">
+    <link rel="stylesheet" type="text/css" href="//nikitablack.github.io/themes/roon/assets/css/screen.css?v=1490348927481" />
+
+    <link rel="canonical" href="https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html" />
+    <meta name="referrer" content="origin" />
+    
+    <meta property="og:site_name" content="Simply about complex" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Functional programming in c++ by example" />
+    <meta property="og:description" content="Functional programming (FP) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the" />
+    <meta property="og:url" content="https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html" />
+    <meta property="article:tag" content="c++" />
+    <meta property="article:tag" content=" functional" />
+    
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Functional programming in c++ by example" />
+    <meta name="twitter:description" content="Functional programming (FP) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the" />
+    <meta name="twitter:url" content="https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html" />
+    
+    <script type="application/ld+json">
+null
+    </script>
+
+    <meta name="generator" content="HubPress" />
+    <link rel="alternate" type="application/rss+xml" title="Simply about complex" href="https://nikitablack.github.io/rss/" />
+</head>
+<body class="post-template tag-c tag-functional  noimage">
+
+    
+
+
+    <article role="main" class="">
+        <header>
+            <a href="https://nikitablack.github.io" id="home_link">«</a>
+            <div class="meta"><time datetime="2017-03-23"><a href="https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html">March 23, 2017</a></time> <span class="count" id="js-reading-time"></span></div>
+            <h1>Functional programming in c++ by example</h1>
+        </header>
+
+        <div class="text" id="js-post-content">
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Functional programming (<strong>FP</strong>) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I&#8217;ll take a code from my <a href="https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html">previous article</a> so the example will be a 2D physics simulation.</p>
+</div>
+<div class="paragraph">
+<p>The Russian version of the post is <a href="https://habrahabr.ru/post/324518/">here</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_disclaimer">Disclaimer</h5>
+<div class="paragraph">
+<p>I&#8217;m not an expert, so take all my words with a grain of salt. From all of the functional languages, I had an experience only with Erlang. This article is my attempt to better understand <strong>FP</strong> and a field of its appliance. Here I&#8217;ll write step by step how I transformed <strong>OOP</strong> code to some sort of functional. In other words, here I&#8217;m presenting my learning process. And of course, I welcome any criticism.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_introduction">Introduction</h5>
+<div class="paragraph">
+<p>I&#8217;ll not touch <strong>FP</strong> theory at all - you can find a way better sources around. Thought I tried to write the program in the pure functional style I couldn&#8217;t achieve it by 100%. Sometimes because there&#8217;s no sense, sometimes because the language doesn&#8217;t support a feature (pattern matching, for example), sometimes because of lack of experience. For example, rendering is done in usual <strong>OOP</strong> style. Why? One of the <strong>FP</strong> principles is data immutability and absence of a state. But for DirectX (API I&#8217;m using), it&#8217;s necessary to keep buffers, textures, devices. Though it&#8217;s possible to recreate everything every frame it&#8217;ll be too long to do so (more about performance later). Also, you&#8217;ll not find here lazy evaluations - because I couldn&#8217;t find a place where I could use it.</p>
+</div>
+<div class="paragraph">
+<p>The source code can be found <a href="https://github.com/nikitablack/cpp-tests/tree/master/functional/almost_pure_functional">here</a>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_main">Main</h5>
+<div class="paragraph">
+<p>In the <code>main()</code> function we create shapes (<code>struct Shape</code>) and start an infinite loop where we&#8217;ll update the simulation. It&#8217;s worth to mention the code organization - every function resides in a separate <code>cpp</code> file and in place of it&#8217;s use it have to be declared as <code>extern</code>. Using this approach there&#8217;s no need to create a header and this plausibly affects compilation time. Moreover, it makes the code more clear: one function - one file.</p>
+</div>
+<div class="paragraph">
+<p>After the creation of initial data, we need to pass it further to <code>updateSimulation()</code> function.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_update_simulation">Update Simulation</h5>
+<div class="paragraph">
+<p>This function is the heart of our program. This is the signature:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">vector&lt;Shape&gt; updateSimulation(float const dt, vector&lt;Shape&gt; const shapes, float const width, float const height);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We&#8217;re taking the data by value and return a copy of modified data. But why a copy and not a const reference? Earlier I wrote that one of the principles of <strong>FP</strong> is data immutability and <code>const &amp;</code> guarantees that. That&#8217;s right, but there&#8217;s another important principle - the function should be pure, i.e. it shouldn&#8217;t introduce side effects - with the same input data the output should always be the same. But taking a reference a function can&#8217;t have that guarantee. Let&#8217;s look at the example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">int foo(vector&lt;int&gt; const &amp; data)
+{
+    return accumulate(data.begin(), data.end(), 0);
+}
+
+vector&lt;int&gt; data{1, 1, 1};
+int result{foo(data)};</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Though <code>foo()</code> takes input by const reference the data itself is not constant. That means it can be changed before or during the call to <code>accumulate()</code> for example by another thread. On the other side if we&#8217;ll obey the rule of passing data by copy the modification of data excluded.</p>
+</div>
+<div class="paragraph">
+<p>Moreover, in order to maintain data immutability principle, all fields of all user types should be const. This is, for example, <code>Vec2</code> type:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">struct Vec2
+{
+	float const x;
+	float const y;
+
+	Vec2(float const x = 0.0f, float const y = 0.0f) : x{ x }, y{ y }
+	{}
+
+	// member functions - all const
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you can see, the state is set during object creation and never changes. It&#8217;s even hard to call it a state - it&#8217;s just the data.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s go back to the function <code>updateSimulation()</code>. It&#8217;s called the following way:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">shapes = updateSimulation(dtStep, move(shapes), wSize.x, wSize.y);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Since <code>shapes</code> is not constant here we can move the data (<code>std::move()</code>) - potentially this can avoid unnecessary copying and increase the performance. In our case, however, there&#8217;s no effect - we&#8217;re working with primitive types and moving is equal to copying.</p>
+</div>
+<div class="paragraph">
+<p>One more interesting thing - the function returns a new data which is assigned to the old variable <code>shapes</code>. By theory, this violates the rule of state absence. However, by my humble opinion, we can use local variable freely since it has no effect on the result, i.e. the state encapsulated inside the function.</p>
+</div>
+<div class="paragraph">
+<p>This is function&#8217;s body:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">vector&lt;Shape&gt; updateSimulation(float const dt, vector&lt;Shape&gt; const shapes, float const width, float const height)
+{
+	// step 1 - update calculate current positions
+	vector&lt;Shape&gt; const updatedShapes1{ calculatePositionsAndBounds(dt, shapes) };
+
+	// step 2 - for each shape calculate cells it fits in
+	uint32_t rows;
+	uint32_t columns;
+	tie(rows, columns) = getNumberOfCells(width, height); // auto [rows, columns] = getNumberOfCells(width, height); - c++17 structured bindings - not supported in vs2017 at the moment of writing
+
+	vector&lt;Shape&gt; const updatedShapes2{ calculateCellsRanges(width, height, rows, columns, updatedShapes1) };
+
+	// step 3 - put shapes in corresponding cells
+	vector&lt;vector&lt;Shape&gt;&gt; const cellsWithShapes{ fillGrid(width, height, rows, columns, updatedShapes2) };
+
+	// step 4 - calculate collisions
+	vector&lt;VelocityAfterImpact&gt; const velocityAfterImpact{ solveCollisions(cellsWithShapes, columns) };
+
+	// step 5 - apply velocities
+	vector&lt;Shape&gt; const updatedShapes3{ applyVelocities(updatedShapes2, velocityAfterImpact) };
+
+	return updatedShapes3;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As always we take the data by copy and return the copy. This code is easy to understand - we call a function after function passing data from one stage to another - just like a pipeline.</p>
+</div>
+<div class="paragraph">
+<p>Next, we&#8217;ll run through the algorithm and will see what we have to do to make it work with <strong>FP</strong>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="__alculate_positions_and_bounds">Сalculate Positions And Bounds</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">vector&lt;Shape&gt; calculatePositionsAndBounds(float const dt, vector&lt;Shape&gt; const shapes)
+{
+	vector&lt;Shape&gt; updatedShapes;
+	updatedShapes.reserve(shapes.size());
+
+	transform(shapes.begin(), shapes.end(), back_inserter(updatedShapes), [dt](Shape const shape)
+	{
+		Shape const newShape{ shape.id, shape.vertices, calculatePosition(shape, dt), shape.velocity, shape.bounds, shape.cellsRange, shape.color, shape.massInverse };
+		return Shape{ newShape.id, newShape.vertices, newShape.position, newShape.velocity, calculateBounds(newShape), newShape.cellsRange, newShape.color, newShape.massInverse };
+	});
+
+	return updatedShapes;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The standard library supports <strong>FP</strong> for many years. Algorithm <code>transform()</code> is a high-order function, i.e. the function that accepts other functions as parameters. <strong>STL</strong> have tons of interesting algorithms and it&#8217;s very important to know them if you&#8217;re writing in functional style.</p>
+</div>
+<div class="paragraph">
+<p>There&#8217;s interesting thing in this example. In pure <strong>FP</strong> there&#8217;re no loops, since loop counter is a state. Instead of loop in <strong>FP</strong> we use recursion. Let&#8217;s try to rewrite our function with it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">vector&lt;Shape&gt; updateOne(float const dt, vector&lt;Shape&gt; shapes, vector&lt;Shape&gt; updatedShapes)
+{
+	if (shapes.size() &gt; 0)
+	{
+		Shape shape{ shapes.back() };
+		shapes.pop_back();
+
+		Shape const newShape{ shape.id, shape.vertices, calculatePosition(shape, dt), shape.velocity, shape.bounds, shape.cellsRange, shape.color, shape.massInverse };
+		updatedShapes.emplace_back(newShape.id, newShape.vertices, newShape.position, newShape.velocity, calculateBounds(newShape), newShape.cellsRange, newShape.color, newShape.massInverse);
+	}
+	else
+	{
+		return updatedShapes;
+	}
+
+	return updateOne(dt, move(shapes), move(updatedShapes));
+}
+
+vector&lt;Shape&gt; calculatePositionsAndBounds(float const dt, vector&lt;Shape&gt; const shapes)
+{
+	return updateOne(dt, move(shapes), {});
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Instead of one function, we have two. And what is more important the readability became worse (at least for me - the guy who grown up on traditional <strong>OOP</strong>). In this approach, we used so-called tail recursion. In theory, in this case, the stack should be cleared on every recursion entrance. However, I couldn&#8217;t find in c++ standard true behavior. Because of this, I can&#8217;t guarantee that there will be no stack overflow. Taking all this into account I decided not to use recursion in my code.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_calculate_cells_ranges">Calculate Cells Ranges</h5>
+<div class="paragraph">
+<p>For acceleration 2D grid was used. A shape can be in multiple cells, as can bee seen on the picture:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://raw.githubusercontent.com/nikitablack/articles_stuff/master/functional_by_example/1.png" alt="1" width="400">
+</div>
+</div>
+<div class="paragraph">
+<p>Function <code>calculateCellsRanges()</code> runs through each shape and calculates rows and columns in the grid where a shape resides.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_fill_grid">Fill Grid</h5>
+<div class="paragraph">
+<p>Each cell in the grid represented as a vector of shapes. If it&#8217;s empty during a frame the vector size will be zero. Obviously. In function <code>fillGrid()</code> we again run through all shapes and put them in corresponding cells (vectors). Later we&#8217;ll check shapes inside each cell for an intersection. But on the picture above we can see that the shapes <code>a</code> and <code>b</code> are both resides in cell <code>2</code> and <code>5</code>. This means that we&#8217;ll check these two shapes twice. In order to fix this we need to add special code that will say - do we need to make a check. Knowing rows and columns of the grid for the shape makes this task trivial.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_solve_collisions">Solve Collisions</h5>
+<div class="paragraph">
+<p>In my <a href="https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html">previous article</a> we used the following algorithm for collision resolution - if objects were overlapped we moved them apart:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://raw.githubusercontent.com/nikitablack/articles_stuff/master/functional_by_example/2.png" alt="1" width="400">
+</div>
+</div>
+<div class="paragraph">
+<p>This added a lot of complexity - we had to recalculate bounding box every time we moved a shape. In order to reduce the number of recalculations, we added a special accumulator which accumulated all necessary position changes and later applied it to the shape only once. Anyway, we had to add mutexes for synchronization, the code was difficult to understand and wasn&#8217;t ready for use with <strong>FP</strong>.</p>
+</div>
+<div class="paragraph">
+<p>In the new attempt, we&#8217;ll not move objects to solve overlap at all. Moreover, we&#8217;ll make calculations only if it really necessary. On the picture, for example, there&#8217;s no need to solve collision - the shape <strong>b</strong> moves faster than the shape <strong>a</strong> and they moving apart from each other. Sooner or later they will stop to overlap by themselves - without our intervention. Of course, this is physically inaccurate, but if velocities and the simulation step are small then it looks ok. When the calculations are necessary we calculate velocity changes and store them together with the shape id.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_apply_velocities">Apply Velocities</h5>
+<div class="paragraph">
+<p>Having velocity changes we pass them to the <code>applyVelocities()</code> function which just sums them up and applies to the shape. Again, there&#8217;s no physical meaning in this and probably there can be artifacts. But the purpose of this experiment was not a simulation correctness.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_result">Result</h5>
+<div class="paragraph">
+<p>After these simple steps, we have new data which is ready to be passed to the renderer. After rendering we&#8217;re repeating everything from the beginning again and again. Here&#8217;s a short video in order to prove that it works:</p>
+</div>
+<div class="videoblock">
+<div class="content">
+<iframe width="480" height="300" src="https://www.youtube.com/embed/mhhjrqtw8_8?rel=0" frameborder="0" allowfullscreen></iframe>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_conclusion">Conclusion</h5>
+<div class="paragraph">
+<p><strong>FP</strong> requires changing of thinking direction. But is it worth to do? Here&#8217;re my pros and cons:</p>
+</div>
+<div class="paragraph">
+<p><strong>Pros</strong>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Code readability. Together with <a href="https://en.wikipedia.org/wiki/Single_responsibility_principle">SRP</a> the code is easy to understand.</p>
+</li>
+<li>
+<p>Testability. Since the function&#8217;s result doesn&#8217;t depend on the environment and each function is a self-contained piece of code we have everything for testing.</p>
+</li>
+<li>
+<p>The most important point - the amazing ability for parallelization. Each function in our example can be called safely from any thread. Without synchronization primitives!</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Cons</strong>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Performance. Recall that in <a href="https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html">previous article</a> we could simulate <code>8000</code> shapes in one thread. Now we can do only <code>330</code>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>When I worked in a game dev, trying to get the maximum of speed from each line of code, the approach we used today is not usable as it is. However, c++ is not a game dev only and I see a lot of places where <strong>FP</strong> can be applied.</p>
+</div>
+<div class="paragraph">
+<p>In my next article, I&#8217;m planning to speak about the performance. I&#8217;ll add multithreading. Also, I&#8217;ll try to combine traditional <strong>OOP</strong> and <strong>FP</strong>. I don&#8217;t know the result but I see already weak places that can be fixed. So stay tuned, it should be interesting.</p>
+</div>
+</div>
+        </div>
+
+
+        <footer class="post-footer" role="contentinfo">
+
+            <div class="vcard">s
+                <a href="https://nikitablack.github.io/rss/feed.rss" id="btn_feed" class="btn" title="Feed" target="_blank">
+                    <span aria-hidden="true" data-icon=")"></span>
+                    <strong>Feed</strong>
+                </a>
+
+                <a href="https://nikitablack.github.io/author/nikitablack/" class="photo">
+                    <span style="background-image: url('https://avatars3.githubusercontent.com/u/6390092?v&#x3D;3');">
+                        <img src="https://avatars3.githubusercontent.com/u/6390092?v&#x3D;3" alt="nikitablack">
+                    </span>
+                </a>
+
+                <div class="details">
+                    <h4><a href="https://nikitablack.github.io/author/nikitablack/" class="url n">nikitablack</a></h4>
+                    
+                    <a href="https://nikitablack.github.io" class="js-remove-domain-schema">https://nikitablack.github.io</a>
+                </div>
+            </div>
+
+            <div id="user_bio">
+                <div class="inner">
+                    
+                </div>
+            </div>
+
+        </footer>
+
+
+
+
+    <section class="post-comments">
+      <div id="disqus_thread"></div>
+      <script type="text/javascript">
+      var disqus_shortname = 'nikitablack'; // required: replace example with your forum shortname
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+      </script>
+      <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+    </section>
+
+
+    </article>
+
+    <div id="share_modal">
+        <div class="wrap">
+            <div class="inner">
+                <header>
+                    Share
+                    <a href="" class="close" title="Close">&times;</a>
+                </header>
+
+                <div class="roon-share-links">
+                    <a href="https://twitter.com/share" class="twitter-share-button" data-dnt="true">Tweet</a>
+                    <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+                    <div id="fb-elems">
+                        <div id="fb-root"></div>
+                        <script>(function(d, s, id) {
+                        var js, fjs = d.getElementsByTagName(s)[0];
+                        if (d.getElementById(id)) return;
+                        js = d.createElement(s); js.id = id;
+                        js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=463438580397968";
+                        fjs.parentNode.insertBefore(js, fjs);
+                        }(document, 'script', 'facebook-jssdk'));</script>
+                        <div class="fb-like" data-send="false" data-layout="button_count" data-width="110" data-show-faces="false" data-font="arial"></div>
+                    </div>
+
+                    <div id="pinit-btn">
+                        <a href="//pinterest.com/pin/create/button/?url=https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html&amp;description=Functional%20programming%20in%20c%2B%2B%20by%20example-Simply%20about%20complex " data-pin-do="buttonPin" data-pin-config="beside"><img src="//assets.pinterest.com/images/pidgets/pin_it_button.png"></a>
+                        <script type="text/javascript" src="//assets.pinterest.com/js/pinit.js"></script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+        <a href="https://nikitablack.github.io" id="blog_badge">
+            <span style="background-image: url('https://raw.githubusercontent.com/nikitablack/nikitablack.github.io/master/images/logo.jpg');">Simply about complex</span>
+        </a>
+
+
+    <script>
+
+            function get_text(el) {
+                ret = "";
+                var length = el.childNodes.length;
+                for(var i = 0; i < length; i++) {
+                    var node = el.childNodes[i];
+                    if(node.nodeType != 8) {
+                        ret += node.nodeType != 1 ? node.nodeValue : get_text(node);
+                    }
+                }
+                return ret;
+            }
+            function reading_time () {
+                var post_content = document.getElementById('js-post-content');
+                if (post_content) {
+                    var words = get_text(post_content),
+                        count = words.split(/\s+/).length,
+                        read_time = Math.ceil((count / 150)),
+                        read_time_node = document.createTextNode(read_time + ' min read');
+                    document.getElementById('js-reading-time').appendChild(read_time_node);
+                }
+            }
+
+        function no_schema_links () {
+            var links = document.querySelectorAll('.js-remove-domain-schema');
+            if (links) {
+                for (i = 0; i < links.length; ++i) {
+                    var link = links[i],
+                        text = link.innerHTML,
+                        no_schema = text.replace(/.*?:\/\//g, "");
+                    link.innerHTML = no_schema;
+                }
+            }
+        }
+
+        window.onload = function () {
+            no_schema_links();
+
+            reading_time();
+        }
+    </script>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment-with-locales.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js?v="></script> 
+      <script type="text/javascript">
+        jQuery( document ).ready(function() {
+          // change date with ago
+          jQuery('ago.ago').each(function(){
+            var element = jQuery(this).parent();
+            element.html( moment(element.text()).fromNow());
+          });
+        });
+
+        hljs.initHighlightingOnLoad();
+      </script>
+
+        <script>
+            $(function(){
+                var share_modal = $("#share_modal"),
+                    update_social_links = true;
+
+                $("#btn_share").click(function(){
+                    var that = $(this);
+                    share_modal.fadeIn(200);
+                    return false;
+                });
+
+                share_modal.click(function(e){
+                    if (e.target.className == "wrap" || e.target.id == "share_modal") {
+                        share_modal.fadeOut(200);
+                    }
+                    return false;
+                });
+
+                share_modal.find("div.inner > header > a.close").click(function(){
+                    share_modal.fadeOut(200);
+                    return false;
+                });
+            });
+        </script>
+
+
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-69402602-2', 'auto');
+    ga('send', 'pageview');
+
+    </script>
+
+</body>
+</html>
