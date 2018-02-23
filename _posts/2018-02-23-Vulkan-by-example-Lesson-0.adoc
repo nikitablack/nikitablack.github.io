@@ -6,8 +6,13 @@ Hi everybody. Today we’ll talk about Vulkan - the modern API for communication
 ===== Disclaimer
 I'm not an expert guru ninja, I'm just learning. And definitely, there will be mistakes in my lessons. I'm kindly asking you to point to them so I can correct it soon. You can do it via comments here, or Reddit, where I'm planning to leave a link, or cpp slack Vulkan channel which I check quite often (and which is very silent btw).
 
-So let's start. What should I do? Of course, render a tesselated teapot! I did it before with https://nikitablack.github.io/2016/07/23/Direct-X-12-by-example.html[DirectX 12], so I already know from which side to approach. It covers a lot of pipeline stages so I have to touch different parts of the API, which is good. It's almost complete application, not just triangle or static mesh. This would be our goal:
+===== The goal
+So let's start. What should I do? Of course, render a tesselated teapot! I did it before with https://nikitablack.github.io/2016/07/23/Direct-X-12-by-example.html[DirectX 12], so I already know from which side to approach. It covers a lot of pipeline stages so I have to touch different parts of the API, which is good. It's almost a complete application, not just a triangle or static mesh. This would be our goal:
 
 video::8RCWeKLlVew[youtube, width=640, height=360]
 
-Amazing, isn't it? Sorry for the quality - youtube mercilessly fucked up the quality and I don't know how to achieve true HD picture.
+Amazing, isn't it? Sorry for the blurriness - youtube mercilessly fucked up the quality and I don't know how to achieve true HD picture.
+
+Ok, I know I want to see a rotating teapot and the very first thing I need is a data.
+
+===== The data
