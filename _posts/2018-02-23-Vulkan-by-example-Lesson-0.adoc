@@ -1,2 +1,4 @@
 = Vulkan by example. Lesson 0.
 :hp-tags: c++, vulkan
+
+Hi everybody. Today we'll talk about Vulkan - the modern api for communication with gpu device. There're already some information with tutorials on the web as well as books so why another one. I'll try to explain - these tutorials out there are great by all means, but personally for me they are hard to follow. In this series I'll try to build a mental picture around the api, I'll try not to just follow instructions and create some structures because they say I need this, but I'll try to understand why I need this. For that I'll use pictures, a lot of pictures. And if you read one of my previous posts you know that I'm a fan of functional approach and I'll use this approach in tutorials. I'll build next tutorial on top of the other adding a new stuff, but not modifying it - I found it easyer to follow (though sometimes I'll have to tweak old code to make it work with the new, but I'll try to minimize this).
