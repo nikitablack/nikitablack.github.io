@@ -5,3 +5,8 @@ Hi everybody. Today we'll talk about Vulkan - the modern api for communication w
 
 So let's start. What should we do? Of course render a tesselated teapot! I did it before with https://nikitablack.github.io/2016/07/23/Direct-X-12-by-example.html[DirectX 12], so I know a little how to do it. It covers a lot of pipeline stages so I have to touch different parts of the api, which is good. It's almost complete application, not just triangle or static mesh. This would be our goal:
 
+video::8RCWeKLlVew[youtube, width=640, height=360]
+
+Amazing, isn't it? Sorry gor the quality - youtube mercilessly fucked up the quality and I don't know how to achieve true HD picture.
+
+#1 Disclaimer
