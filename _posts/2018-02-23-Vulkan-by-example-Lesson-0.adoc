@@ -65,3 +65,8 @@ Amazing, isn't it? Sorry for the blurriness - youtube mercilessly fucked up the 
 Ok, I know I want to see a rotating teapot and the very first thing I need is a data.
 
 ===== The data
+One of the first https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot[links] in Google offered me a nice teapot dataset. Thought it looks good it requires some processing - if I use it as it is I get this:
+
+TODO add picture
+
+The data, presented in the set have to be repeated - the body part have to be rotated 3 more times and the handle with the spout have to be mirrored. I just added additional indices - the copy of corresponding parts (so I can use single index array without instancing) and introduced additional array of transformations. Later, in shaders  
