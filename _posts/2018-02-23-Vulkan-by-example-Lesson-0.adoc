@@ -13,27 +13,32 @@ I assume you know what tesselation is, why there are two related stages in the p
 I use `CMake` for code building. I run my code on Windows and Linux Mint. On Linux I use `CLion` IDE - it have nice `CMake` integration and `gcc 7`, on Windows - `Visual Studio Community 2017` with `open folder` feature. I use `c++17` a lot.
 
 ----
-src/
-├──libs/
-│   ├──eigen/
-│   ├──glfw-3.2.1/
-│   └──tl/
-└──tesselated_teapot/
-    ├──resources/
-    ├──src/
-    │   ├──app/
-    │   ├──details/
-    │   ├──vk_helpers/
-    │   ├──AppData.h
-    │   ├──Main.cpp
-    │   ├──MainApplication.cpp
-    │   ├──MainApplication.h
-    │   └──TeapotData.h
-    └──CMakeLists.txt
+lesson/
+├──src/
+│   ├──libs/
+│   │   ├──eigen/
+│   │   │   └──CMakeLists.txt
+│   │   ├──glfw-3.2.1/
+│   │   │   └──CMakeLists.txt
+│   │   └──tl/
+│   │       └──CMakeLists.txt
+│   └──tesselated_teapot/
+│       ├──resources/
+│       ├──src/
+│       │   ├──app/
+│       │   ├──details/
+│       │   ├──vk_helpers/
+│       │   ├──AppData.h
+│       │   ├──Main.cpp
+│       │   ├──MainApplication.cpp
+│       │   ├──MainApplication.h
+│       │   └──TeapotData.h
+│       └──CMakeLists.txt
+└──CMakeLists.txt
 ----
 This is a typical project structure for each lesson. `resources/` folder holds shader files. All application related files go to `app/` folder, wrappers around Vulkan functions and structs go to `vk_helpers` folder and all other helpers go to `details/`.
 
-I use some libraries in my lessons as well.
+I use some libraries in my lessons as well:
 
 - For window creation and management I use http://www.glfw.org/[`glfw`] library - it's simple and crossplatform. It have Vulkan support and simplifies some window related Vulkan parts.
 - For math I use http://eigen.tuxfamily.org/index.php[`eigen`] library instead of commonly used `glm` because I'm more familiar with it.
