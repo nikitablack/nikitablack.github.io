@@ -12,7 +12,7 @@ I assume you know what tesselation is, why there are two related stages in the p
 ===== Code organization
 I use `CMake` for code building. I run my code on Windows and Linux Mint. On Linux I use `CLion` IDE - it have nice `CMake` integration and `gcc 7`, on Windows - `Visual Studio Community 2017` with `open folder` feature. I use `c++17` a lot.
 
-```
+----
 src/
 ├──libs/
 │   ├──eigen/
@@ -30,12 +30,21 @@ src/
     │   ├──MainApplication.h
     │   └──TeapotData.h
     └──CMakeLists.txt
-```
+----
 This is a typical project structure for each lesson. `resources/` folder holds shader files. All application related files go to `app/` folder, wrappers around Vulkan functions and structs go to `vk_helpers` folder and all other helpers gor to `details/`.
 
 I use some libraries in my lessons as well. For window creation and management I use http://www.glfw.org/[`glfw`] library - it's simple and crossplatform. It have Vulkan support and simplifies some window related Vulkan parts. For math I use http://eigen.tuxfamily.org/index.php[`eigen`] library instead of commonly used `glm` because I'm more familiar with it. As you may already know almost each Vulkan function can fail and return some error code. When my function calls such a function it needs to report the result to the main application - in case of success it have to return an object and in case of a failure it have to tell what happened. `std::optional` could be a good candidate for the return object - it can be null or object, but it doesn't say why it is null. http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0323r4.html[`std::expected`] is what I need but it's not a part of the standard. Fortunatelly some smart people wrote an implementation for the current standard. I'm using `tl::expected` implementation from https://blog.tartanllama.xyz/[Simon Brand] (aka TartanLlama), you can read more about it https://blog.tartanllama.xyz/optional-expected/[here]. With it the code looks something like this:
 
-
+[source,cpp]
+----
+using MaybeAppData = tl::expected<AppData, std::string>;
+MaybeAppData maybeAppData{MaybeAppData{get_required_window_extensions(_appData)}
+	                          	.and_then(create_instance)
+	                          	.and_then(create_surface)
+	                          	.and_then(get_physical_device)
+	                          	.and_then(create_logical_device)};
+----
+Here `AppData` is a state holder for the application and it's filled with each new procedure call (or not - if error occured in one of previous calls).
 
 ===== The goal
 So let's start. What should I do? Of course, render a tesselated teapot! I did it before with https://nikitablack.github.io/2016/07/23/Direct-X-12-by-example.html[DirectX 12], so I already know from which side to approach. It covers a lot of pipeline stages so I have to touch different parts of the API, which is good. It's almost a complete application, not just a triangle or static mesh. This would be our goal:
