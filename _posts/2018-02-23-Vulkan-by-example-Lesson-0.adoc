@@ -31,7 +31,7 @@ src/
     │   └──TeapotData.h
     └──CMakeLists.txt
 ----
-This is a typical project structure for each lesson. `resources/` folder holds shader files. All application related files go to `app/` folder, wrappers around Vulkan functions and structs go to `vk_helpers` folder and all other helpers gor to `details/`.
+This is a typical project structure for each lesson. `resources/` folder holds shader files. All application related files go to `app/` folder, wrappers around Vulkan functions and structs go to `vk_helpers` folder and all other helpers go to `details/`.
 
 I use some libraries in my lessons as well.
 
