@@ -79,3 +79,22 @@ image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/vulka
 Here the right triangle's face points in the positive `x` direction. It's clockwise indices are `1-2-3`. Now if I want the mirrored triangle to face in the negative `x` direction, I can't use `1'-2'-3'` anymore - I need to change the order to `1'-3'-2'` or change the winding order to counter clockwise. That's why I have to tweak indices a bit if I use use a mirror matrix.
 
 In the end I store all the data in `TeapotData.h` file - 28 patches in total. For visualisation I also added a vector with colors. Later in shader with patch id (and I know this id - the runtime kindly provides it) I will sample transforms and colors and apply the changes for corresponding patch.
+
+===== The beginning
+The basic code flow is pretty the basic one: `main` creates an instance of `MainApplication` and calls it's method `MainApplication::run()` which starts an infinite loop until I close the window. Here's a `MainApplication` interface:
+----
+class MainApplication
+{
+public:
+	MainApplication(uint32_t windowWidth, uint32_t windowHeight, std::string const & appName);
+	~MainApplication();
+	
+	void run();
+	
+private:
+	void render();
+
+private:
+	AppData _appData{};
+};
+----
