@@ -65,11 +65,11 @@ Amazing, isn't it? Sorry for the blurriness - youtube mercilessly fucked up the 
 Ok, I know I want to see a rotating teapot and the very first thing I need is a data.
 
 ===== The data
-One of the first https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot[links] in Google offered me a nice teapot dataset. Thought it looks good it requires some processing - if I use it as it is I get this:
+One of the first https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot[links] in Google offered me a nice teapot dataset. Thought it looks good it requires some processing - if I use it as it is I get:
 
-TODO add picture
+image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/vulkan_by_example/lesson_0/teapot_initial_patches.png["1", 400]
 
-The data, presented in the set have to be repeated - the body part have to be rotated 3 times and the handle with the spout have to be mirrored. For duplicated objects I just added additional indices - _almost_ copies of corresponding parts. For example, the rim patch is presented by 16 indices (I'm using 16-point patches) - `102, 103, 104, 105, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15` - and represents the quarter of the teapot rim. As you can see only adding copy of indices will not work - I'll end up rendering the same patch in the same place. That's why I have to introduce another vector with patches transformations. Now the original rim patch will be rendered with identity transform, the next one - with 90 deg rotation, the next next one - with 180 deg rotation, and so on. For mirrored parts it's a little bit harder - if I just make a copy of indices and a use a mirror matrix (which basically a scale matrix) - the winding order will chage. On the following picture I tried to visualize a problem.
+The initial data describes only a fraction of the teapot and have to be repeated - the body part have to be rotated 3 times and the handle and the spout have to be mirrored. For duplicated objects I just added additional indices - _almost_ copies of corresponding parts. For example, the rim patch is presented by 16 indices (I'm using 16-point patches) - `102, 103, 104, 105, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15` - and represents the quarter of the teapot rim. As you can see only adding copy of indices will not work - I'll end up rendering the same patch in the same place. That's why I have to introduce another vector with patches transformations. Now the original rim patch will be rendered with identity transform, the next one - with 90 deg rotation, the next next one - with 180 deg rotation, and so on. For mirrored parts it's a little bit harder - if I just make a copy of indices and a use a mirror matrix (which basically a scale matrix) - the winding order will chage. On the following picture I tried to visualize a problem.
 
 TODO add picture
 
