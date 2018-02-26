@@ -47,7 +47,6 @@ I use some libraries in my lessons as well:
 - For math I use http://eigen.tuxfamily.org/index.php[`eigen`] library instead of commonly used `glm` because I'm more familiar with it.
 - As you may already know almost each Vulkan function can fail and return some error code. When my function calls such a function it needs to report the result to the main application - in case of success it have to return an object and in case of a failure it have to tell what happened. `std::optional` could be a good candidate for the return object - it can be null or object, but it doesn't say why it is null. http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0323r4.html[`std::expected`] is what I need but it's not a part of the standard. Fortunatelly some smart people wrote an implementation for the current standard. I'm using `tl::expected` implementation from https://blog.tartanllama.xyz/[Simon Brand] (aka TartanLlama), you can read more about it https://blog.tartanllama.xyz/optional-expected/[here]. With it the code looks something like this:
 
-[source,cpp]
 ----
 using MaybeAppData = tl::expected<AppData, std::string>;
 MaybeAppData maybeAppData{MaybeAppData{get_required_window_extensions(_appData)}
@@ -82,6 +81,7 @@ In the end I store all the data in `TeapotData.h` file - 28 patches in total. Fo
 
 ===== The beginning
 The basic code flow is pretty the basic one: `main` creates an instance of `MainApplication` and calls it's method `MainApplication::run()` which starts an infinite loop until I close the window. Here's a `MainApplication` interface:
+
 ----
 class MainApplication
 {
@@ -98,3 +98,53 @@ private:
 	AppData _appData{};
 };
 ----
+
+`AppData`, as I already told, is a state holder - it holds all the objects required by the application. Right now it's pretty empty:
+
+----
+struct AppData
+{
+	std::string appName{};
+	
+	GLFWwindow* window{nullptr};
+};
+----
+
+`appName` is an application name - an abitrary string, and `window` I create shortly:
+
+----
+MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const windowHeight, std::string const & appName)
+{
+	_appData.appName = appName;
+	
+	GLFWwindow * const window{create_window(windowWidth, windowHeight, appName)};
+	
+	if (window == nullptr)
+		throw runtime_error{"failed to create window"};
+	
+	_appData.window = window;
+	
+	glfwSetWindowUserPointer(window, &_appData);
+	glfwSetKeyCallback(window, &onKeyPress);
+}
+----
+First I create a window, then set a callback with http://www.glfw.org/docs/latest/group__input.html#ga7e496507126f35ea72f01b2e6ef6d155[`glfwSetKeyCallback`] which listens for `+`, `-` or `space` to change tesselation level or rendering mode. In this callback I need to access the current state of the application (`AppData`) so I pass an instance to `glfw`. For the window creation I use one of many (in the future) free functions - `create_window`:
+
+----
+GLFWwindow* create_window(uint32_t const width, uint32_t const height, string const & title)
+{
+	if (!glfwInit())
+		return nullptr;
+	
+	if (!glfwVulkanSupported())
+		return nullptr;
+	
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	
+	GLFWwindow * const window{glfwCreateWindow(width, height, title.data(), nullptr, nullptr)};
+	
+	return window;
+}
+----
+First I initialize `glfw`, next check if Vulkan is supported, next tell `glfw` to http://www.glfw.org/docs/latest/context_guide.html#context_object[not use a context] and create non-resizable windows and finally create a window. In my lessons I'll use  a fixed window - it simplifies the code a bit.
