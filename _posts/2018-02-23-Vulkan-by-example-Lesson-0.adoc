@@ -150,3 +150,16 @@ GLFWwindow* create_window(uint32_t const width, uint32_t const height, string co
 First I initialize `glfw`, next check if Vulkan is supported, next tell `glfw` to http://www.glfw.org/docs/latest/context_guide.html#context_object[not use a context] and create non-resizable windows and finally create a window. In my lessons I'll use  a fixed window - it simplifies the code a bit.
 
 NOTE: All free the functions in the application are _pure_, i.e. they don't change any state and don't have side effects. They always accept arguments by copy or const reference. I store each function in a separate unit (cpp file) and have all declarations in one place (`App.h` file).
+
+After initializaition `MainApplication::run()` which loops until the window is closed:
+
+----
+void MainApplication::run()
+{
+	while (!glfwWindowShouldClose(_appData.window))
+	{
+		glfwPollEvents();
+		render();
+	}
+}
+----
