@@ -61,26 +61,26 @@ Here `AppData` is a state holder for the application and it gets filled with eac
 If you read https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html[one of my previous posts] you know that I’m a big fan of functional style and I’ll use this approach through tutorials. So prepare yourself to lots of free function and separate translation units!
 
 ===== The goal
-So let's start. What should I do? Of course, render a tesselated teapot! I did it before with https://nikitablack.github.io/2016/07/23/Direct-X-12-by-example.html[DirectX 12], so I already know from which side to approach. It covers a lot of pipeline stages so I have to touch different parts of the API, which is good. It's almost a complete application, not just a triangle or static mesh. This would be our goal:
+So let's begin. I want to logically follow to our goal. But what's my goal? Of course, render a tesselated teapot! I chose it because it covers a lot of pipeline stages so I have to touch a lot of different parts of the API, which is good. I did it before with https://nikitablack.github.io/2016/07/23/Direct-X-12-by-example.html[DirectX 12], so I already know from which side to come. This would be my goal:
 
 video::8RCWeKLlVew[youtube, width=640, height=360]
 
-Amazing, isn't it? Sorry for the blurriness - youtube mercilessly fucked up the quality and I don't know how to achieve true HD picture.
+Amazing, isn't it? Sorry for the blurriness - youtube mercilessly messed up with quality and I don't know how to achieve true HD picture.
 
-Ok, I know I want to see a rotating teapot and the very first thing I need is a data.
+Ok, now I know that I want to a rotating teapot and the very first logical step is to obtain a data.
 
 ===== The data
-One of the first https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot[links] in Google offered me a nice teapot dataset. Thought it looks good it requires some processing - if I use it as it is I get:
+One of the first https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot[links] in Google offered me a nice teapot dataset. Though it looks good it requires some processing - if I use it as it is I'll get:
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/vulkan_by_example/lesson_0/teapot_initial_patches.png["teapot_initial_patches", 400]
 
-The initial data describes only a fraction of the teapot and have to be repeated - the body part have to be rotated 3 times and the handle and the spout have to be mirrored. For duplicated objects I just added additional indices - _almost_ copies of corresponding parts. For example, the rim patch is presented by 16 indices (I'm using 16-point patches) - `102, 103, 104, 105, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15` - and represents the quarter of the teapot rim. As you can see only adding copy of indices will not work - I'll end up rendering the same patch in the same place. That's why I have to introduce another vector with patches transformations. Now the original rim patch will be rendered with identity transform, the next one - with 90 deg rotation, the next next one - with 180 deg rotation, and so on. For mirrored parts it's a little bit harder - if I just make a copy of indices and a use a mirror matrix (which basically a scale matrix) - the winding order will chage. On the following picture I tried to visualize a problem.
+The initial data describes only a fraction of the teapot and it's parts have to be duplicated - the body parts have to be rotated 3 times and the handle and the spout have to be mirrored. For these duplicated objects I just added additional indices - _almost_ copies of corresponding parts. For example, the rim patch is presented by 16 indices (I'm using 16-point patches) - `102, 103, 104, 105, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15` - and represents the quarter of the teapot rim. So I added the same indices 3 more times to the indices vector. But as you can gues only adding a copy of indices will not work - I'll end up rendering the same patch in the same place. That's why I have to introduce another vector with patches transformations. Now the original rim patch will be rendered with identity transform, the next one - with 90 deg rotation, the next next one - with 180 deg rotation, and the last one with 270 deg rotation to enclose the surface completely. For mirrored parts it's a little bit harder - if I just make a copy of indices and a use a mirror matrix (which basically a scale matrix) - the winding order will chage. On the following picture I tried to visualize a problem:
 
 image::https://raw.githubusercontent.com/nikitablack/articles_stuff/master/vulkan_by_example/lesson_0/indices_mirror.png["teapot_initial_patches", 321]
 
-Here the right triangle's face points in the positive `x` direction. It's clockwise indices are `1-2-3`. Now if I want the mirrored triangle to face in the negative `x` direction, I can't use `1'-2'-3'` anymore - I need to change the order to `1'-3'-2'` or change the winding order to counter clockwise. That's why I have to tweak indices a bit if I use use a mirror matrix.
+Here the right triangle's face points in the positive `x` direction. It's clockwise indices are `1-2-3`. Now if I want the mirrored triangle to face in the negative `x` direction, I can't use `1'-2'-3'` anymore - I need to change the order to `1'-3'-2'` (or change the winding order to counter clockwise - but I don't want that, the entire mesh have to be consistent). That's why I have to tweak indices a bit if I use a mirror matrix.
 
-In the end I store all the data in `TeapotData.h` file - 28 patches in total. For visualisation I also added a vector with colors. Later in shader with patch id (and I know this id - the runtime kindly provides it) I will sample transforms and colors and apply the changes for corresponding patch.
+All the data is stored in `TeapotData.h` file - 28 patches in total. For visualisation I also added a vector with colors - one color for the patch. Later in shader with patch id (and I know this id - the runtime kindly provides it) I will sample transforms and colors and apply the changes to the corresponding patch.
 
 ===== The beginning
 The basic code flow is pretty the basic one: `main` creates an instance of `MainApplication` and calls it's method `MainApplication::run()` which starts an infinite loop until I close the window. Here's a `MainApplication` interface:
