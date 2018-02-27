@@ -83,7 +83,7 @@ Here the right triangle's face points in the positive `x` direction. It's clockw
 All the data is stored in `TeapotData.h` file - 28 patches in total. For visualisation I also added a vector with colors - one color for the patch. Later in shader with patch id (and I know this id - the runtime kindly provides it) I will sample transforms and colors and apply the changes to the corresponding patch.
 
 ===== The beginning
-The basic code flow is pretty the basic one: `main` creates an instance of `MainApplication` and calls it's method `MainApplication::run()` which starts an infinite loop until I close the window. Here's a `MainApplication` interface:
+The basic code flow is pretty straightforward: in `main` I create an instance of `MainApplication` and call it's method `MainApplication::run()` which starts an infinite loop until I close the window. Here's a `MainApplication` interface:
 
 ----
 class MainApplication
@@ -113,7 +113,7 @@ struct AppData
 };
 ----
 
-`appName` is an application name - an abitrary string, and `window` I create shortly:
+`appName` is an application name - just an information, and `window` is a ... window pointer:
 
 ----
 MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const windowHeight, std::string const & appName)
@@ -131,7 +131,7 @@ MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const wind
 	glfwSetKeyCallback(window, &onKeyPress);
 }
 ----
-First I create a window, then set a callback with http://www.glfw.org/docs/latest/group__input.html#ga7e496507126f35ea72f01b2e6ef6d155[`glfwSetKeyCallback`] which listens for `+`, `-` or `space` to change tesselation level or rendering mode. In this callback I need to access the current state of the application (`AppData`) so I pass an instance to `glfw`. For the window creation I use one of many (in the future) free functions - `create_window`:
+In `MainApplication's` constructor I first create a window, then set a callback with http://www.glfw.org/docs/latest/group__input.html#ga7e496507126f35ea72f01b2e6ef6d155[`glfwSetKeyCallback`] which listens for `+`, `-` or `space` keys to change tesselation level or rendering mode. In this callback I need to access the current state of the application (`AppData`) so I pass an instance to `glfw`. For the window creation I use one of many free functions - `create_window`:
 
 ----
 GLFWwindow* create_window(uint32_t const width, uint32_t const height, string const & title)
@@ -150,11 +150,11 @@ GLFWwindow* create_window(uint32_t const width, uint32_t const height, string co
 	return window;
 }
 ----
-First I initialize `glfw`, next check if `Vulkan` is supported, next tell `glfw` to http://www.glfw.org/docs/latest/context_guide.html#context_object[not use a context] and create non-resizable windows and finally create a window. In my lessons I'll use  a fixed window - it simplifies the code a bit.
+First I initialize `glfw`, next check if `Vulkan` is supported, next tell `glfw` to http://www.glfw.org/docs/latest/context_guide.html#context_object[not use a context] and create non-resizable windows and finally create a window. In my lessons I use fixed window - it simplifies the code a bit.
 
-NOTE: All free the functions in the application are _pure_, i.e. they don't change any state and don't have side effects. They always accept arguments by copy or const reference. I store each function in a separate unit (cpp file) and have all declarations in one place (`App.h` file).
+NOTE: All free functions in the application are _pure_, i.e. they don't change any state and don't have side effects. They always accept arguments by copy or const reference. I store each function in a separate unit (cpp file) and have all declarations in one place (`App.h` file).
 
-After initializaition `MainApplication::run()` which loops until the window is closed:
+After initializaition `MainApplication::run()` is called which loops until the window is closed:
 
 ----
 void MainApplication::run()
@@ -166,7 +166,7 @@ void MainApplication::run()
 	}
 }
 ----
-Here in the loop I call `glfw` callbacks and do rendering (empty in this lesson).
+Here in the loop I tell `glfw` to invoke registered callbacks and do rendering (empty in this lesson).
 
 In the end in the `MainApplication` destructor I make a cleaning:
 
@@ -176,7 +176,7 @@ MainApplication::~MainApplication()
 	glfwTerminate();
 }
 ----
-For now I just destroy a window.
+For now only the window needs to be destroyed.
 
 ===== Conclusion
-Wow, the whole post and no any single `Vulkan` related line of code! Sorry, that was a long indroduction and I didn't tell about a lot of things I wanted but I promise the next lesson will be much more interesting.
+Wow, the whole post and no any single `Vulkan` related line of code! Sorry, that was a long indroduction and I didn't even start to tell about a lot of things I wanted but I promise the next lesson will be much more interesting.
