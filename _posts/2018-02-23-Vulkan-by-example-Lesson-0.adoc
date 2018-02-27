@@ -176,4 +176,4 @@ MainApplication::~MainApplication()
 For now I just destroy a window.
 
 ===== Conclusion
-Wow, the whole post and no any single `Vulkan` related line of code! Sorry, that was a long indroduction but I promise the next lesson will be much more interesting.
+Wow, the whole post and no any single `Vulkan` related line of code! Sorry, that was a long indroduction and I didn't tell about a lot of things I wanted but I promise the next lesson will be much more interesting.
