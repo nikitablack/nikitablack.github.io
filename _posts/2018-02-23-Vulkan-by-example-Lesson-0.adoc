@@ -1,16 +1,16 @@
 = Vulkan by example. Lesson 0.
 :hp-tags: c++, vulkan
 
-Hi everybody. Today we’ll talk about Vulkan - the modern API for communication with GPU device. There's already some information and tutorials on the web as well as books so why another one. I’ll try to explain - these tutorials out there are great by all means, but personally, for me, they are hard to follow. In this series I’ll try to build a mental picture around the API, I’ll try not to just follow instructions and create some structures because somebody says I need this, but I’ll try to understand why I need this. For that, I’ll use pictures, a lot of them. And if you read https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html[one of my previous posts] you know that I’m a fan of functional approach and I’ll use this approach through tutorials. I’ll build every next lesson on top of the previous adding a new stuff, but not modifying it - I found it easier to follow (though sometimes I’ll have to return back and tweak the old code to make it work with the new, but I’ll try to minimize this).
+Hi everybody. Today we’ll talk about `Vulkan` - the modern API for communication with GPU device. There's already some information and tutorials on the web as well as books so why another one. I’ll try to explain - these tutorials out there are great by all means, but personally, for me, they are hard to follow. In this series I’ll try to build a mental picture around the API, I’ll try not to just follow instructions and create some structures because somebody says I need this, but I’ll try to understand why I need this. For that, I’ll use pictures, a lot of them. And if you read https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html[one of my previous posts] you know that I’m a fan of functional approach and I’ll use this approach through tutorials. I’ll build every next lesson on top of the previous adding a new stuff, but not modifying it - I found it easier to follow (though sometimes I’ll have to return back and tweak the old code to make it work with the new, but I’ll try to minimize this).
 
 ===== Disclaimer
-I'm not an expert guru ninja, I'm just learning. And definitely, there will be mistakes in my lessons. I'm kindly asking you to point to them so I can correct it soon. You can do it via comments here, or Reddit, where I'm planning to leave a link, or cpp slack Vulkan channel which I check quite often (and which is very silent, btw).
+I'm not an expert guru ninja, I'm just learning. And definitely, there will be mistakes in my lessons. I'm kindly asking you to point to them so I can correct it soon. You can do it via comments here, or Reddit, where I'm planning to leave a link, or cpp slack `Vulkan` channel which I check quite often (and which is deadly silent, btw).
 
 ===== What will be in tutorials
 Application accepts input from the user to increase/decrease tesselation level (i.e. how fine the model is) and switch between wireframe/solid rendering. Wireframe will use `VK_CULL_MODE_NONE` cull mode (because I want to see back faces of triangles in this mode) and solid mode will use `VK_CULL_MODE_BACK_BIT` (though there're visible holes in some places, but it's done intentionally). In addition to usual vertex and index buffers I'll use uniform buffers for matrices (model, view, projection), storage buffer for patches transforms and colors and push constants for tesselation level.
 
 ===== What will not be in tutorials
-I assume you know what tesselation is, why there are two related stages in the pipeline (tesselation control and tesselation evaluation), so I'll not explain it in detail. Same goes for curves surfaces - if you need to refresh your memory I recommend http://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article]. Also I assume you already have Vulkan SDK installed and have all required environment variables set.
+I assume you know what tesselation is, why there are two related stages in the pipeline (tesselation control and tesselation evaluation), so I'll not explain it in detail. Same goes for curves surfaces - if you need to refresh your memory I recommend http://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article]. Also I assume you already have `Vulkan` SDK installed and have all required environment variables set.
 
 ===== Code organization
 I use `CMake` for code building. I run my code on Windows and Linux Mint. On Linux I use `CLion` IDE - it have nice `CMake` integration and `gcc 7`, on Windows - `Visual Studio Community 2017` with `open folder` feature. I use `c++17` a lot.
@@ -39,13 +39,13 @@ lesson/
 │       └──CMakeLists.txt
 └──CMakeLists.txt
 ----
-This is a typical project structure for each lesson. `resources/` folder holds shader files. All application related files go to `app/` folder, wrappers around Vulkan functions and structs go to `vk_helpers` folder and all other helpers go to `details/`.
+This is a typical project structure for each lesson. `resources/` folder holds shader files. All application related files go to `app/` folder, wrappers around `Vulkan` functions and structs go to `vk_helpers` folder and all other helpers go to `details/`.
 
 I use some libraries in my lessons as well:
 
-- For window creation and management I use http://www.glfw.org/[`glfw`] library - it's simple and crossplatform. It have Vulkan support and simplifies some window related Vulkan parts.
+- For window creation and management I use http://www.glfw.org/[`glfw`] library - it's simple and crossplatform. It have `Vulkan` support and simplifies some window related `Vulkan` parts.
 - For math I use http://eigen.tuxfamily.org/index.php[`eigen`] library instead of commonly used `glm` because I'm more familiar with it.
-- As you may already know almost each Vulkan function can fail and return some error code. When my function calls such a function it needs to report the result to the main application - in case of success it have to return an object and in case of a failure it have to tell what happened. `std::optional` could be a good candidate for the return object - it can be null or object, but it doesn't say why it is null. http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0323r4.html[`std::expected`] is what I need but it's not a part of the standard. Fortunatelly some smart people wrote an implementation for the current standard. I'm using `tl::expected` implementation from https://blog.tartanllama.xyz/[Simon Brand] (aka TartanLlama), you can read more about it https://blog.tartanllama.xyz/optional-expected/[here]. With it the code looks something like this:
+- As you may already know almost each `Vulkan` function can fail and return some error code. When my function calls such a function it needs to report the result to the main application - in case of success it have to return an object and in case of a failure it have to tell what happened. `std::optional` could be a good candidate for the return object - it can be null or object, but it doesn't say why it is null. http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0323r4.html[`std::expected`] is what I need but it's not a part of the standard. Fortunatelly some smart people wrote an implementation for the current standard. I'm using `tl::expected` implementation from https://blog.tartanllama.xyz/[Simon Brand] (aka TartanLlama), you can read more about it https://blog.tartanllama.xyz/optional-expected/[here]. With it the code looks something like this:
 
 ----
 using MaybeAppData = tl::expected<AppData, std::string>;
@@ -147,7 +147,7 @@ GLFWwindow* create_window(uint32_t const width, uint32_t const height, string co
 	return window;
 }
 ----
-First I initialize `glfw`, next check if Vulkan is supported, next tell `glfw` to http://www.glfw.org/docs/latest/context_guide.html#context_object[not use a context] and create non-resizable windows and finally create a window. In my lessons I'll use  a fixed window - it simplifies the code a bit.
+First I initialize `glfw`, next check if `Vulkan` is supported, next tell `glfw` to http://www.glfw.org/docs/latest/context_guide.html#context_object[not use a context] and create non-resizable windows and finally create a window. In my lessons I'll use  a fixed window - it simplifies the code a bit.
 
 NOTE: All free the functions in the application are _pure_, i.e. they don't change any state and don't have side effects. They always accept arguments by copy or const reference. I store each function in a separate unit (cpp file) and have all declarations in one place (`App.h` file).
 
@@ -163,3 +163,17 @@ void MainApplication::run()
 	}
 }
 ----
+Here in the loop I call `glfw` callbacks and do rendering (empty in this lesson).
+
+In the end in the `MainApplication` destructor I make a cleaning:
+
+----
+MainApplication::~MainApplication()
+{
+	glfwTerminate();
+}
+----
+For now I just destroy a window.
+
+===== Conclusion
+Wow, the whole post and no any single `Vulkan` related line of code! Sorry, that was a long indroduction but I promise the next lesson will be much more interesting.
