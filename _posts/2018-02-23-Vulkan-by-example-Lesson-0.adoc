@@ -1,19 +1,21 @@
 = Vulkan by example. Lesson 0.
 :hp-tags: c++, vulkan
 
-Hi everybody. Today we’ll talk about `Vulkan` - the modern API for communication with GPU device. There's already some information and tutorials on the web as well as books so why another one. I’ll try to explain - these tutorials out there are great by all means, but personally, for me, they are hard to follow. In this series I’ll try to build a mental picture around the API, I’ll try not to just follow instructions and create some structures because somebody says I need this, but I’ll try to understand why I need this. For that, I’ll use pictures, a lot of them. And if you read https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html[one of my previous posts] you know that I’m a fan of functional approach and I’ll use this approach through tutorials. I’ll build every next lesson on top of the previous adding a new stuff, but not modifying it - I found it easier to follow (though sometimes I’ll have to return back and tweak the old code to make it work with the new, but I’ll try to minimize this).
+Hi everybody. Today we’ll talk about `Vulkan` - the modern API for communication with a GPU device. There're already some information and tutorials on the web as well as books but still it's not enough. Though all these resources out there are great by all means, personally for me, they are hard to follow. Because `Vulkan` is huge - with tons of concepts and nuances (often we need to initialize a structure to initizlize another structure with it. To initialize the third one ¯\\_(ツ)_/¯ ). In this series I’ll try to build a mental picture around the API, I’ll try not to just follow instructions, but I’ll try to understand why I need every bit of code. I hope somebody will find that useful too.
+
+I’ll build every next lesson on top of the previous adding a new stuf, but not modifying it - I found it easier to follow (though sometimes I’ll have to return back and tweak the old code to make it work with the new, but I’ll try to minimize this). And yes, I’ll use pictures, a lot of them.
 
 ===== Disclaimer
-I'm not an expert guru ninja, I'm just learning. And definitely, there will be mistakes in my lessons. I'm kindly asking you to point to them so I can correct it soon. You can do it via comments here, or Reddit, where I'm planning to leave a link, or cpp slack `Vulkan` channel which I check quite often (and which is deadly silent, btw).
+I'm not an expert guru ninja, I'm just learning. And definitely, there will be mistakes in my lessons. I'm kindly asking you to point to them so I can correct it soon. You can do it via comments here, or https://www.reddit.com/r/vulkan/[Vulkan Reddit], where I'm planning to leave a link, or https://cpplang.slack.com/[cpp slack Vulkan channel] which I check quite often (and which is deadly silent, btw).
 
 ===== What will be in tutorials
-Application accepts input from the user to increase/decrease tesselation level (i.e. how fine the model is) and switch between wireframe/solid rendering. Wireframe will use `VK_CULL_MODE_NONE` cull mode (because I want to see back faces of triangles in this mode) and solid mode will use `VK_CULL_MODE_BACK_BIT` (though there're visible holes in some places, but it's done intentionally). In addition to usual vertex and index buffers I'll use uniform buffers for matrices (model, view, projection), storage buffer for patches transforms and colors and push constants for tesselation level.
+A teapot of course. Also application will accept an input from the user to increase/decrease tesselation level (i.e. how fine the model is) and switch between wireframe/solid rendering. Wireframe will use `VK_CULL_MODE_NONE` cull mode (because I want to see back faces of triangles in this mode) and solid mode will use `VK_CULL_MODE_BACK_BIT` (despite there're visible holes in a couple of places). In addition to usual vertex and index buffers I'll use uniform buffers for matrices (model, view, projection), storage buffer for patches transforms and colors and push constants for tesselation level.
 
 ===== What will not be in tutorials
-I assume you know what tesselation is, why there are two related stages in the pipeline (tesselation control and tesselation evaluation), so I'll not explain it in detail. Same goes for curves surfaces - if you need to refresh your memory I recommend http://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article]. Also I assume you already have `Vulkan` SDK installed and have all required environment variables set.
+I assume you know what tesselation is, why there are two related stages in the pipeline (tesselation control and tesselation evaluation), so I'll not explain it in detail. Same goes for curves surfaces - if you need to refresh your memory I recommend http://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article]. I'll not explain math behaind projection and other transformation matrices. Also I assume you already have `Vulkan` SDK installed and have all required environment variables set.
 
 ===== Code organization
-I use `CMake` for code building. I run my code on Windows and Linux Mint. On Linux I use `CLion` IDE - it have nice `CMake` integration and `gcc 7`, on Windows - `Visual Studio Community 2017` with `open folder` feature. I use `c++17` a lot.
+I use `CMake` for code building. I test my code on `Windows 10` and `Linux Mint`. On `Linux` I use `CLion` (it have nice `CMake` integration) with `gcc 7`, on `Windows` - `Visual Studio Community 2017` with `open folder` feature. Also `c++17` is my choice.
 
 ----
 lesson/
@@ -39,14 +41,13 @@ lesson/
 │       └──CMakeLists.txt
 └──CMakeLists.txt
 ----
-This is a typical project structure for each lesson. `resources/` folder holds shader files. All application related files go to `app/` folder, wrappers around `Vulkan` functions and structs go to `vk_helpers` folder and all other helpers go to `details/`.
+This is a typical project structure for each lesson. `resources/` folder holds shader `glsl` files. All application related files go to `app/` folder, wrappers around `Vulkan` functions and structs go to `vk_helpers` folder and all other helpers go to `details/`.
 
-I use some libraries in my lessons as well:
+I use some libraries as well:
 
 - For window creation and management I use http://www.glfw.org/[`glfw`] library - it's simple and crossplatform. It have `Vulkan` support and simplifies some window related `Vulkan` parts.
 - For math I use http://eigen.tuxfamily.org/index.php[`eigen`] library instead of commonly used `glm` because I'm more familiar with it.
-- As you may already know almost each `Vulkan` function can fail and return some error code. When my function calls such a function it needs to report the result to the main application - in case of success it have to return an object and in case of a failure it have to tell what happened. `std::optional` could be a good candidate for the return object - it can be null or object, but it doesn't say why it is null. http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0323r4.html[`std::expected`] is what I need but it's not a part of the standard. Fortunatelly some smart people wrote an implementation for the current standard. I'm using `tl::expected` implementation from https://blog.tartanllama.xyz/[Simon Brand] (aka TartanLlama), you can read more about it https://blog.tartanllama.xyz/optional-expected/[here]. With it the code looks something like this:
-
+- As you may already know almost each `Vulkan` function can fail and return some error code. When my procedure calls such a function it needs to report the result to the main application - in case of success return an object and in case of a failure tell what happened. http://en.cppreference.com/w/cpp/utility/optional[`std::optional`] could be a good candidate for the return object - it can be empty or hold object, but it doesn't say why it is empty. http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0323r4.html[`std::expected`] is what I need but it's not a part of the standard. Fortunatelly some smart people wrote an implementation for the current standard. I'm using `tl::expected` implementation from https://blog.tartanllama.xyz/[Simon Brand] (aka TartanLlama), you can read more about it https://blog.tartanllama.xyz/optional-expected/[here]. With it the code will look something like this:
 ----
 using MaybeAppData = tl::expected<AppData, std::string>;
 MaybeAppData maybeAppData{MaybeAppData{get_required_window_extensions(_appData)}
@@ -55,7 +56,9 @@ MaybeAppData maybeAppData{MaybeAppData{get_required_window_extensions(_appData)}
 	                          	.and_then(get_physical_device)
 	                          	.and_then(create_logical_device)};
 ----
-Here `AppData` is a state holder for the application and it's filled with each new procedure call (or not - if error occured in one of previous calls).
+Here `AppData` is a state holder for the application and it gets filled with each new procedure call (or not - if an error occured in one of the calls).
+
+If you read https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html[one of my previous posts] you know that I’m a big fan of functional style and I’ll use this approach through tutorials. So prepare yourself to lots of free function and separate translation units!
 
 ===== The goal
 So let's start. What should I do? Of course, render a tesselated teapot! I did it before with https://nikitablack.github.io/2016/07/23/Direct-X-12-by-example.html[DirectX 12], so I already know from which side to approach. It covers a lot of pipeline stages so I have to touch different parts of the API, which is good. It's almost a complete application, not just a triangle or static mesh. This would be our goal:
