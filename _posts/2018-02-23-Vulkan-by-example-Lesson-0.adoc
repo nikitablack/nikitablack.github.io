@@ -206,4 +206,4 @@ For now only the window needs to be destroyed.
 ===== Conclusion
 Wow, the whole post and no any single `Vulkan` related line of code! Sorry, that was a long indroduction and I didn't even start to tell about a lot of things I wanted but I promise the next lesson will be much more interesting.
 
-The source code for this lesson is https://github.com/nikitablack/vulkan_teapot_tutorial/tree/master/lesson_0[here].
+The source code for this lesson is https://github.com/nikitablack/vulkan_by_example/tree/lesson_0[here].
