@@ -82,7 +82,7 @@ Here the right triangle's face points in the positive `x` direction. It's clockw
 
 All the data is stored in `TeapotData.h` file - 28 patches in total. For visualisation I also added a vector with colors - one color for the patch. Later in shader with patch id (and I know this id - the runtime kindly provides it) I will sample transforms and colors and apply the changes to the corresponding patch.
 
-===== The beginning
+===== The preparing
 The basic code flow is pretty straightforward: in `main` I create an instance of `MainApplication` and call it's method `MainApplication::run()` which starts an infinite loop until I close the window. Here's a `MainApplication` interface:
 
 ----
@@ -102,24 +102,23 @@ private:
 };
 ----
 
-`AppData`, as I already told, is a state holder - it holds all the objects required by the application. Right now it's pretty empty:
+`AppData`, as I already told, is a state holder - it holds all the objects required by the application. In this tutorial it's pretty empty:
 
 ----
 struct AppData
 {
-	std::string appName{};
-	
 	GLFWwindow* window{nullptr};
+    
+    TeapotData teapotData{};
+	float tessLevel{1.0f};
 };
 ----
 
-`appName` is an application name - just an information, and `window` is a ... window pointer:
+All I know for now is that I need to render the `teapotData` onto some surface - a `window`. Also as I speak about tesselation I need a way to control that tesselation and I do it with `tessLevel`.
 
 ----
 MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const windowHeight, std::string const & appName)
 {
-	_appData.appName = appName;
-	
 	GLFWwindow * const window{create_window(windowWidth, windowHeight, appName)};
 	
 	if (window == nullptr)
@@ -131,7 +130,8 @@ MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const wind
 	glfwSetKeyCallback(window, &onKeyPress);
 }
 ----
-In `MainApplication's` constructor I first create a window, then set a callback with http://www.glfw.org/docs/latest/group__input.html#ga7e496507126f35ea72f01b2e6ef6d155[`glfwSetKeyCallback`] which listens for `+`, `-` or `space` keys to change tesselation level or rendering mode. In this callback I need to access the current state of the application (`AppData`) so I pass an instance to `glfw`. For the window creation I use one of many free functions - `create_window`:
+
+In `MainApplication's` constructor I first create a window with the help of one of many free functions - `create_window`:
 
 ----
 GLFWwindow* create_window(uint32_t const width, uint32_t const height, string const & title)
@@ -152,6 +152,30 @@ GLFWwindow* create_window(uint32_t const width, uint32_t const height, string co
 ----
 First I initialize `glfw`, next check if `Vulkan` is supported, next tell `glfw` to http://www.glfw.org/docs/latest/context_guide.html#context_object[not use a context] and create non-resizable windows and finally create a window. In my lessons I use fixed window - it simplifies the code a bit.
 
+Then set a callback with http://www.glfw.org/docs/latest/group__input.html#ga7e496507126f35ea72f01b2e6ef6d155[`glfwSetKeyCallback`] which listens for `+`, `-` or `space` keys to change tesselation level or rendering mode.
+
+----
+void onKeyPress(GLFWwindow * const window, int const key, int const /*scancode*/, int const action, int const /*mods*/)
+{
+	[[maybe_unused]] AppData * const appData{static_cast<AppData *>(glfwGetWindowUserPointer(window))};
+
+	if (key == GLFW_KEY_KP_ADD && (action == GLFW_PRESS || action == GLFW_REPEAT))
+	{
+		// TODO increase tesselation level
+	}
+	else if (key == GLFW_KEY_KP_SUBTRACT && (action == GLFW_PRESS || action == GLFW_REPEAT))
+	{
+		// TODO decrease tesselation level
+	}
+	else if (key == GLFW_KEY_SPACE && (action == GLFW_RELEASE))
+	{
+		// TODO switch wireframe/solid rendering
+	}
+}
+----
+
+In this callback I need to access the current state of the application (`AppData`) so I pass an instance to `glfw` with `glfwSetWindowUserPointer()`.
+
 NOTE: All free functions in the application are _pure_, i.e. they don't change any state and don't have side effects. They always accept arguments by copy or const reference. I store each function in a separate unit (cpp file) and have all declarations in one place (`App.h` file).
 
 After initializaition `MainApplication::run()` is called which loops until the window is closed:
@@ -166,9 +190,9 @@ void MainApplication::run()
 	}
 }
 ----
-Here in the loop I tell `glfw` to invoke registered callbacks and do rendering (empty in this lesson).
+Here in the loop I tell `glfw` to invoke registered callbacks with `glfwPollEvents` and do rendering (empty in this lesson).
 
-In the end in the `MainApplication` destructor I make a cleaning:
+In the `MainApplication` destructor I make cleaning:
 
 ----
 MainApplication::~MainApplication()
@@ -176,6 +200,7 @@ MainApplication::~MainApplication()
 	glfwTerminate();
 }
 ----
+
 For now only the window needs to be destroyed.
 
 ===== Conclusion
