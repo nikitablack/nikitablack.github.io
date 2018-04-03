@@ -1,0 +1,82 @@
+= Vulkan by example - Shaders
+:hp-tags: c++, vulkan, glsl
+
+In the https://TODO[previous lesson] I made all preparations necessary to start exploring vulkan. Here is the diagramm of the current state of the application:
+
+[picture]
+
+The diagramm is pretty empty now but it will grow as I progress through tutorials. For now it's enough to know that there's a CPU, which controls the application and orchestrates the GPU; a GPU itself, which do magic and produces nice pictures (not necessarily); a window which should show these pictures.
+
+Now the logic question - what's next? I will start from the heart of every graphics application - by my opinion it is shaders, after all this is exactly what GPU runs. In my program I will use 4 shader stages - Vertex, Tesselation Control, Tesselation Eveluation, Fragment. Next I will step over all of these stages briefly explaining the purpose of each.
+
+===== Vertex shader
+
+This is the first stage in the pipeline and it's pretty simple. Looking back to the teapot data I know which information which needs to be passed - since I'm using patches I need to provide points describing them - `16` points for every patch.
+
+----
+#version 450
+
+layout(location = 0) in vec3 inPosition;
+
+out gl_PerVertex
+{
+    vec4 gl_Position;
+};
+
+void main()
+{
+    gl_Position = vec4(inPosition, 1.0);
+}
+----
+
+A patch point arrives to the shader at location `0` and simply gets passed to the next stage. Thi stage will be executed for every point (vertex) that is provided. Since I use `28` patches `16` point each it will be called at least `28 * 16 = 448` times (it's not an important information - just for fun).
+
+===== Tessellation control shader
+
+----
+#version 450
+
+layout(push_constant) uniform TessLevel
+{
+	float value;
+} tessLevel;
+
+layout(vertices = 16) out;
+
+void main()
+{
+    if (gl_InvocationID == 0)
+    {
+        gl_TessLevelInner[0] = tessLevel.value;
+        gl_TessLevelInner[1] = tessLevel.value;
+
+        gl_TessLevelOuter[0] = tessLevel.value;
+        gl_TessLevelOuter[1] = tessLevel.value;
+        gl_TessLevelOuter[2] = tessLevel.value;
+        gl_TessLevelOuter[3] = tessLevel.value;
+    }
+
+    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+}
+----
+
+This shader simple as well as it doesn't do a lot of work, but it have a couple of interesting moments. The first one is how I update a tesselation level (how many details a tesselator should create). I decided to use the so called `Push Constant` - a feature that allows to pass a constant directly in command buffer. Don't affraid of all these terms right now - I'll explain what all this means when I reach the actual code that uses them. For now it's enough to know that the tesselation level is a float variable (to make a subdivision more smooth) that somehow updates from a CPU. Next I tell the GPU that this stage produces 16 control points for the patch, i.e. doesn't change the amount (yes, this stage can generate new points as well as remove some).
+
+===== Tessellation evaluation shader
+
+===== Fragment shader
+
+----
+#version 450
+
+layout(location = 0) out vec4 outColor;
+
+layout(location = 0) in vec3 fragColor;
+
+void main()
+{
+    outColor = vec4(fragColor, 1.0);
+}
+----
+
+Another one _"lazy"_ shader - the data is coming at input location `0` and going to the output storage location also `0`. Latter tells that there's should be some special memory region (`Image` in that case) somewhere.
