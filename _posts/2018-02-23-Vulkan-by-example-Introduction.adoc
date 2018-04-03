@@ -1,4 +1,4 @@
-= Vulkan by example. Lesson 0.
+= Vulkan by example - Introduction
 :hp-tags: c++, vulkan
 
 Hi everybody. Today we’ll talk about `Vulkan` - the modern API for communication with a GPU device. There're already some information and tutorials on the web as well as books but still it's not enough. Though all these resources out there are great by all means, personally for me, they are hard to follow. Because `Vulkan` is huge - with tons of concepts and nuances (often we need to initialize a structure to initizlize another structure with it. To initialize the third one ¯\\_(ツ)_/¯ ). In this series I’ll try to build a mental picture around the API, I’ll try not to just follow instructions, but I’ll try to understand why I need every bit of code. I hope somebody will find that useful too.
