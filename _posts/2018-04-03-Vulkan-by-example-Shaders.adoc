@@ -141,6 +141,8 @@ Next is a scary math - calculation of a 3d point having a `gl_TessCoord` that ca
 
 The outputs of this shader are newly generated vertex and color. Since the entire patch colored with a solid color every vertex from one patch will have the same attribute.
 
+I think it's obvious that this shader will be invoked as many times as the number of generated vertices.
+
 ===== Fragment shader
 
 ----
