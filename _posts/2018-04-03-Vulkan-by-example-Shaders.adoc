@@ -134,6 +134,9 @@ void main(void)
 	outColor = patchData.data[gl_PrimitiveID].color.xyz;
 }
 ----
+
+NOTE: hfj
+
 ===== Fragment shader
 
 ----
