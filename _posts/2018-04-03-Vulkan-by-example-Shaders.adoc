@@ -208,6 +208,15 @@ VkResult vkCreateInstance(
     VkInstance*                                 pInstance);
 ----
 
+Finally I'm at the leaf node, no more unknown variables! And I already forgot why do I need all this... Ah, I wanted to create `Shader Modules`. To recal here's the dependency chain: `VkShaderModule` -> `VkDevice` -> `VkPhysicalDevice` -> `VkInstance`. And here's how I done this in code:
 
+----
+MaybeAppData maybeAppData{MaybeAppData{get_required_window_extensions(_appData)}
+	                          .and_then(create_instance)
+	                          .and_then(create_surface)
+	                          .and_then(get_physical_device)
+	                          .and_then(create_logical_device)
+	                          .and_then(create_shader_modules)};
+----
 
 In remainig part of this lesson I'll do exatly this.
