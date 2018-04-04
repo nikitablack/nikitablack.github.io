@@ -159,3 +159,5 @@ void main()
 ----
 
 Another one _"lazy"_ shader - the data is coming at input location `0` and going to the output storage location also `0`. Latter tells that there's should be some special memory region (`Image` in that case) somewhere.
+
+Hurray! The application is almost done! Joking. Once I read the sentense which describes `Vulkan` in a nutshell: _"Show me your triangle in three months."_ The same applies here - I'm planning to write `7` or `8` parts total. Shaders were the easiest part, all other code serves only to make them run and run *correctly*. By correctness I mean that there should not be undefined behavior, data races, pipeline stalls. In remainig tutorials I'll do exatly this.
