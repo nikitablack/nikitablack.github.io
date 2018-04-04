@@ -219,4 +219,5 @@ MaybeAppData maybeAppData{MaybeAppData{get_required_window_extensions(_appData)}
 	                          .and_then(create_shader_modules)};
 ----
 
-In remainig part of this lesson I'll do exatly this.
+
+
