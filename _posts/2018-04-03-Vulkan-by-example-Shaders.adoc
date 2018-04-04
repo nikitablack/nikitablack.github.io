@@ -73,28 +73,28 @@ layout (quads, fractional_odd_spacing, cw) in;
 
 struct PatchData
 {
-    mat4 transform;
-    vec4 color;
+	mat4 transform;
+	vec4 color;
 };
 
 layout(binding = 0, row_major) buffer PatchDataBuffer
 {
-    PatchData data[];
+	PatchData data[];
 } patchData;
 
 layout(binding = 1) uniform Proj
 {
-    layout(row_major) mat4 mat;
+	layout(row_major) mat4 mat;
 } proj;
 
 layout(binding = 2) uniform View
 {
-    layout(row_major) mat4 mat;
+	layout(row_major) mat4 mat;
 } view;
 
 layout(binding = 3) uniform Model
 {
-    layout(row_major) mat4 mat;
+	layout(row_major) mat4 mat;
 } model;
 
 layout (location = 0) out vec3 outColor;
@@ -124,10 +124,10 @@ vec4 evaluateBezier(vec4 basisU, vec4 basisV)
 
 void main(void)
 {
-    vec4 basisU = bernsteinBasis(gl_TessCoord.x);
-    vec4 basisV = bernsteinBasis(gl_TessCoord.y);
+	vec4 basisU = bernsteinBasis(gl_TessCoord.x);
+	vec4 basisV = bernsteinBasis(gl_TessCoord.y);
 
-    vec4 localPos = evaluateBezier(basisU, basisV);
+	vec4 localPos = evaluateBezier(basisU, basisV);
 
 	gl_Position = localPos * patchData.data[gl_PrimitiveID].transform * model.mat * view.mat * proj.mat;
 
@@ -135,7 +135,11 @@ void main(void)
 }
 ----
 
-NOTE: hfj
+First I need to specify tesselation rules: domain (`quad`), spacing (`fractional_odd_spacing`) and winding order (`cw` - clockwise). Next I define the patch information in the form of a buffer. Again, no information right now - just know that each patch should be transformed and colored (see https://TODO[introduction lesson] for more details why) and the information incoming as an array of `PatchData`. Also I need usual transformation matrices. I could provide one MVP-matrix and reduce the number of calculations but I want to show how to manipulate with multiple uniform buffers in `Vulkan`. That's why there are three matrices: model, view and projection.
+
+Next is a scary math - calculation of a 3d point having a `gl_TessCoord` that came from tesselator. Actually the math is not that complicated, a found https://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article] very good at explaining the theory behind curves.And the code itself (functions `bernsteinBasis()` and `evaluateBezier()`) I shamelesly took from http://www.gdcvault.com/play/1012740/direct3d[this gdc presentation].
+
+The outputs of this shader are newly generated vertex and color. Since the entire patch colored with a solid color every vertex from one patch will have the same attribute.
 
 ===== Fragment shader
 
