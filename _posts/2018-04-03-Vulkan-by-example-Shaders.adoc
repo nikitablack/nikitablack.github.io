@@ -197,7 +197,7 @@ VkResult vkEnumeratePhysicalDevices(
     VkPhysicalDevice*                           pPhysicalDevices);
 ----
 
-It will never end... Here again I see an unknown variable `instance`.
+It will never end... Here again I see an unknown variable `instance`. Moreover, this function can return a list of *all* available devices in the system but I'm interested only in one. For the application I need a GPU that supports tesselation and can output images to the operating system's present engine. Yes, it sounds weird but it looks like there are devices that can't render, at least in theory. In order to check device's _"presentability"_ I need some information about render surface. In `Vulkan` this information stored in http://vulkan-spec-chunked.ahcox.com/ch29s02.html[`VkSurfaceKHR`] object and I need to get this object. Fortunately with `GLFW` library it is an easy task. 
 
 https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkInstance.html[`VkInstance`] is an entity that keeps the state of the application and is used almost in every other `Vulkan` function. I can create one with https://www.khronos.org/registry/vulkan/specs/1.0/man/html/vkCreateInstance.html[`vkCreateInstance`] function:
 
@@ -208,15 +208,18 @@ VkResult vkCreateInstance(
     VkInstance*                                 pInstance);
 ----
 
-Finally I'm at the leaf node, no more unknown variables! And I already forgot why do I need all this... Ah, I wanted to create `Shader Modules`. To recal here's the dependency chain: `VkShaderModule` -> `VkDevice` -> `VkPhysicalDevice` -> `VkInstance`. And here's how I manage this in code:
+Finally I'm at the leaf node, no more unknown variables! And I already forgot why do I need all this... Ah, I wanted to create `Shader Modules`.
+
+To summarize: here's the dependency chain: `VkShaderModule` -> `VkDevice` -> `VkPhysicalDevice` -> `VkSurfaceKHR` -> `VkInstance`. And here's how this chain managed in the code:
 
 ----
+// MainApplication.cpp
 MaybeAppData maybeAppData{MaybeAppData{get_required_window_extensions(_appData)}
-	                          .and_then(create_instance)
-	                          .and_then(create_surface)
-	                          .and_then(get_physical_device)
-	                          .and_then(create_logical_device)
-	                          .and_then(create_shader_modules)};
+                                      .and_then(create_instance)
+                                      .and_then(create_surface)
+                                      .and_then(get_physical_device)
+                                      .and_then(create_logical_device)
+                                      .and_then(create_shader_modules)};
 ----
 
 
