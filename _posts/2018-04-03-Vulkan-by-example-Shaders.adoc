@@ -210,7 +210,14 @@ VkResult vkCreateInstance(
 
 Finally I'm at the leaf node, no more unknown variables! And I already forgot why do I need all this... Ah, I wanted to create `Shader Modules`.
 
-To summarize: here's the dependency chain: `VkShaderModule` -> `VkDevice` -> `VkPhysicalDevice` -> `VkSurfaceKHR` -> `VkInstance`. And here's how this chain managed in the code:
+To summarize: here's the dependency chain:
+
+----
+VkShaderModule 🡢 VkDevice 🡢 VkPhysicalDevice 🡢 VkInstance
+                              └🡢 VkSurfaceKHR 
+----
+
+And here's how this chain managed in the code:
 
 ----
 // MainApplication.cpp
