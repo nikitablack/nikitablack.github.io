@@ -249,3 +249,4 @@ Here `MaybeAppData` is an alias to `tl::expected` (a library as a replacement fo
 ----
 using MaybeAppData = tl::expected<AppData, std::string>;
 ----
+
