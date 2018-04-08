@@ -217,7 +217,12 @@ VkResult vkCreateInstance(
     VkInstance*                                 pInstance);
 ----
 
-Previously I wrote that `GLFW` library helps with a surface building.
+Previously I wrote that `GLFW` library helps with creation of a surface. But this surface thing is special. `VkSurfaceKHR` - this `KHR` ending means that this object is not a part of a _standard_ vulkan, but object which can be obtained through *extensions*. Indeed, presentation is so OS specific that it's very hard to make it as a part of a standard. Or there could be some vendor specific extensions that adds some new functionality. There are instance-level extensions and device-level extensions. For the surface I need to include instance-level extensions. Extensions are just string and I specify them like this:
+
+----
+_appData.instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+_appData.deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+----
 
 Finally I'm at the leaf node, no more unknown variables! And I already forgot why do I need all this... Ah, I wanted to create `Shader Modules`.
 
