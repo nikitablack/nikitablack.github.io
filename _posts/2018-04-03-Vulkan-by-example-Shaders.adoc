@@ -236,18 +236,73 @@ And here's how this chain managed in the code:
 
 ----
 // MainApplication.cpp
-MaybeAppData maybeAppData{MaybeAppData{get_required_window_extensions(_appData)}
-                                      .and_then(create_instance)
-                                      .and_then(create_surface)
-                                      .and_then(get_physical_device)
-                                      .and_then(create_logical_device)
-                                      .and_then(create_shader_modules)};
+MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const windowHeight, std::string const & appName)
+{
+	GLFWwindow * const window{create_window(windowWidth, windowHeight, appName)};
+	
+	if (window == nullptr)
+		throw runtime_error{"failed to create window"};
+	
+	_appData.window = window;
+	
+	glfwSetWindowUserPointer(window, &_appData);
+	glfwSetKeyCallback(window, &onKeyPress);
+	
+    // new code start
+	MaybeAppData maybeAppData{MaybeAppData{get_required_window_extensions(_appData)}
+	                          .and_then(create_instance)
+	                          .and_then(create_surface)
+	                          .and_then(get_physical_device)
+	                          .and_then(create_logical_device)
+	                          .and_then(create_shader_modules)};
+	
+	if (!maybeAppData)
+		throw runtime_error{maybeAppData.error()};
+	
+	_appData = *maybeAppData;
+    // new code end
+}
 ----
 
-Here `MaybeAppData` is an alias to `tl::expected` (a library as a replacement for non-existent yet `std::expected`, see the https://TODO[previous article]).
+Here `MaybeAppData` is an alias to `tl::expected` (a library as a replacement for non-existent yet `std::expected`, see the https://TODO[previous article]) - it can hold an an `AppData` object or be empty, hence the suffix `maybe`.
 
 ----
 using MaybeAppData = tl::expected<AppData, std::string>;
 ----
 
-Just look how beautiful the code is. If the first call fails all other calls will not be executed and `expected` object will hold an error instead of valid value. By this error I can find the fail reason. Each function in the chain is a standalone pure function in separate unit - that's how I'm trying to fight the verbosity of a `Vulkan` application (the number of lines easile gets more that 1000 even in simple triangle application).
+Just look how beautiful the code is. If the first call fails all other calls will not be executed and `expected` object will hold an error instead of valid value. By this error I can find the fail reason. Each function in the chain is a standalone pure function in separate unit - that's how I'm trying to fight the verbosity of a `Vulkan` application (the number of lines easile gets more that 1000 even in simple triangle application). Now I'm going to visit each function trying to explain what it does.
+
+===== Getting required extensions
+
+This one is simple because `GLFW` library helps:
+
+----
+AppData get_required_window_extensions(AppData appData)
+{
+	uint32_t glfwExtensionCount{0};
+	char const * const * const glfwExtensions{glfwGetRequiredInstanceExtensions(&glfwExtensionCount)};
+
+	for (uint32_t i{0}; i < glfwExtensionCount; ++i)
+		appData.instanceExtensions.push_back(glfwExtensions[i]);
+	
+	return appData;
+}
+----
+
+http://www.glfw.org/docs/latest/group__vulkan.html#ga1abcbe61033958f22f63ef82008874b1[`glfwGetRequiredInstanceExtensions`] returns a list of extesion name required for surface creation. I pass this list to a `VkInstance` creation function.
+
+NOTE: I could pass a const reference to `AppData` to avoid copying, but since I need a copy anyway to need to modify the state I just let the runtime to do one.
+
+===== Creating an instance
+
+----
+MaybeAppData create_instance(AppData appData)
+{
+	VkInstanceCreateInfo const createInfo{get_instance_create_info(&appData.instanceExtensions, &appData.layers)};
+	
+	if (vkCreateInstance(&createInfo, nullptr, &appData.instance) != VK_SUCCESS)
+		return make_unexpected("failed to create instance");
+	
+	return appData;
+}
+----
