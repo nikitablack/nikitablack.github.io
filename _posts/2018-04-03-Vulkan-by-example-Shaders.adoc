@@ -250,3 +250,4 @@ Here `MaybeAppData` is an alias to `tl::expected` (a library as a replacement fo
 using MaybeAppData = tl::expected<AppData, std::string>;
 ----
 
+Just look how beautiful the code is. If the first call fails all other calls will not be executed and `expected` object will hold an error instead of valid value. By this error I can find the fail reason. Each function in the chain is a standalone pure function in separate unit - that's how I'm trying to fight the verbosity of a `Vulkan` application (the number of lines easile gets more that 1000 even in simple triangle application).
