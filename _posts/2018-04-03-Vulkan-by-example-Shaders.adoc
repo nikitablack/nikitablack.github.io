@@ -344,3 +344,5 @@ VkInstanceCreateInfo get_instance_create_info(vector<char const *> const * const
 . Layers are used for debugging. In this lesson it's too early for debugging and `layers` vector is empty. Notice how arrays are passed to `Vulkan` - there's no `std::vector` or other similar data structures - only raw pointers. And every array accompanied with it's size.
 
 . Here I provide extension I got from `GLFW` window.
+
+===== Creating a surface
