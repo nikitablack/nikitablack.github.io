@@ -295,6 +295,8 @@ NOTE: I could pass a const reference to `AppData` to avoid copying, but since I 
 
 ===== Creating an instance
 
+Having required instance extensions names I can create an instance.
+
 ----
 MaybeAppData create_instance(AppData appData)
 {
@@ -306,3 +308,37 @@ MaybeAppData create_instance(AppData appData)
 	return appData;
 }
 ----
+
+All objects in `Vulkan` are created by providing information through related structures. For the instance this structure is https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkInstanceCreateInfo.html[`VkInstanceCreateInfo`]. I isolated all structure creations in `VkStructHelpers.h` and `VkStructHelpers.cpp` files.
+
+NOTE: It's possible to use https://github.com/KhronosGroup/Vulkan-Hpp[Vulkan-Hpp] `c++` wrapper by `Khronos`, but I decided to go low-level in this lessons.
+
+----
+VkInstanceCreateInfo get_instance_create_info(vector<char const *> const * const extensions,
+	                                      vector<char const *> const * const layers)
+{
+	VkInstanceCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO; // #1
+	info.pNext = nullptr; // #2
+	info.flags = 0; // #3
+	info.pApplicationInfo = nullptr; // #4
+	info.enabledLayerCount = (layers != nullptr) ? static_cast<uint32_t>(layers->size()) : 0;
+	info.ppEnabledLayerNames = (layers != nullptr) ? layers->data() : nullptr; // #5
+	info.enabledExtensionCount = (extensions != nullptr) ? static_cast<uint32_t>(extensions->size()) : 0;
+	info.ppEnabledExtensionNames = (extensions != nullptr) ? extensions->data() : nullptr; // #6
+		
+	return info;
+}
+----
+
+. Every structure in `Vulkan` have a corresponding name. For `VkInstanceCreateInfo` it is `VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO`, for other types - other names. I will not mention this anymore for new structures.
+
+. Some information objects can be extended by providing another structure in `pNext` member. For example, information for device memory creation can be extended with additional data that marks memory as shared. This application will not use that feature so I will not mention it anymore.
+
+. This structure doesn't use any flags. In future I will only describe `flags` field only if it have value.
+
+. This structure can provide information about application to the driver with https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkApplicationInfo.html[`VkApplicationInfo`] struct. Since it's only informatical I left it null.
+
+. Layers are used for debugging. In this lesson it's too early for debugging and `layers` vector is empty. Notice how arrays are passed to `Vulkan` - there's no `std::vector` or other similar data structures - only raw pointers. And every array accompanied with it's size.
+
+. Here I provide extension I got from `GLFW` window.
