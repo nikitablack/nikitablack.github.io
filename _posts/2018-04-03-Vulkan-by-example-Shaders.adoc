@@ -309,7 +309,9 @@ MaybeAppData create_instance(AppData appData)
 }
 ----
 
-All objects in `Vulkan` are created by providing information through related structures. For the instance this structure is https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkInstanceCreateInfo.html[`VkInstanceCreateInfo`]. I isolated all structure creations in `VkStructHelpers.h` and `VkStructHelpers.cpp` files.
+If call to  https://www.khronos.org/registry/vulkan/specs/1.0/man/html/vkCreateInstance.html[`vkCreateInstance`] was successful I return modified `AppData` object wrapped by `expected` object. In opposite case `tl::expected` object will hold an error instead of a valid data.
+
+All objects in `Vulkan` are created by providing information through corrsponding structures. For an instance this structure is https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkInstanceCreateInfo.html[`VkInstanceCreateInfo`]. I isolated all structure creations in `VkStructHelpers.h` and `VkStructHelpers.cpp` files.
 
 NOTE: It's possible to use https://github.com/KhronosGroup/Vulkan-Hpp[Vulkan-Hpp] `c++` wrapper by `Khronos`, but I decided to go low-level in this lessons.
 
