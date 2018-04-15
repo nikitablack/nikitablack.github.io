@@ -343,6 +343,23 @@ VkInstanceCreateInfo get_instance_create_info(vector<char const *> const * const
 
 . Layers are used for debugging. In this lesson it's too early for debugging and `layers` vector is empty. Notice how arrays are passed to `Vulkan` - there's no `std::vector` or other similar data structures - only raw pointers. And every array accompanied with it's size.
 
-. Here I provide extension I got from `GLFW` window.
+. I provide extensions got from `GLFW` window.
 
 ===== Creating a surface
+
+----
+MaybeAppData create_surface(AppData appData)
+{
+	assert(appData.instance);
+	assert(appData.window);
+	
+	if (glfwCreateWindowSurface(appData.instance, appData.window, nullptr, &appData.surface) != VK_SUCCESS)
+		return make_unexpected("failed to create window surface");
+	
+	return appData;
+}
+----
+
+Again `GLFW` library takes care of surface creation with http://www.glfw.org/docs/latest/group__vulkan.html#ga1a24536bec3f80b08ead18e28e6ae965[`glfwCreateWindowSurface`] function which returns https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkResult.html[`VkResult`] indicating the result of the call. Under the hood the library calls platform specific `Vulkan` function, like `vkCreateWin32SurfaceKHR` for `Windows` which uses corresponding info structure `VkWin32SurfaceCreateInfoKHR`. But `GLFW` hides this platform dependent call which is why I use it.
+
+===== Getting a physical device
