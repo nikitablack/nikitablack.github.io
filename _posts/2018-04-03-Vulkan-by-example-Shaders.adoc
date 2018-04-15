@@ -363,3 +363,57 @@ MaybeAppData create_surface(AppData appData)
 Again `GLFW` library takes care of surface creation with http://www.glfw.org/docs/latest/group__vulkan.html#ga1a24536bec3f80b08ead18e28e6ae965[`glfwCreateWindowSurface`] function which returns https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkResult.html[`VkResult`] indicating the result of the call. Under the hood the library calls platform specific `Vulkan` function, like `vkCreateWin32SurfaceKHR` for `Windows` which uses corresponding info structure `VkWin32SurfaceCreateInfoKHR`. But `GLFW` hides this platform dependent call which is why I use it.
 
 ===== Getting a physical device
+
+----
+MaybeAppData get_physical_device(AppData appData)
+{
+	assert(appData.instance);
+	assert(appData.surface);
+	
+	uint32_t deviceCount{0};
+	if(vkEnumeratePhysicalDevices(appData.instance, &deviceCount, nullptr) != VK_SUCCESS || deviceCount == 0)
+		return make_unexpected("failed to find GPUs with Vulkan support");
+		
+	vector<VkPhysicalDevice> physicalDevices(deviceCount);
+	if(vkEnumeratePhysicalDevices(appData.instance, &deviceCount, physicalDevices.data()) != VK_SUCCESS)
+		return make_unexpected("failed to find GPUs with Vulkan support");
+		
+	for(VkPhysicalDevice const d : physicalDevices)
+	{
+		MaybeSurfaceFormat const mbSurfaceFormat{get_device_surface_format(d, appData.surface)};
+		if(!mbSurfaceFormat)
+			continue;
+			
+		MaybePresentMode const mbPresentMode{get_device_surface_present_mode(d, appData.surface)};
+		if(!mbPresentMode)
+			continue;
+			
+		if(!check_device_suitability(d, appData.deviceExtensions))
+			continue;
+			
+		MaybeQueueFamilies const mbQueueFamilies{get_device_graphics_and_present_queue_families(d, appData.surface)};
+		if(!mbQueueFamilies)
+			continue;
+			
+		VkSurfaceCapabilitiesKHR surfaceCapabilities{};
+		if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(d, appData.surface, &surfaceCapabilities) != VK_SUCCESS)
+			continue;
+			
+		appData.surfaceCapabilities = surfaceCapabilities;
+			
+		appData.physicalDevice = d;
+		appData.graphicsFamilyQueueIndex = (*mbQueueFamilies).first;
+		appData.presentFamilyQueueIndex = (*mbQueueFamilies).second;
+		appData.surfaceFormat = *mbSurfaceFormat;
+		appData.surfacePresentMode = *mbPresentMode;
+		appData.surfaceExtent = get_surface_extent(appData.window, appData.surfaceCapabilities);
+			
+		vkGetPhysicalDeviceFeatures(appData.physicalDevice, &appData.physicalDeviceFeatures);
+		vkGetPhysicalDeviceProperties(appData.physicalDevice, &appData.physicalDeviceProperties);
+			
+		return appData;
+	}
+		
+	return make_unexpected("failed to find suitable device");
+}
+----
