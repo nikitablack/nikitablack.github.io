@@ -90,74 +90,89 @@ class MainApplication
 {
 public:
 	MainApplication(uint32_t windowWidth, uint32_t windowHeight, std::string const & appName);
+	MainApplication(MainApplication const &) = delete;
+	MainApplication & operator=(MainApplication const &) = delete;
 	~MainApplication();
 	
 	void run();
 	
 private:
+	MainApplication();
+	
 	void render();
 
 private:
-	AppData _appData{};
+	app::AppData m_appData{};
 };
 ----
 
-`AppData`, as I already told, is a state holder - it holds all the objects required by the application. In this tutorial it's pretty empty:
+`AppData`, as I already told, is a state holder - it holds all objects required by the application. In this first tutorial it's pretty empty:
 
 ----
 struct AppData
 {
 	GLFWwindow* window{nullptr};
-    
-    TeapotData teapotData{};
-	float tessLevel{1.0f};
+	bool framebufferResized{false};
+	
+	TeapotData teapotData{};
 };
 ----
 
-All I know for now is that I need to render the `teapotData` onto some surface - a `window`. Also as I speak about tesselation I need a way to control that tesselation and I do it with `tessLevel`.
+All I know for now is that I need to render the `teapotData` onto some surface - a `window`. Ocassionaly the window will be resized so I need to handle that - `framebufferResized` field will help.
 
 ----
-MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const windowHeight, std::string const & appName)
+MainApplication::MainApplication(){}
+
+MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const windowHeight, std::string const & appName) : MainApplication{}
 {
-	GLFWwindow * const window{create_window(windowWidth, windowHeight, appName)};
+	app::MaybeWindow const mbWindow{app::create_window(windowWidth, windowHeight, appName)};
 	
-	if (window == nullptr)
-		throw runtime_error{"failed to create window"};
+	if (!mbWindow)
+		throw std::runtime_error{mbWindow.error()};
 	
-	_appData.window = window;
+	m_appData.window = *mbWindow;
 	
-	glfwSetWindowUserPointer(window, &_appData);
-	glfwSetKeyCallback(window, &onKeyPress);
+	glfwSetWindowUserPointer(m_appData.window, &m_appData);
+	glfwSetKeyCallback(m_appData.window, &app::on_key_press);
+	glfwSetWindowSizeLimits(m_appData.window, 640, 480, GLFW_DONT_CARE, GLFW_DONT_CARE);
+	glfwSetFramebufferSizeCallback(m_appData.window, app::framebuffer_size_callback);
 }
 ----
+
+NOTE: Note how the main constructor delegates a call to the empty constructor - this is necessary if I want to call a destructor is case the constructor throws.
 
 In `MainApplication's` constructor I first create a window with the help of one of many free functions - `create_window`:
 
 ----
-GLFWwindow* create_window(uint32_t const width, uint32_t const height, string const & title)
+MaybeWindow create_window(uint32_t const width, uint32_t const height, string const & title)
 {
 	if (!glfwInit())
-		return nullptr;
+		return tl::make_unexpected("failed to init glfw");
 	
 	if (!glfwVulkanSupported())
-		return nullptr;
+		return tl::make_unexpected("vulkan is not supported");
 	
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 	
 	GLFWwindow * const window{glfwCreateWindow(width, height, title.data(), nullptr, nullptr)};
+	if(!window)
+		return tl::make_unexpected("failed to create window");
 	
 	return window;
 }
 ----
-First I initialize `glfw`, next check if `Vulkan` is supported, next tell `glfw` to http://www.glfw.org/docs/latest/context_guide.html#context_object[not use a context] and create non-resizable windows and finally create a window. In my lessons I use fixed window - it simplifies the code a bit.
 
-Then set a callback with http://www.glfw.org/docs/latest/group__input.html#ga7e496507126f35ea72f01b2e6ef6d155[`glfwSetKeyCallback`] which listens for `+`, `-` or `space` keys to change tesselation level or rendering mode.
+First I initialize `glfw`, next check if `Vulkan` is supported, next tell `glfw` to http://www.glfw.org/docs/latest/context_guide.html#context_object[not use a context] and create resizable windows and finally create a window.
+
+Next step is to assosiate a data (instance of the `AppData`) with the window - later in different `glfw` callbacks I'll be able to retrieve this data. Then I set a callback with http://www.glfw.org/docs/latest/group__input.html#ga7e496507126f35ea72f01b2e6ef6d155[`glfwSetKeyCallback`] which listens for `+`, `-` or `space` keys to change tesselation level or rendering mode.
 
 ----
-void onKeyPress(GLFWwindow * const window, int const key, int const /*scancode*/, int const action, int const /*mods*/)
+void on_key_press(GLFWwindow * const window, int const key, int const /*scancode*/, int const action, int const /*mods*/)
 {
-	[[maybe_unused]] AppData * const appData{static_cast<AppData *>(glfwGetWindowUserPointer(window))};
+	AppData * const appData{static_cast<AppData *>(glfwGetWindowUserPointer(window))};
+	
+	assert(appData);
 
 	if (key == GLFW_KEY_KP_ADD && (action == GLFW_PRESS || action == GLFW_REPEAT))
 	{
@@ -174,9 +189,24 @@ void onKeyPress(GLFWwindow * const window, int const key, int const /*scancode*/
 }
 ----
 
-In this callback I need to access the current state of the application (`AppData`) so I pass an instance to `glfw` with `glfwSetWindowUserPointer()`.
+Here I obtain the data I passed earlier to `glfwSetWindowUserPointer()`.
 
-NOTE: All free functions in the application are _pure_, i.e. they don't change any state and don't have side effects. They always accept arguments by copy or const reference. I store each function in a separate unit (cpp file) and have all declarations in one place (`App.h` file).
+Next I set some window size limit and finaly set a callback for the window resize.
+
+----
+void framebuffer_size_callback(GLFWwindow * const window, int const /*width*/, int const /*height*/)
+{
+	AppData * const appData{static_cast<AppData *>(glfwGetWindowUserPointer(window))};
+
+	assert(appData);
+	
+	appData->framebufferResized = true;
+}
+----
+
+All it's do is set the mentioned `framebufferResized` field to `true` but actual handling will be done in a main loop. This is done because there's no way to return an error from `glfw` callback, so if during the resize process there will be an exception we'll not know why.
+
+NOTE: Almost all free functions in the application are _pure_, i.e. they don't change any state and don't have side effects. They always accept arguments by copy or const reference. I store each function in a separate unit (cpp file) and have all declarations in one place (`App.h` file).
 
 After initializaition `MainApplication::run()` is called which loops until the window is closed:
 
@@ -190,6 +220,7 @@ void MainApplication::run()
 	}
 }
 ----
+
 Here in the loop I tell `glfw` to invoke registered callbacks with `glfwPollEvents` and do rendering (empty in this lesson).
 
 In the `MainApplication` destructor I make cleaning:
@@ -204,6 +235,6 @@ MainApplication::~MainApplication()
 For now only the window needs to be destroyed.
 
 ===== Conclusion
-Wow, the whole post and no any single `Vulkan` related line of code! Sorry, that was a long indroduction and I didn't even start to tell about a lot of things I wanted but I promise the next lesson will be much more interesting.
+Wow, the whole post and no any single `Vulkan` related line of code! Sorry for that, it was a necessary long indroduction but I promise the next lesson will be much more interesting.
 
 The source code for this lesson is https://github.com/nikitablack/vulkan_by_example/tree/lesson_0[here].
