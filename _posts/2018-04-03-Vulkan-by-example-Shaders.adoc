@@ -73,28 +73,28 @@ layout (quads, fractional_odd_spacing, cw) in;
 
 struct PatchData
 {
-	mat4 transform;
-	vec4 color;
+    mat4 transform;
+    vec4 color;
 };
 
-layout(binding = 0, row_major) buffer PatchDataBuffer
+layout(binding = 0, row_major) readonly buffer PatchDataBuffer
 {
-	PatchData data[];
+    PatchData data[];
 } patchData;
 
 layout(binding = 1) uniform Proj
 {
-	layout(row_major) mat4 mat;
+    layout(row_major) mat4 mat;
 } proj;
 
 layout(binding = 2) uniform View
 {
-	layout(row_major) mat4 mat;
+    layout(row_major) mat4 mat;
 } view;
 
 layout(binding = 3) uniform Model
 {
-	layout(row_major) mat4 mat;
+    layout(row_major) mat4 mat;
 } model;
 
 layout (location = 0) out vec3 outColor;
@@ -124,10 +124,10 @@ vec4 evaluateBezier(vec4 basisU, vec4 basisV)
 
 void main(void)
 {
-	vec4 basisU = bernsteinBasis(gl_TessCoord.x);
-	vec4 basisV = bernsteinBasis(gl_TessCoord.y);
+    vec4 basisU = bernsteinBasis(gl_TessCoord.x);
+    vec4 basisV = bernsteinBasis(gl_TessCoord.y);
 
-	vec4 localPos = evaluateBezier(basisU, basisV);
+    vec4 localPos = evaluateBezier(basisU, basisV);
 
 	gl_Position = localPos * patchData.data[gl_PrimitiveID].transform * model.mat * view.mat * proj.mat;
 
@@ -160,11 +160,11 @@ void main()
 
 Another one _"lazy"_ shader - the data is coming at input location `0` and going to the output storage location also `0`. Latter tells that there's should be some special memory region (`Image` in that case) somewhere.
 
-Hurray! The application is almost done! Joking. Once I read the sentense which describes `Vulkan` in a nutshell: _"Show me your triangle in three months."_ The same applies here - I'm planning to write `7` or `8` parts total. Shaders were the easiest part, all other code serves only to make them run and run *correctly*. By correctness I mean that there should not be undefined behavior, data races, pipeline stalls.
+Hurray! The application is almost done! Joking. Once I read the sentense which describes `Vulkan` in a nutshell: _"Show me your triangle in three months."_ The same applies here - I'm planning to write `7` or `8` parts in total. Shaders were the easiest part, all other code serves only to make them run and run *correctly*. By correctness I mean that there should not be undefined behavior, data races, pipeline stalls.
 
 ===== Finally some Vulkan
 
-So I have some shaders written as text in some files, but I can't use them directly. In `Vulkan` shaders have to be compiled to so called `SPIR-V` binary format and supplied to the API via https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkShaderModule.html[`VkShaderModule`]. I can create one with https://www.khronos.org/registry/vulkan/specs/1.0/man/html/vkCreateShaderModule.html[`vkCreateShaderModule`] function. Here's the definition of this function:
+So I have some shaders written as text in some files, but I can't use them directly. In `Vulkan` shaders have to be compiled to so called `SPIR-V` binary format and supplied to the API via `VkShaderModule`. I can create one with `vkCreateShaderModule` function. Here's the definition of this function:
 
 ----
 VkResult vkCreateShaderModule(
@@ -176,7 +176,7 @@ VkResult vkCreateShaderModule(
 
 Last parameter (`pShaderModule`) is a return value I'm interesting in. Third parameter (`pAllocator`) used for custom allocation and *never* will be used in lessons (always `nullptr`). Second parameter (`pCreateInfo`) is an information which describes a shader and can be created right now. But the first parameter (`device`) is an unknown variable.
 
-https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkDevice.html[`VkDevice`] is a software representation of `GPU`. I think about it like an instance of a real physical `GPU` - it is possible to have multiple instances of it (though I will use only one). I can create one with https://www.khronos.org/registry/vulkan/specs/1.0/man/html/vkCreateDevice.html[`vkCreateDevice`] function:
+`VkDevice` is a software representation of `GPU`. I think about it like an instance of a real physical `GPU` - it is possible to have multiple instances of it (though I will use only one). I can create one with `vkCreateDevice` function:
 
 ----
 VkResult vkCreateDevice(
@@ -188,7 +188,7 @@ VkResult vkCreateDevice(
 
 `pDevice` - return value, `pAllocator` - `nullptr`, `pCreateInfo` - some information, `physicalDevice` - again unknown.
 
-Continuing the analogy https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkPhysicalDevice.html[`VkPhysicalDevice`] is a class or a blueprint. It represents unique piece of hardware and can be used for obtaining some useful info, like capabilities of the `GPU`. I can't create an instance of it, but can ask the API to give it with https://www.khronos.org/registry/vulkan/specs/1.0/man/html/vkEnumeratePhysicalDevices.html[`vkEnumeratePhysicalDevices`] call:
+Continuing the analogy `VkPhysicalDevice` is a class or a blueprint. It represents unique piece of hardware and can be used for obtaining some useful info, like capabilities of the `GPU`. I can't create an instance of it, but can ask the API to give it with `vkEnumeratePhysicalDevices` call:
 
 ----
 VkResult vkEnumeratePhysicalDevices(
@@ -197,7 +197,7 @@ VkResult vkEnumeratePhysicalDevices(
     VkPhysicalDevice*                           pPhysicalDevices);
 ----
 
-It will never end... Here again I see an unknown variable `instance`. Moreover, this function can return a list of *all* available devices in the system but I'm interested only in one. For the application I need a GPU that supports tesselation and can output images to the operating system's present engine. Yes, it sounds weird but it looks like there are devices that can't render. In order to check device's _"presentability"_ I need some information about render surface. In `Vulkan` this information stored in http://vulkan-spec-chunked.ahcox.com/ch29s02.html[`VkSurfaceKHR`] object and I need to get this object. Fortunately with `GLFW` library this is an easy task:
+It will never end... Here again I see an unknown variable `instance`. Moreover, this function can return a list of *all* available devices in the system but I'm interested only in one. For the application I need a GPU that supports tesselation and can output images to the operating system's present engine. Yes, it sounds weird but it looks like there are devices that can't render. In order to check device's _"presentability"_ I need some information about render surface. In `Vulkan` this information stored in `VkSurfaceKHR` object and I need to get this object. Fortunately with `GLFW` library this is an easy task:
 
 ----
 VkResult glfwCreateWindowSurface(
@@ -208,7 +208,7 @@ VkResult glfwCreateWindowSurface(
 )
 ----
 
-Again https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkInstance.html[`VkInstance`] It is an entity that keeps the state of the application and is used almost in every `Vulkan` function. I can create one with https://www.khronos.org/registry/vulkan/specs/1.0/man/html/vkCreateInstance.html[`vkCreateInstance`] function:
+Again `VkInstance` It is an entity that keeps the state of the application and is used almost in every `Vulkan` function. I can create one with `vkCreateInstance` function:
 
 ----
 VkResult vkCreateInstance(
