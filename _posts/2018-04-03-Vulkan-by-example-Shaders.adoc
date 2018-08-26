@@ -236,31 +236,34 @@ And here's how this chain managed in the code:
 
 ----
 // MainApplication.cpp
-MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const windowHeight, std::string const & appName)
+MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const windowHeight, std::string const & appName) : MainApplication{}
 {
-	GLFWwindow * const window{create_window(windowWidth, windowHeight, appName)};
+	app::MaybeWindow const mbWindow{app::create_window(windowWidth, windowHeight, appName)};
 	
-	if (window == nullptr)
-		throw runtime_error{"failed to create window"};
+	if (!mbWindow)
+		throw std::runtime_error{mbWindow.error()};
 	
-	_appData.window = window;
+	m_appData.window = *mbWindow;
 	
-	glfwSetWindowUserPointer(window, &_appData);
-	glfwSetKeyCallback(window, &onKeyPress);
-	
-    // new code start
-	MaybeAppData maybeAppData{MaybeAppData{get_required_window_extensions(_appData)}
-	                          .and_then(create_instance)
-	                          .and_then(create_surface)
-	                          .and_then(get_physical_device)
-	                          .and_then(create_logical_device)
-	                          .and_then(create_shader_modules)};
-	
-	if (!maybeAppData)
-		throw runtime_error{maybeAppData.error()};
-	
-	_appData = *maybeAppData;
-    // new code end
+	glfwSetWindowUserPointer(m_appData.window, &m_appData);
+	glfwSetKeyCallback(m_appData.window, &app::on_key_press);
+	glfwSetWindowSizeLimits(m_appData.window, 640, 480, GLFW_DONT_CARE, GLFW_DONT_CARE);
+	glfwSetFramebufferSizeCallback(m_appData.window, app::framebuffer_size_callback);
+
+	app::MaybeAppData mbData{app::MaybeAppData{app::get_required_window_extensions(std::move(m_appData))}
+	                         .and_then(app::create_instance)
+	                         .and_then(app::create_surface)
+	                         .and_then(app::get_physical_device)
+	                         .map(app::prepare_device_features)
+	                         .and_then(app::create_logical_device)
+	                         .and_then(app::create_shader_modules)};
+
+	if (!mbData)
+		throw std::runtime_error{mbData.error()};
+
+	m_appData = std::move(*mbData);
+
+	glfwSetWindowUserPointer(m_appData.window, &m_appData);
 }
 ----
 
@@ -277,15 +280,15 @@ Just look how beautiful the code is. If the first call fails all other calls wil
 This one is simple because `GLFW` library helps:
 
 ----
-AppData get_required_window_extensions(AppData appData)
+AppData get_required_window_extensions(AppData data)
 {
 	uint32_t glfwExtensionCount{0};
 	char const * const * const glfwExtensions{glfwGetRequiredInstanceExtensions(&glfwExtensionCount)};
-
+		
 	for (uint32_t i{0}; i < glfwExtensionCount; ++i)
-		appData.instanceExtensions.push_back(glfwExtensions[i]);
-	
-	return appData;
+		data.instanceExtensions.push_back(glfwExtensions[i]);
+		
+	return data;
 }
 ----
 
@@ -298,37 +301,37 @@ NOTE: I could pass a const reference to `AppData` to avoid copying, but since I 
 Having required instance extensions names I can create an instance.
 
 ----
-MaybeAppData create_instance(AppData appData)
+MaybeAppData create_instance(AppData data)
 {
-	VkInstanceCreateInfo const createInfo{get_instance_create_info(&appData.instanceExtensions, &appData.layers)};
+	helpers::MaybeInstance const mbInstance{helpers::create_instance(&data.instanceExtensions, &data.layers)};
+	if(!mbInstance)
+		return tl::make_unexpected(mbInstance.error());
 	
-	if (vkCreateInstance(&createInfo, nullptr, &appData.instance) != VK_SUCCESS)
-		return make_unexpected("failed to create instance");
+	data.instance = *mbInstance;
 	
-	return appData;
+	return data;
 }
 ----
 
-If call to  https://www.khronos.org/registry/vulkan/specs/1.0/man/html/vkCreateInstance.html[`vkCreateInstance`] was successful I return modified `AppData` object wrapped by `expected` object. In opposite case `tl::expected` object will hold an error instead of a valid data.
+If call to  `vkCreateInstance` was successful I return modified `AppData` object wrapped by `expected` object. In opposite case `tl::expected` object will hold an error instead of a valid data.
 
-All objects in `Vulkan` are created by providing information through corrsponding structures. For an instance this structure is https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkInstanceCreateInfo.html[`VkInstanceCreateInfo`]. I isolated all structure creations in `VkStructHelpers.h` and `VkStructHelpers.cpp` files.
+All objects in `Vulkan` are created by providing information through corrsponding structures. For an instance this structure is `VkInstanceCreateInfo`. I isolated all structure creations in `VkStructHelpers.h` and `VkStructHelpers.cpp` files.
 
 NOTE: It's possible to use https://github.com/KhronosGroup/Vulkan-Hpp[Vulkan-Hpp] `c++` wrapper by `Khronos`, but I decided to go low-level in this lessons.
 
 ----
-VkInstanceCreateInfo get_instance_create_info(vector<char const *> const * const extensions,
-	                                      vector<char const *> const * const layers)
+VkInstanceCreateInfo get_instance_create_info(vector<char const *> const * const extensions, vector<char const *> const * const layers, VkApplicationInfo const * const applicationInfo)
 {
 	VkInstanceCreateInfo info{};
-	info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO; // #1
-	info.pNext = nullptr; // #2
-	info.flags = 0; // #3
-	info.pApplicationInfo = nullptr; // #4
-	info.enabledLayerCount = (layers != nullptr) ? static_cast<uint32_t>(layers->size()) : 0;
-	info.ppEnabledLayerNames = (layers != nullptr) ? layers->data() : nullptr; // #5
-	info.enabledExtensionCount = (extensions != nullptr) ? static_cast<uint32_t>(extensions->size()) : 0;
-	info.ppEnabledExtensionNames = (extensions != nullptr) ? extensions->data() : nullptr; // #6
-		
+	info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	info.pNext = nullptr;
+	info.flags = 0;
+	info.pApplicationInfo = applicationInfo;
+	info.enabledLayerCount = (layers) ? static_cast<uint32_t>(layers->size()) : 0;
+	info.ppEnabledLayerNames = (layers) ? layers->data() : nullptr;
+	info.enabledExtensionCount = (extensions) ? static_cast<uint32_t>(extensions->size()) : 0;
+	info.ppEnabledExtensionNames = (extensions) ? extensions->data() : nullptr;
+	
 	return info;
 }
 ----
@@ -339,7 +342,7 @@ VkInstanceCreateInfo get_instance_create_info(vector<char const *> const * const
 
 . This structure doesn't use any flags. In future I will only describe `flags` field only if it have value.
 
-. This structure can provide information about application to the driver with https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkApplicationInfo.html[`VkApplicationInfo`] struct. Since it's only informatical I left it null.
+. This structure can provide information about application to the driver with `VkApplicationInfo` struct. Since it's only informatical I left it null.
 
 . Layers are used for debugging. In this lesson it's too early for debugging and `layers` vector is empty. Notice how arrays are passed to `Vulkan` - there's no `std::vector` or other similar data structures - only raw pointers. And every array accompanied with it's size.
 
@@ -348,21 +351,21 @@ VkInstanceCreateInfo get_instance_create_info(vector<char const *> const * const
 ===== Creating a surface
 
 ----
-MaybeAppData create_surface(AppData appData)
+MaybeAppData create_surface(AppData data)
 {
-	assert(appData.instance);
-	assert(appData.window);
+	assert(data.instance);
+	assert(data.window);
 	
-	if (glfwCreateWindowSurface(appData.instance, appData.window, nullptr, &appData.surface) != VK_SUCCESS)
-		return make_unexpected("failed to create window surface");
+	if (glfwCreateWindowSurface(data.instance, data.window, nullptr, &data.surface) != VK_SUCCESS)
+		return tl::make_unexpected("failed to create window surface");
 	
-	return appData;
+	return data;
 }
 ----
 
-Again `GLFW` library takes care of surface creation with http://www.glfw.org/docs/latest/group__vulkan.html#ga1a24536bec3f80b08ead18e28e6ae965[`glfwCreateWindowSurface`] function which returns https://www.khronos.org/registry/vulkan/specs/1.0/man/html/VkResult.html[`VkResult`] indicating the result of the call. Under the hood the library calls platform specific `Vulkan` function, like `vkCreateWin32SurfaceKHR` for `Windows` which uses corresponding info structure `VkWin32SurfaceCreateInfoKHR`. But `GLFW` hides this platform dependent call which is why I use it.
+Again `GLFW` library takes care of surface creation with http://www.glfw.org/docs/latest/group__vulkan.html#ga1a24536bec3f80b08ead18e28e6ae965[`glfwCreateWindowSurface`] function which returns `VkResult` indicating the result of the call. Under the hood the library calls platform specific `Vulkan` function, like `vkCreateWin32SurfaceKHR` for `Windows` which uses corresponding info structure `VkWin32SurfaceCreateInfoKHR`. But `GLFW` hides this platform dependent call which is why I use it.
 
-===== Getting a physical device
+===== Obtaining a physical device
 
 ----
 MaybeAppData get_physical_device(AppData appData)
