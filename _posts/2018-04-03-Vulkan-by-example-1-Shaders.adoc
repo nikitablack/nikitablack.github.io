@@ -135,13 +135,13 @@ void main(void)
 }
 ----
 
-First I need to specify tesselation rules: domain (`quad`), spacing (`fractional_odd_spacing`) and winding order (`cw` - clockwise). Next I define the patch information in the form of a buffer. Again, no information right now - just know that each patch should be transformed and colored (see https://TODO[introduction lesson] for more details why) and the information incoming as an array of `PatchData`. Also I need usual transformation matrices. I could provide one MVP-matrix and reduce the number of calculations but I want to show how to manipulate with multiple uniform buffers in `Vulkan`. That's why there are three matrices: model, view and projection.
+First I need to specify tesselation rules: domain (`quad`), spacing (`fractional_odd_spacing`) and winding order (`cw` - clockwise). Next I define the patch information in the form of a buffer. Again, no information right now - just know that each patch should be transformed and colored (see https://TODO[introduction lesson] for more details why) and the information incoming as an array of `PatchData`. Also I need usual transformation matrices. I could provide one MVP-matrix and reduce the number of calculations but I want to show how to deal with multiple uniform buffers in `Vulkan`. That's why there are three matrices: model, view and projection.
 
-Next is a scary math - calculation of a 3d point having a `gl_TessCoord` that came from tesselator. Actually the math is not that complicated, a found https://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article] very good at explaining the theory behind curves.And the code itself (functions `bernsteinBasis()` and `evaluateBezier()`) I shamelesly took from http://www.gdcvault.com/play/1012740/direct3d[this gdc presentation].
+Next is a scary math - calculation of a 3d point having a `gl_TessCoord` that came from the tesselator. Actually the math is not that complicated, I found https://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article] very good at explaining the theory behind curves.And the code itself (functions `bernsteinBasis()` and `evaluateBezier()`) I shamelesly took from http://www.gdcvault.com/play/1012740/direct3d[this gdc presentation].
 
-The outputs of this shader are newly generated vertex and color. Since the entire patch colored with a solid color every vertex from one patch will have the same attribute.
+The outputs of this shader are newly generated vertex and color. Since the entire patch colored with a solid color every vertex from the same patch will have the same attribute.
 
-I think it's obvious that this shader will be invoked as many times as the number of generated vertices.
+I think it's obvious that a number of executions of this shader is equal to a number vertices produced by the tesselator.
 
 ===== Fragment shader
 
@@ -158,9 +158,9 @@ void main()
 }
 ----
 
-Another one _"lazy"_ shader - the data is coming at input location `0` and going to the output storage location also `0`. Latter tells that there's should be some special memory region (`Image` in that case) somewhere.
+Another one _"lazy"_ shader - the data is coming at input location `0` and going to the output location `0`. The last one tells that there should be some special memory region (`Image` in that case) somewhere to keep the color.
 
-Hurray! The application is almost done! Joking. Once I read the sentense which describes `Vulkan` in a nutshell: _"Show me your triangle in three months."_ The same applies here - I'm planning to write `7` or `8` parts in total. Shaders were the easiest part, all other code serves only to make them run and run *correctly*. By correctness I mean that there should not be undefined behavior, data races, pipeline stalls.
+Hurray! The application is almost done! Joking. Once I read the sentense which describes `Vulkan` in a nutshell: _"Show me your triangle in three months."_ So be patient. I'm planning to write `7` or `8` parts in total. Shaders were the easiest part, and all the remaining code we need to write should serve a single purpose - to make the shaders run. And run *correctly*. By correctness I mean that there should not be undefined behavior, data races, pipeline stalls.
 
 ===== Finally some Vulkan
 
