@@ -1,4 +1,4 @@
-= Vulkan by example - Shaders
+= Vulkan by example 1 - Shaders
 :hp-tags: c++, vulkan, glsl
 
 In the https://TODO[previous lesson] I made all preparations necessary to start exploring vulkan. Here is the diagramm of the current state of the application:
@@ -368,77 +368,71 @@ Again `GLFW` library takes care of surface creation with http://www.glfw.org/doc
 ===== Obtaining a physical device
 
 ----
-MaybeAppData get_physical_device(AppData appData)
+MaybeAppData get_physical_device(AppData data)
 {
-	assert(appData.instance);
-	assert(appData.surface);
+	assert(data.instance);
+	assert(data.surface);
 	
 	uint32_t deviceCount{0};
-	if(vkEnumeratePhysicalDevices(appData.instance, &deviceCount, nullptr) != VK_SUCCESS || deviceCount == 0)
-		return make_unexpected("failed to find GPUs with Vulkan support");
-		
+	if(vkEnumeratePhysicalDevices(data.instance, &deviceCount, nullptr) != VK_SUCCESS || deviceCount == 0)
+		return tl::make_unexpected("failed to find GPUs with Vulkan support");
+	
 	vector<VkPhysicalDevice> physicalDevices(deviceCount);
-	if(vkEnumeratePhysicalDevices(appData.instance, &deviceCount, physicalDevices.data()) != VK_SUCCESS)
-		return make_unexpected("failed to find GPUs with Vulkan support");
-		
+	if(vkEnumeratePhysicalDevices(data.instance, &deviceCount, physicalDevices.data()) != VK_SUCCESS)
+		return tl::make_unexpected("failed to find GPUs with Vulkan support");
+	
 	for(VkPhysicalDevice const d : physicalDevices)
 	{
-		MaybeSurfaceFormat const mbSurfaceFormat{get_device_surface_format(d, appData.surface)};
+		MaybeSurfaceFormat const mbSurfaceFormat{get_device_surface_format(d, data.surface)};
 		if(!mbSurfaceFormat)
 			continue;
-			
-		MaybePresentMode const mbPresentMode{get_device_surface_present_mode(d, appData.surface)};
+		
+		MaybePresentMode const mbPresentMode{get_device_surface_present_mode(d, data.surface)};
 		if(!mbPresentMode)
 			continue;
-			
-		if(!check_device_suitability(d, appData.deviceExtensions))
+		
+		if(!check_device_suitability(d, data.deviceExtensions))
 			continue;
-			
-		MaybeQueueFamilies const mbQueueFamilies{get_device_graphics_and_present_queue_families(d, appData.surface)};
+		
+		MaybeQueueFamilies const mbQueueFamilies{get_device_graphics_and_present_queue_families(d, data.surface)};
 		if(!mbQueueFamilies)
 			continue;
-			
-		VkSurfaceCapabilitiesKHR surfaceCapabilities{};
-		if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(d, appData.surface, &surfaceCapabilities) != VK_SUCCESS)
-			continue;
-			
-		appData.surfaceCapabilities = surfaceCapabilities;
-			
-		appData.physicalDevice = d;
-		appData.graphicsFamilyQueueIndex = (*mbQueueFamilies).first;
-		appData.presentFamilyQueueIndex = (*mbQueueFamilies).second;
-		appData.surfaceFormat = *mbSurfaceFormat;
-		appData.surfacePresentMode = *mbPresentMode;
-		appData.surfaceExtent = get_surface_extent(appData.window, appData.surfaceCapabilities);
-			
-		vkGetPhysicalDeviceFeatures(appData.physicalDevice, &appData.physicalDeviceFeatures);
-		vkGetPhysicalDeviceProperties(appData.physicalDevice, &appData.physicalDeviceProperties);
-			
-		return appData;
-	}
 		
-	return make_unexpected("failed to find suitable device");
+		data.physicalDevice = d;
+		tie(data.graphicsFamilyQueueIndex, data.presentFamilyQueueIndex) = *mbQueueFamilies;
+		data.surfaceFormat = *mbSurfaceFormat;
+		data.surfacePresentMode = *mbPresentMode;
+		
+		vkGetPhysicalDeviceProperties(data.physicalDevice, &data.physicalDeviceProperties);
+		
+		return data;
+	}
+	
+	return tl::make_unexpected("failed to find suitable device");
 }
 ----
 
+----
+using MaybeSurfaceFormat = tl::expected<VkSurfaceFormatKHR, string>;
+using MaybePresentMode = tl::expected<VkPresentModeKHR, string>;
+using MaybeQueueFamilies = tl::expected<tuple<uint32_t, uint32_t>, string>;
+----
 
 ----
 MaybeSurfaceFormat get_device_surface_format(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
 {
-	uint32_t formatsCount{0};
-	if (vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatsCount, nullptr) != VK_SUCCESS)
-		return make_unexpected("failed to get physical device surface formats");
-		
-	vector<VkSurfaceFormatKHR> formats(formatsCount);
-	if (formatsCount == 0 || vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatsCount, formats.data()) != VK_SUCCESS)
-		return make_unexpected("failed to get physical device surface formats");
-		
+	app::helpers::MaybePhysicalDevicesSurfaceFormats const mbFormats{app::helpers::get_physical_devices_surface_formats(physicalDevice, surface)};
+	if (!mbFormats)
+		return tl::make_unexpected(mbFormats.error());
+	
+	vector<VkSurfaceFormatKHR> const formats{*mbFormats};
+
 	if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED)
 		return VkSurfaceFormatKHR{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
-		
-	if (auto const it = find_if(formats.begin(), formats.end(), [](VkSurfaceFormatKHR const f) { return f.format == VK_FORMAT_B8G8R8A8_UNORM && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR; }); it != formats.end())
+	
+	if (auto const it = find_if(begin(formats), end(formats), [](VkSurfaceFormatKHR const f) { return f.format == VK_FORMAT_B8G8R8A8_UNORM && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR; }); it != end(formats))
 		return VkSurfaceFormatKHR{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
-		
+	
 	return formats[0];
 }
 ----
@@ -447,102 +441,115 @@ MaybeSurfaceFormat get_device_surface_format(VkPhysicalDevice const physicalDevi
 ----
 MaybePresentMode get_device_surface_present_mode(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
 {
-	uint32_t presentModesCount{0};
-	if (vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, nullptr) != VK_SUCCESS)
-		return make_unexpected("failed to get physical device surface present modes");
-		
-	vector<VkPresentModeKHR> presentModes(presentModesCount);
-	if (presentModesCount == 0 || vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, presentModes.data()) != VK_SUCCESS)
-		return make_unexpected("failed to get physical device surface present modes");
-		
-	if (auto const it = find(presentModes.begin(), presentModes.end(), VK_PRESENT_MODE_MAILBOX_KHR); it != presentModes.end())
+	app::helpers::MaybePhysicalDevicesSurfacePresentModes const mbPresentModes{app::helpers::get_physical_device_surface_present_modes(physicalDevice, surface)};
+	if (!mbPresentModes)
+		return tl::make_unexpected(mbPresentModes.error());
+	
+	vector<VkPresentModeKHR> const presentModes{*mbPresentModes};
+
+	if (auto const it = find(begin(presentModes), end(presentModes), VK_PRESENT_MODE_MAILBOX_KHR); it != end(presentModes))
 		return VK_PRESENT_MODE_MAILBOX_KHR;
-		
-	if (auto const it = find(presentModes.begin(), presentModes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR); it != presentModes.end())
+	
+	if (auto const it = find(begin(presentModes), end(presentModes), VK_PRESENT_MODE_IMMEDIATE_KHR); it != end(presentModes))
 		return VK_PRESENT_MODE_IMMEDIATE_KHR;
 	
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 ----
 
+----
+bool check_required_device_extensions(VkPhysicalDevice const physicalDevice, vector<char const *> const & requiredExtensions)
+{
+	uint32_t extensionCount{0};
+	if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr) != VK_SUCCESS)
+		return false;
+	
+	vector<VkExtensionProperties> availableExtensions(extensionCount);
+	if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data()) != VK_SUCCESS)
+		return false;
+	
+	for (char const * element : requiredExtensions)
+	{
+		if (find_if(begin(availableExtensions), end(availableExtensions), [element](VkExtensionProperties const & extensionProp) { return strcmp(element, extensionProp.extensionName) == 0; }) == end(availableExtensions))
+			return false;
+	}
+	
+	return true;
+}
+----
 
 ----
 bool check_device_suitability(VkPhysicalDevice const physicalDevice, vector<char const *> const & requiredExtensions)
 {
 	VkPhysicalDeviceProperties deviceProperties{};
 	vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
-		
+	
 	if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 		return false;
-		
+	
 	VkPhysicalDeviceFeatures deviceFeatures{};
 	vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
-		
+	
 	if (!deviceFeatures.tessellationShader)
 		return false;
-		
+	
 	if (deviceProperties.limits.maxTessellationPatchSize < 16)
 		return false;
-		
+	
 	if (!deviceFeatures.fillModeNonSolid)
 		return false;
-		
+	
 	if (!check_required_device_extensions(physicalDevice, requiredExtensions))
 		return false;
-		
+	
 	return true;
 }
 ----
 
-
 ----
 MaybeQueueFamilies get_device_graphics_and_present_queue_families(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
 {
-	uint32_t queueFamilyCount{0};
-	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
-		
-	vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
-		
+	vector<VkQueueFamilyProperties> const queueFamilies{app::helpers::get_queue_family_properties(physicalDevice)};
+	
 	for (size_t i{0}; i < queueFamilies.size(); ++i)
 	{
-		VkQueueFamilyProperties& queueFamily{queueFamilies[i]};
-			
+		VkQueueFamilyProperties queueFamily{queueFamilies[i]};
+		
 		if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
 		{
 			VkBool32 presentSupported{VK_FALSE};
 			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, static_cast<uint32_t>(i), surface, &presentSupported);
-				
+			
 			if (presentSupported)
-				return pair<uint32_t, uint32_t>{static_cast<uint32_t>(i), static_cast<uint32_t>(i)};
+				return make_tuple(static_cast<uint32_t>(i), static_cast<uint32_t>(i));
 		}
 	}
-		
+	
 	int graphicsQueueIndex{-1};
 	for (size_t i{0}; i < queueFamilies.size(); ++i)
 	{
-		VkQueueFamilyProperties& queueFamily{queueFamilies[i]};
-			
+		VkQueueFamilyProperties queueFamily{queueFamilies[i]};
+		
 		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
 			graphicsQueueIndex = static_cast<int>(i);
 			break;
 		}
 	}
-		
+	
 	if (graphicsQueueIndex == -1)
-		return make_unexpected("failed to find graphics queue");
-		
+		return tl::make_unexpected("failed to find graphics queue");
+	
 	int presentQueueIndex{-1};
-	for (size_t i{ 0 }; i < queueFamilies.size(); ++i)
+	for (size_t i{0}; i < queueFamilies.size(); ++i)
 	{
-		VkQueueFamilyProperties& queueFamily{queueFamilies[i]};
-			
+		VkQueueFamilyProperties const queueFamily{queueFamilies[i]};
+		
 		if (queueFamily.queueCount > 0)
 		{
 			VkBool32 presentSupported{VK_FALSE};
 			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, static_cast<uint32_t>(i), surface, &presentSupported);
-				
+			
 			if (presentSupported)
 			{
 				presentQueueIndex = static_cast<int>(i);
@@ -550,26 +557,134 @@ MaybeQueueFamilies get_device_graphics_and_present_queue_families(VkPhysicalDevi
 			}
 		}
 	}
-		
+	
 	if (presentQueueIndex == -1)
-		return make_unexpected("failed to find present queue");
-		
-	return make_pair(static_cast<uint32_t>(graphicsQueueIndex), static_cast<uint32_t>(presentQueueIndex));
+		return tl::make_unexpected("failed to find present queue");
+	
+	return make_tuple(static_cast<uint32_t>(graphicsQueueIndex), static_cast<uint32_t>(presentQueueIndex));
 }
 ----
 
 
 ----
-VkExtent2D get_surface_extent(GLFWwindow * const window, VkSurfaceCapabilitiesKHR const & surfaceCapabilities)
+AppData prepare_device_features(AppData data)
 {
-	if (surfaceCapabilities.currentExtent.width != numeric_limits<uint32_t>::max())
-		return surfaceCapabilities.currentExtent;
-		
-	int windowWidth{0};
-	int windowHeight{0};
-	glfwGetWindowSize(window, &windowWidth, &windowHeight);
-		
-	return {max(surfaceCapabilities.minImageExtent.width, min(surfaceCapabilities.maxImageExtent.width, static_cast<uint32_t>(windowWidth))),
-		max(surfaceCapabilities.minImageExtent.height, min(surfaceCapabilities.maxImageExtent.height, static_cast<uint32_t>(windowHeight)))};
+	data.physicalDeviceFeatures.tessellationShader = VK_TRUE;
+	data.physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;
+	data.physicalDeviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE; // // though the patch buffer in the tesselation evaluation shader marked as `readonly` the validation layer still complains ("Shader requires vertexPipelineStoresAndAtomics but is not enabled on the device"). This is a bug - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/73.
+	
+	return data;
+}
+----
+
+
+----
+MaybeAppData create_logical_device(AppData data)
+{
+	assert(data.physicalDevice);
+	
+	std::vector<uint32_t> queueIndices{data.graphicsFamilyQueueIndex};
+	std::vector<std::vector<float>> queueNumAndPriorities{{1.0f}};
+	
+	if(data.graphicsFamilyQueueIndex != data.presentFamilyQueueIndex)
+	{
+		queueIndices.push_back(data.presentFamilyQueueIndex);
+		queueNumAndPriorities.push_back({1.0f});
+	}
+	
+	helpers::MaybeDevice const mbDevice{helpers::create_device(data.physicalDevice, &queueIndices, &queueNumAndPriorities, &data.physicalDeviceFeatures, &data.deviceExtensions)};
+	if(!mbDevice)
+		return tl::make_unexpected(mbDevice.error());
+	
+	data.device = *mbDevice;
+	
+	return data;
+}
+----
+
+
+----
+MaybeAppData create_shader_modules(AppData data)
+{
+	assert(data.device);
+	
+	{
+		MaybeShaderData const mbShaderData{load_shader("VertexShader.spv")};
+		if (!mbShaderData)
+			tl::make_unexpected(mbShaderData.error());
+
+		helpers::MaybeShaderModule const mbVertexShaderModule{helpers::create_shader_module(data.device, &(*mbShaderData))};
+		if (!mbVertexShaderModule)
+			return tl::make_unexpected(mbVertexShaderModule.error());
+
+		data.vertexShaderModule = *mbVertexShaderModule;
+	}
+
+	{
+		MaybeShaderData const mbShaderData{load_shader("TesselationControlShader.spv")};
+		if (!mbShaderData)
+			tl::make_unexpected(mbShaderData.error());
+
+		helpers::MaybeShaderModule const mbTessControlShaderModule{helpers::create_shader_module(data.device, &(*mbShaderData))};
+		if (!mbTessControlShaderModule)
+			return tl::make_unexpected(mbTessControlShaderModule.error());
+
+		data.tessControlShaderModule = *mbTessControlShaderModule;
+	}
+
+	{
+		MaybeShaderData const mbShaderData{load_shader("TesselationEvaluationShader.spv")};
+		if (!mbShaderData)
+			tl::make_unexpected(mbShaderData.error());
+
+		helpers::MaybeShaderModule const mbTessEvaluationShaderModule{helpers::create_shader_module(data.device, &(*mbShaderData))};
+		if (!mbTessEvaluationShaderModule)
+			return tl::make_unexpected(mbTessEvaluationShaderModule.error());
+
+		data.tessEvaluationShaderModule = *mbTessEvaluationShaderModule;
+	}
+
+	{
+		MaybeShaderData const mbShaderData{load_shader("FragmentShader.spv")};
+		if (!mbShaderData)
+			tl::make_unexpected(mbShaderData.error());
+
+		helpers::MaybeShaderModule const mbFragmentShaderModule{helpers::create_shader_module(data.device, &(*mbShaderData))};
+		if (!mbFragmentShaderModule)
+			return tl::make_unexpected(mbFragmentShaderModule.error());
+
+		data.fragmentShaderModule = *mbFragmentShaderModule;
+	}
+
+	return data;
+}
+----
+
+
+----
+using MaybeShaderData = tl::expected<vector<char>, string>;
+
+MaybeShaderData load_shader(string const & fileName)
+{
+	ifstream file{fileName, ios::ate | ios::binary};
+
+	if (!file.is_open())
+		return tl::make_unexpected("failed to open shader file");
+
+	size_t const fileSize{static_cast<size_t>(file.tellg())};
+	vector<char> buffer(fileSize);
+
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+
+	file.close();
+
+	if (!file)
+		return tl::make_unexpected("failed to read shader file");
+
+	if (buffer.empty() || buffer.size() % 4 != 0)
+		return tl::make_unexpected("failed to read shader file");
+
+	return buffer;
 }
 ----
