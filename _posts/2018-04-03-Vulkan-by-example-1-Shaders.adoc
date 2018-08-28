@@ -433,7 +433,6 @@ MaybeAppData get_physical_device(AppData data)
 
 . A typical pattern in `Vulkan` - if we want to get the number of something we call a function with a null argument. So I call `vkEnumeratePhysicalDevices` with last argument as `nullptr` and the implementation fills `deviceCount` with an actual numner of devices.
 
-[start=2]
 . This time I call `vkEnumeratePhysicalDevices` with a pointer to the container and the implementation fills the container with `deviceCount` physical devices.
 
 . Next I try to get underlying window surface format - we need to know it since we want to render to that surface and we want our bicture to be correct.
@@ -441,7 +440,7 @@ MaybeAppData get_physical_device(AppData data)
 ----
 MaybeSurfaceFormat get_device_surface_format(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
 {
-	app::helpers::MaybePhysicalDevicesSurfaceFormats const mbFormats{app::helpers::get_physical_devices_surface_formats(physicalDevice, surface)};
+	app::helpers::MaybePhysicalDevicesSurfaceFormats const mbFormats{app::helpers::get_physical_devices_surface_formats(physicalDevice, surface)}; // #a
 	if (!mbFormats)
 		return tl::make_unexpected(mbFormats.error());
 	
@@ -457,7 +456,28 @@ MaybeSurfaceFormat get_device_surface_format(VkPhysicalDevice const physicalDevi
 }
 ----
 
+.. Here `get_physical_devices_surface_formats` uses the pattern we already saw:
 
+----
+MaybePhysicalDevicesSurfaceFormats get_physical_devices_surface_formats(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
+{
+	assert(physicalDevice);
+	assert(surface);
+	
+	uint32_t formatsCount{0};
+	if (vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatsCount, nullptr) != VK_SUCCESS)
+		return make_unexpected("failed to get physical device surface formats");
+	
+	vector<VkSurfaceFormatKHR> formats(formatsCount);
+	if (formatsCount == 0 || vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatsCount, formats.data()) != VK_SUCCESS)
+		return make_unexpected("failed to get physical device surface formats");
+	
+	return formats;
+}
+----
+
+[start=4]
+. Next
 ----
 using MaybeSurfaceFormat = tl::expected<VkSurfaceFormatKHR, string>;
 using MaybePresentMode = tl::expected<VkPresentModeKHR, string>;
