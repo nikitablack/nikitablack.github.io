@@ -313,7 +313,7 @@ MaybeAppData create_instance(AppData data)
 }
 ----
 
-where `helpers::create_instance` defined in `VkObjectHelpers` file:
+where `helpers::create_instance` declared/defined in `VkObjectHelpers.h/cpp` files:
 
 ----
 // VkObjectHelpers.h
@@ -332,21 +332,21 @@ MaybeInstance create_instance(vector<char const *> const * const extensions, std
 }
 ----
 
-All objects in `Vulkan` are created by providing information through corrsponding structures. For an instance this structure is `VkInstanceCreateInfo`. I isolated all structure creations in `VkStructHelpers` files.
+All objects in `Vulkan` are created by providing information through corrsponding structures. For an instance this structure is `VkInstanceCreateInfo`. I isolated all structure creations in `VkStructHelpers.h/cpp` files.
 
-NOTE: It's possible to use https://github.com/KhronosGroup/Vulkan-Hpp[Vulkan-Hpp] `c++` wrapper by `Khronos`, but I decided to go low-level in this lessons.
+NOTE: It's possible to use https://github.com/KhronosGroup/Vulkan-Hpp[Vulkan-Hpp] `c++` wrapper by `Khronos`, but I decided to go low-level in this lessons by multiple reasons - first I want to understand every bit of code and for this I want to type everything by myself, and the second reason is a `vulkan.hpp`'s size - it's almost 2MB and more than 40000 lines of code! Man, I don't want to retire waiting the compilation is done.
 
 ----
 VkInstanceCreateInfo get_instance_create_info(vector<char const *> const * const extensions, vector<char const *> const * const layers, VkApplicationInfo const * const applicationInfo)
 {
 	VkInstanceCreateInfo info{};
-	info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	info.pNext = nullptr;
-	info.flags = 0;
-	info.pApplicationInfo = applicationInfo;
-	info.enabledLayerCount = (layers) ? static_cast<uint32_t>(layers->size()) : 0;
+	info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO; // #1
+	info.pNext = nullptr; // #2
+	info.flags = 0; // #3
+	info.pApplicationInfo = applicationInfo; // #3
+	info.enabledLayerCount = (layers) ? static_cast<uint32_t>(layers->size()) : 0; // #4
 	info.ppEnabledLayerNames = (layers) ? layers->data() : nullptr;
-	info.enabledExtensionCount = (extensions) ? static_cast<uint32_t>(extensions->size()) : 0;
+	info.enabledExtensionCount = (extensions) ? static_cast<uint32_t>(extensions->size()) : 0; // #5
 	info.ppEnabledExtensionNames = (extensions) ? extensions->data() : nullptr;
 	
 	return info;
@@ -357,13 +357,13 @@ VkInstanceCreateInfo get_instance_create_info(vector<char const *> const * const
 
 . Some information objects can be extended by providing another structure in `pNext` member. For example, information for device memory creation can be extended with additional data that marks memory as shared. This application will not use that feature so I will not mention it anymore.
 
-. This structure doesn't use any flags. In future I will only describe `flags` field only if it have value.
+. This structure doesn't use any flags. In future I will only describe `flags` field only if it's not empty.
 
-. This structure can provide information about application to the driver with `VkApplicationInfo` struct. Since it's only informatical I left it null.
+. This structure can provide information about application to the driver with `VkApplicationInfo` struct. Since it's only informatical I pass a `nullptr`.
 
 . Layers are used for debugging. In this lesson it's too early for debugging and `layers` vector is empty. Notice how arrays are passed to `Vulkan` - there's no `std::vector` or other similar data structures - only raw pointers. And every array accompanied with it's size.
 
-. I provide extensions got from `GLFW` window.
+. I provide extensions I got from `GLFW` window.
 
 ===== Creating a surface
 
