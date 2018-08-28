@@ -402,7 +402,7 @@ MaybeAppData get_physical_device(AppData data)
 	
 	for(VkPhysicalDevice const d : physicalDevices)
 	{
-		MaybeSurfaceFormat const mbSurfaceFormat{get_device_surface_format(d, data.surface)};
+		MaybeSurfaceFormat const mbSurfaceFormat{get_device_surface_format(d, data.surface)}; // #3
 		if(!mbSurfaceFormat)
 			continue;
 		
@@ -433,13 +433,10 @@ MaybeAppData get_physical_device(AppData data)
 
 . A typical pattern in `Vulkan` - if we want to get the number of something we call a function with a null argument. So I call `vkEnumeratePhysicalDevices` with last argument as `nullptr` and the implementation fills `deviceCount` with an actual numner of devices.
 
+[start=2]
 . This time I call `vkEnumeratePhysicalDevices` with a pointer to the container and the implementation fills the container with `deviceCount` physical devices.
-----
-using MaybeSurfaceFormat = tl::expected<VkSurfaceFormatKHR, string>;
-using MaybePresentMode = tl::expected<VkPresentModeKHR, string>;
-using MaybeQueueFamilies = tl::expected<tuple<uint32_t, uint32_t>, string>;
-----
 
+. Next I try to get underlying window surface format - we need to know it since we want to render to that surface and we want our bicture to be correct.
 
 ----
 MaybeSurfaceFormat get_device_surface_format(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
@@ -459,6 +456,16 @@ MaybeSurfaceFormat get_device_surface_format(VkPhysicalDevice const physicalDevi
 	return formats[0];
 }
 ----
+
+
+----
+using MaybeSurfaceFormat = tl::expected<VkSurfaceFormatKHR, string>;
+using MaybePresentMode = tl::expected<VkPresentModeKHR, string>;
+using MaybeQueueFamilies = tl::expected<tuple<uint32_t, uint32_t>, string>;
+----
+
+
+
 
 
 ----
