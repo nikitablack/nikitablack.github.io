@@ -174,9 +174,9 @@ VkResult vkCreateShaderModule(
     VkShaderModule*                             pShaderModule);
 ----
 
-Last parameter (`pShaderModule`) is a return value I'm interesting in. Third parameter (`pAllocator`) used for custom allocation and *never* will be used in lessons (always `nullptr`). Second parameter (`pCreateInfo`) is an information which describes a shader and can be created right now. But the first parameter (`device`) is an unknown variable.
+Last parameter (`pShaderModule`) is a return value I'm interesting in. Third parameter (`pAllocator`) used for custom allocation and *never* will be used in these lessons (always `nullptr`). Second parameter (`pCreateInfo`) is an information which describes a shader. But the first parameter (`device`) is an unknown variable.
 
-`VkDevice` is a software representation of `GPU`. I think about it like an instance of a real physical `GPU` - it is possible to have multiple instances of it (though I will use only one). I can create one with `vkCreateDevice` function:
+`VkDevice` is a software representation of `GPU`. I think about it like an instance of a real physical `GPU` - it is possible to have multiple instances of it (though we will use only one). I can create a device with `vkCreateDevice` function:
 
 ----
 VkResult vkCreateDevice(
@@ -188,7 +188,7 @@ VkResult vkCreateDevice(
 
 `pDevice` - return value, `pAllocator` - `nullptr`, `pCreateInfo` - some information, `physicalDevice` - again unknown.
 
-Continuing the analogy `VkPhysicalDevice` is a class or a blueprint. It represents unique piece of hardware and can be used for obtaining some useful info, like capabilities of the `GPU`. I can't create an instance of it, but can ask the API to give it with `vkEnumeratePhysicalDevices` call:
+Continuing our OOP the analogy `VkPhysicalDevice` is a class itself or a blueprint. It represents unique piece of hardware and can be used for obtaining some useful info, like capabilities of the `GPU`. It exist as a single instance and we can't create it, but can ask the API to give it to us with `vkEnumeratePhysicalDevices` call - this function enumerates available physical devices in a system:
 
 ----
 VkResult vkEnumeratePhysicalDevices(
@@ -197,7 +197,7 @@ VkResult vkEnumeratePhysicalDevices(
     VkPhysicalDevice*                           pPhysicalDevices);
 ----
 
-It will never end... Here again I see an unknown variable `instance`. Moreover, this function can return a list of *all* available devices in the system but I'm interested only in one. For the application I need a GPU that supports tesselation and can output images to the operating system's present engine. Yes, it sounds weird but it looks like there are devices that can't render. In order to check device's _"presentability"_ I need some information about render surface. In `Vulkan` this information stored in `VkSurfaceKHR` object and I need to get this object. Fortunately with `GLFW` library this is an easy task:
+It will never end... Here again we see an unknown variable `instance`. Moreover, this function can return a list of *all* available devices in the system but I'm interested only in one. For the application I need a GPU that supports tesselation and can output images to the operating system's presentation engine. Yes, it sounds weird but it looks like there are devices that can't render, at least in theory. In order to check device's _"presentability"_ I need some information about render surface. In `Vulkan` this information stored in `VkSurfaceKHR` object and I need to get this object. Fortunately with `GLFW` library this is an easy task:
 
 ----
 VkResult glfwCreateWindowSurface(
@@ -208,7 +208,7 @@ VkResult glfwCreateWindowSurface(
 )
 ----
 
-Again `VkInstance` It is an entity that keeps the state of the application and is used almost in every `Vulkan` function. I can create one with `vkCreateInstance` function:
+Again `VkInstance`. It is an entity that keeps the state of the application and which we can create with `vkCreateInstance` function:
 
 ----
 VkResult vkCreateInstance(
@@ -217,14 +217,14 @@ VkResult vkCreateInstance(
     VkInstance*                                 pInstance);
 ----
 
-Previously I wrote that `GLFW` library helps with creation of a surface. But this surface thing is special. `VkSurfaceKHR` - this `KHR` ending means that this object is not a part of a _standard_ vulkan, but object which can be obtained through *extensions*. Indeed, presentation is so OS specific that it's very hard to make it as a part of a standard. Or there could be some vendor specific extensions that adds some new functionality. There are instance-level extensions and device-level extensions. For the surface I need to include instance-level extensions. Extensions are just string and I specify them like this:
+Previously I wrote that `GLFW` library helps with creation of a surface. But this surface thing is special. `VkSurfaceKHR` - this `KHR` ending means that this object is not a part of a _standard_ vulkan, but object which can be obtained through *extensions*. Indeed, presentation is so OS specific that it's very hard to make it as a part of a standard. Or there could be some vendor specific extensions that adds some new functionality. There are instance-level extensions and device-level extensions. For the surface we need to include instance-level extensions. Extensions are just strings and I specify them like this in the application:
 
 ----
 _appData.instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 _appData.deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 ----
 
-Finally I'm at the leaf node, no more unknown variables! And I already forgot why do I need all this... Ah, I wanted to create `Shader Modules`.
+Finally no more unknown variables! But I already forgot why do I need all this... Ah, I wanted to create `Shader Modules`.
 
 To summarize: here's the dependency chain:
 
@@ -232,7 +232,7 @@ To summarize: here's the dependency chain:
 VkShaderModule 🡢 VkDevice 🡢 VkPhysicalDevice 🡢 VkSurfaceKHR 🡢 VkInstance 🡢 extensions
 ----
 
-And here's how this chain managed in the code:
+And here's how this chain is managed in the code:
 
 ----
 // MainApplication.cpp
@@ -273,7 +273,7 @@ Here `MaybeAppData` is an alias to `tl::expected` (a library as a replacement fo
 using MaybeAppData = tl::expected<AppData, std::string>;
 ----
 
-Just look how beautiful the code is. If the first call fails all other calls will not be executed and `expected` object will hold an error instead of valid value. By this error I can find the fail reason. Each function in the chain is a standalone pure function in separate unit - that's how I'm trying to fight the verbosity of a `Vulkan` application (the number of lines easile gets more that 1000 even in simple triangle application). Now I'm going to visit each function trying to explain what it does.
+Just look how beautiful the code is. If the first call fails all other calls will not be executed and `expected` object will hold an error instead of valid value. By this error I can find the fail reason. Each function in the chain is a standalone pure function in separate unit - that's how I'm trying to fight the verbosity of a `Vulkan` application (the number of lines easily gets over 1000 even in a simple triangle application). Now I'm going to visit each function trying to explain what it does.
 
 ===== Getting required extensions
 
@@ -292,13 +292,13 @@ AppData get_required_window_extensions(AppData data)
 }
 ----
 
-http://www.glfw.org/docs/latest/group__vulkan.html#ga1abcbe61033958f22f63ef82008874b1[`glfwGetRequiredInstanceExtensions`] returns a list of extesion name required for surface creation. I pass this list to a `VkInstance` creation function.
+http://www.glfw.org/docs/latest/group__vulkan.html#ga1abcbe61033958f22f63ef82008874b1[`glfwGetRequiredInstanceExtensions`] returns a list of extesion names required for surface creation. I need this list to create a `VkInstance`.
 
-NOTE: I could pass a const reference to `AppData` to avoid copying, but since I need a copy anyway to need to modify the state I just let the runtime to do one.
+NOTE: I could pass a const reference to `AppData` to avoid copying, but since I need a copy anyway to return a new the state (remember - all functions should be pure) I just let the runtime to do one.
 
 ===== Creating an instance
 
-Having required instance extensions names I can create an instance.
+With instance extensions names I can create an instance.
 
 ----
 MaybeAppData create_instance(AppData data)
@@ -313,9 +313,26 @@ MaybeAppData create_instance(AppData data)
 }
 ----
 
-If call to  `vkCreateInstance` was successful I return modified `AppData` object wrapped by `expected` object. In opposite case `tl::expected` object will hold an error instead of a valid data.
+where `helpers::create_instance` defined in `VkObjectHelpers` file:
 
-All objects in `Vulkan` are created by providing information through corrsponding structures. For an instance this structure is `VkInstanceCreateInfo`. I isolated all structure creations in `VkStructHelpers.h` and `VkStructHelpers.cpp` files.
+----
+// VkObjectHelpers.h
+using MaybeInstance = tl::expected<VkInstance, std::string>;
+
+// VkObjectHelpers.cpp
+MaybeInstance create_instance(vector<char const *> const * const extensions, std::vector<char const *> const * const layers, VkApplicationInfo const * const applicationInfo)
+{
+	VkInstanceCreateInfo const createInfo{get_instance_create_info(extensions, layers, applicationInfo)};
+	
+	VkInstance instance{VK_NULL_HANDLE};
+	if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
+	return make_unexpected("failed to create instance");
+	
+	return instance;
+}
+----
+
+All objects in `Vulkan` are created by providing information through corrsponding structures. For an instance this structure is `VkInstanceCreateInfo`. I isolated all structure creations in `VkStructHelpers` files.
 
 NOTE: It's possible to use https://github.com/KhronosGroup/Vulkan-Hpp[Vulkan-Hpp] `c++` wrapper by `Khronos`, but I decided to go low-level in this lessons.
 
