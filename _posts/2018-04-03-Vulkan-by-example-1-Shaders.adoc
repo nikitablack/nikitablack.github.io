@@ -343,10 +343,10 @@ VkInstanceCreateInfo get_instance_create_info(vector<char const *> const * const
 	info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO; // #1
 	info.pNext = nullptr; // #2
 	info.flags = 0; // #3
-	info.pApplicationInfo = applicationInfo; // #3
-	info.enabledLayerCount = (layers) ? static_cast<uint32_t>(layers->size()) : 0; // #4
+	info.pApplicationInfo = applicationInfo; // #4
+	info.enabledLayerCount = (layers) ? static_cast<uint32_t>(layers->size()) : 0; // #5
 	info.ppEnabledLayerNames = (layers) ? layers->data() : nullptr;
-	info.enabledExtensionCount = (extensions) ? static_cast<uint32_t>(extensions->size()) : 0; // #5
+	info.enabledExtensionCount = (extensions) ? static_cast<uint32_t>(extensions->size()) : 0; // #6
 	info.ppEnabledExtensionNames = (extensions) ? extensions->data() : nullptr;
 	
 	return info;
@@ -380,9 +380,11 @@ MaybeAppData create_surface(AppData data)
 }
 ----
 
-Again `GLFW` library takes care of surface creation with http://www.glfw.org/docs/latest/group__vulkan.html#ga1a24536bec3f80b08ead18e28e6ae965[`glfwCreateWindowSurface`] function which returns `VkResult` indicating the result of the call. Under the hood the library calls platform specific `Vulkan` function, like `vkCreateWin32SurfaceKHR` for `Windows` which uses corresponding info structure `VkWin32SurfaceCreateInfoKHR`. But `GLFW` hides this platform dependent call which is why I use it.
+Again `GLFW` library takes care of surface creation with http://www.glfw.org/docs/latest/group__vulkan.html#ga1a24536bec3f80b08ead18e28e6ae965[`glfwCreateWindowSurface`] function which returns `VkResult` indicating the result of the call. Under the hood the library calls platform specific `Vulkan` function, like `vkCreateWin32SurfaceKHR` for `Windows` which uses corresponding info structure `VkWin32SurfaceCreateInfoKHR`. But `GLFW` hides this platform dependent call and this is why I use it.
 
 ===== Obtaining a physical device
+
+We have the Vulkan instance and the window surface, now we can enumerate all available devices (GPUs) and select one fulfilling our needs.
 
 ----
 MaybeAppData get_physical_device(AppData data)
@@ -391,11 +393,11 @@ MaybeAppData get_physical_device(AppData data)
 	assert(data.surface);
 	
 	uint32_t deviceCount{0};
-	if(vkEnumeratePhysicalDevices(data.instance, &deviceCount, nullptr) != VK_SUCCESS || deviceCount == 0)
+	if(vkEnumeratePhysicalDevices(data.instance, &deviceCount, nullptr) != VK_SUCCESS || deviceCount == 0) // #1
 		return tl::make_unexpected("failed to find GPUs with Vulkan support");
 	
 	vector<VkPhysicalDevice> physicalDevices(deviceCount);
-	if(vkEnumeratePhysicalDevices(data.instance, &deviceCount, physicalDevices.data()) != VK_SUCCESS)
+	if(vkEnumeratePhysicalDevices(data.instance, &deviceCount, physicalDevices.data()) != VK_SUCCESS) // #2
 		return tl::make_unexpected("failed to find GPUs with Vulkan support");
 	
 	for(VkPhysicalDevice const d : physicalDevices)
@@ -429,11 +431,15 @@ MaybeAppData get_physical_device(AppData data)
 }
 ----
 
+. A typical pattern in `Vulkan` - if we want to get the number of something we call a function with a null argument. So I call `vkEnumeratePhysicalDevices` with last argument as `nullptr` and the implementation fills `deviceCount` with an actual numner of devices.
+
+. This time I call `vkEnumeratePhysicalDevices` with a pointer to the container and the implementation fills the container with `deviceCount` physical devices.
 ----
 using MaybeSurfaceFormat = tl::expected<VkSurfaceFormatKHR, string>;
 using MaybePresentMode = tl::expected<VkPresentModeKHR, string>;
 using MaybeQueueFamilies = tl::expected<tuple<uint32_t, uint32_t>, string>;
 ----
+
 
 ----
 MaybeSurfaceFormat get_device_surface_format(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
@@ -474,6 +480,7 @@ MaybePresentMode get_device_surface_present_mode(VkPhysicalDevice const physical
 }
 ----
 
+
 ----
 bool check_required_device_extensions(VkPhysicalDevice const physicalDevice, vector<char const *> const & requiredExtensions)
 {
@@ -494,6 +501,7 @@ bool check_required_device_extensions(VkPhysicalDevice const physicalDevice, vec
 	return true;
 }
 ----
+
 
 ----
 bool check_device_suitability(VkPhysicalDevice const physicalDevice, vector<char const *> const & requiredExtensions)
@@ -522,6 +530,7 @@ bool check_device_suitability(VkPhysicalDevice const physicalDevice, vector<char
 	return true;
 }
 ----
+
 
 ----
 MaybeQueueFamilies get_device_graphics_and_present_queue_families(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
