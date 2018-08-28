@@ -164,7 +164,7 @@ Hurray! The application is almost done! Joking. Once I read the sentense which d
 
 ===== Finally some Vulkan
 
-So I have some shaders written as text in some files, but I can't use them directly. In `Vulkan` shaders have to be compiled to so called `SPIR-V` binary format and supplied to the API via `VkShaderModule`. I can create one with `vkCreateShaderModule` function. Here's the definition of this function:
+So I have some shaders written as text which I can't use directly. In `Vulkan` shaders have to be compiled to so called `SPIR-V` binary format and supplied to the API via `VkShaderModule`. I can create one with `vkCreateShaderModule` function. Here's the definition of this function:
 
 ----
 VkResult vkCreateShaderModule(
