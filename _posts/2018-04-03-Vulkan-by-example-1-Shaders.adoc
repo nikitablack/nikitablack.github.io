@@ -392,25 +392,23 @@ MaybeAppData get_physical_device(AppData data)
 	assert(data.instance);
 	assert(data.surface);
 	
-	uint32_t deviceCount{0};
-	if(vkEnumeratePhysicalDevices(data.instance, &deviceCount, nullptr) != VK_SUCCESS || deviceCount == 0) // #1
-		return tl::make_unexpected("failed to find GPUs with Vulkan support");
+	helpers::MaybePhysicalDevices const mbPhysicalDevices{helpers::get_physical_devices(data.instance)};
+	if(!mbPhysicalDevices)
+		return tl::make_unexpected(mbPhysicalDevices.error());
 	
-	vector<VkPhysicalDevice> physicalDevices(deviceCount);
-	if(vkEnumeratePhysicalDevices(data.instance, &deviceCount, physicalDevices.data()) != VK_SUCCESS) // #2
-		return tl::make_unexpected("failed to find GPUs with Vulkan support");
+	vector<VkPhysicalDevice> const & physicalDevices{*mbPhysicalDevices};
 	
 	for(VkPhysicalDevice const d : physicalDevices)
 	{
-		MaybeSurfaceFormat const mbSurfaceFormat{get_device_surface_format(d, data.surface)}; // #3
+		if(!check_device_suitability(d, data.deviceExtensions))
+			continue;
+		
+		MaybeSurfaceFormat const mbSurfaceFormat{get_device_surface_format(d, data.surface)};
 		if(!mbSurfaceFormat)
 			continue;
 		
 		MaybePresentMode const mbPresentMode{get_device_surface_present_mode(d, data.surface)};
 		if(!mbPresentMode)
-			continue;
-		
-		if(!check_device_suitability(d, data.deviceExtensions))
 			continue;
 		
 		MaybeQueueFamilies const mbQueueFamilies{get_device_graphics_and_present_queue_families(d, data.surface)};
