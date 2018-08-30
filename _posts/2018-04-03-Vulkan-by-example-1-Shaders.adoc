@@ -584,7 +584,19 @@ MaybePhysicalDevicesSurfaceFormats get_physical_devices_surface_formats(VkPhysic
 Nothing new or anything to talk about.
 
 [start=2]
-.. Having a list of supported formats for the selected device we need to choose the one we will use.
+.. Having a list of supported formats for the selected device we need to choose the one we will use. Here's a quote from the specification:
+
+[source]
+--
+If pSurfaceFormats includes just one entry, whose value for format is VK_FORMAT_UNDEFINED, surface has no preferred format. In this case, the application can use any valid VkFormat value.
+--
+
+So if thid condition is true I simply return `VK_FORMAT_B8G8R8A8_UNORM` as format and `VK_COLOR_SPACE_SRGB_NONLINEAR_KHR` as a color space.
+
+[start=3]
+.. If the previous condition was not true I iterate over all supported formats searching for the one I like (`{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}`).
+
+.. Finally if the desired format was not found I just return the first one from available.
 
 
 
