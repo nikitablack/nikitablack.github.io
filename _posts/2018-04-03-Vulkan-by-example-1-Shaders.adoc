@@ -540,7 +540,7 @@ MaybeExtensionProperties get_physical_device_device_extension_properties(VkPhysi
 Here we see the familiar pattern for obtaining the list of elements of unknown size in Vulkan.
 
 [start=3]
-. Next I try to get underlying window surface format - we need to know it since we want to render to that surface and we want our bicture to be correct.
+. Next I try to get an underlying window surface format - we need to know it since we want to render to that surface and we want our bicture to be correct.
 
 ----
 MaybeSurfaceFormat get_device_surface_format(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
@@ -581,7 +581,7 @@ MaybePhysicalDevicesSurfaceFormats get_physical_devices_surface_formats(VkPhysic
 }
 ----
 
-Nothing new or anything to talk about.
+Nothing new or anything to talk about. It just gives us the list of all formats gpu supports for the given surface.
 
 [start=2]
 .. Having a list of supported formats for the selected device we need to choose the one we will use. Here's a quote from the specification:
