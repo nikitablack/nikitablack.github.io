@@ -392,7 +392,7 @@ MaybeAppData get_physical_device(AppData data)
 	assert(data.instance);
 	assert(data.surface);
 	
-	helpers::MaybePhysicalDevices const mbPhysicalDevices{helpers::get_physical_devices(data.instance)};
+	helpers::MaybePhysicalDevices const mbPhysicalDevices{helpers::get_physical_devices(data.instance)}; // #1
 	if(!mbPhysicalDevices)
 		return tl::make_unexpected(mbPhysicalDevices.error());
 	
@@ -400,18 +400,18 @@ MaybeAppData get_physical_device(AppData data)
 	
 	for(VkPhysicalDevice const d : physicalDevices)
 	{
-		if(!check_device_suitability(d, data.deviceExtensions))
+		if(!check_device_suitability(d, data.deviceExtensions)) // #2
 			continue;
 		
-		MaybeSurfaceFormat const mbSurfaceFormat{get_device_surface_format(d, data.surface)};
+		MaybeSurfaceFormat const mbSurfaceFormat{get_device_surface_format(d, data.surface)}; // #3
 		if(!mbSurfaceFormat)
 			continue;
 		
-		MaybePresentMode const mbPresentMode{get_device_surface_present_mode(d, data.surface)};
+		MaybePresentMode const mbPresentMode{get_device_surface_present_mode(d, data.surface)}; // #4
 		if(!mbPresentMode)
 			continue;
 		
-		MaybeQueueFamilies const mbQueueFamilies{get_device_graphics_and_present_queue_families(d, data.surface)};
+		MaybeQueueFamilies const mbQueueFamilies{get_device_graphics_and_present_queue_families(d, data.surface)}; // #5
 		if(!mbQueueFamilies)
 			continue;
 		
@@ -420,7 +420,7 @@ MaybeAppData get_physical_device(AppData data)
 		data.surfaceFormat = *mbSurfaceFormat;
 		data.surfacePresentMode = *mbPresentMode;
 		
-		vkGetPhysicalDeviceProperties(data.physicalDevice, &data.physicalDeviceProperties);
+		vkGetPhysicalDeviceProperties(data.physicalDevice, &data.physicalDeviceProperties); // #6
 		
 		return data;
 	}
@@ -429,53 +429,84 @@ MaybeAppData get_physical_device(AppData data)
 }
 ----
 
-. A typical pattern in `Vulkan` - if we want to get the number of something we call a function with a null argument. So I call `vkEnumeratePhysicalDevices` with last argument as `nullptr` and the implementation fills `deviceCount` with an actual numner of devices.
+As can be seen the function calls other functions. Let's investigate each in order.
 
-. This time I call `vkEnumeratePhysicalDevices` with a pointer to the container and the implementation fills the container with `deviceCount` physical devices.
+. First I get all available devices in my system with the helper function:
+
+----
+MaybePhysicalDevices get_physical_devices(VkInstance const instance)
+{
+	assert(instance);
+	
+	uint32_t deviceCount{0};
+	if(vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr) != VK_SUCCESS || deviceCount == 0) // #a
+		return make_unexpected("failed to find GPUs with Vulkan support");
+	
+	vector<VkPhysicalDevice> physicalDevices(deviceCount);
+	if(vkEnumeratePhysicalDevices(instance, &deviceCount, physicalDevices.data()) != VK_SUCCESS) // #b
+		return make_unexpected("failed to find GPUs with Vulkan support");
+	
+	return physicalDevices;
+}
+----
+
+.. A typical pattern in `Vulkan` - if you want to get the number of something you call a function with a null argument. So I call `vkEnumeratePhysicalDevices` with last argument as `nullptr` and the implementation fills `deviceCount` with an actual number of devices.
+
+.. This time I call `vkEnumeratePhysicalDevices` with a pointer to the container and the implementation fills the container with `deviceCount` physical devices.
+
+[start=2]
+. Next I iterate over all devices and check if the current one fits our needs:
+
+----
+bool check_device_suitability(VkPhysicalDevice const physicalDevice, vector<char const *> const & requiredExtensions)
+{
+	VkPhysicalDeviceProperties deviceProperties{};
+	vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties); // #a
+	
+	if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) // #b
+		return false;
+	
+	VkPhysicalDeviceFeatures deviceFeatures{};
+	vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures); // #c
+	
+	if (!deviceFeatures.tessellationShader) // #d
+		return false;
+	
+	if (deviceProperties.limits.maxTessellationPatchSize < 16) // #e
+		return false;
+	
+	if (!deviceFeatures.fillModeNonSolid) // #f
+		return false;
+	
+	if (!check_required_device_extensions(physicalDevice, requiredExtensions)) // #g
+		return false;
+	
+	return true;
+}
+----
+
+.. First I get device properties with `vkGetPhysicalDeviceProperties` call. This function never fails according to specs so no checks here.
+
+.. One of my test machines have 2 GPUs and I want to use the more powerfull one so I ignore all non discrete adapters (i.e. integrated). But if your laptop have a modern Intel GPU you can remove this check.
+
+.. Next I get device features. The difference between properties and features is that the former is a general properties which just show the GPU capabilities while the latter can be enabled or disabled per request.
+
+.. Here I check that a _tesselation feature_ can be enabled for the considered device.
+
+.. Next I check the size of a patch. Remember that I'm using 16 point patches so I need to be sure the GPU knows how to deal with them.
+
 
 . Next I try to get underlying window surface format - we need to know it since we want to render to that surface and we want our bicture to be correct.
 
-----
-MaybeSurfaceFormat get_device_surface_format(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
-{
-	app::helpers::MaybePhysicalDevicesSurfaceFormats const mbFormats{app::helpers::get_physical_devices_surface_formats(physicalDevice, surface)}; // #a
-	if (!mbFormats)
-		return tl::make_unexpected(mbFormats.error());
-	
-	vector<VkSurfaceFormatKHR> const formats{*mbFormats};
 
-	if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED)
-		return VkSurfaceFormatKHR{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
-	
-	if (auto const it = find_if(begin(formats), end(formats), [](VkSurfaceFormatKHR const f) { return f.format == VK_FORMAT_B8G8R8A8_UNORM && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR; }); it != end(formats))
-		return VkSurfaceFormatKHR{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
-	
-	return formats[0];
-}
-----
 
 .. Here `get_physical_devices_surface_formats` uses the pattern we already saw:
 
-----
-MaybePhysicalDevicesSurfaceFormats get_physical_devices_surface_formats(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
-{
-	assert(physicalDevice);
-	assert(surface);
-	
-	uint32_t formatsCount{0};
-	if (vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatsCount, nullptr) != VK_SUCCESS)
-		return make_unexpected("failed to get physical device surface formats");
-	
-	vector<VkSurfaceFormatKHR> formats(formatsCount);
-	if (formatsCount == 0 || vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatsCount, formats.data()) != VK_SUCCESS)
-		return make_unexpected("failed to get physical device surface formats");
-	
-	return formats;
-}
-----
+
 
 [start=4]
 . Next
+
 ----
 using MaybeSurfaceFormat = tl::expected<VkSurfaceFormatKHR, string>;
 using MaybePresentMode = tl::expected<VkPresentModeKHR, string>;
@@ -486,135 +517,7 @@ using MaybeQueueFamilies = tl::expected<tuple<uint32_t, uint32_t>, string>;
 
 
 
-----
-MaybePresentMode get_device_surface_present_mode(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
-{
-	app::helpers::MaybePhysicalDevicesSurfacePresentModes const mbPresentModes{app::helpers::get_physical_device_surface_present_modes(physicalDevice, surface)};
-	if (!mbPresentModes)
-		return tl::make_unexpected(mbPresentModes.error());
-	
-	vector<VkPresentModeKHR> const presentModes{*mbPresentModes};
 
-	if (auto const it = find(begin(presentModes), end(presentModes), VK_PRESENT_MODE_MAILBOX_KHR); it != end(presentModes))
-		return VK_PRESENT_MODE_MAILBOX_KHR;
-	
-	if (auto const it = find(begin(presentModes), end(presentModes), VK_PRESENT_MODE_IMMEDIATE_KHR); it != end(presentModes))
-		return VK_PRESENT_MODE_IMMEDIATE_KHR;
-	
-	return VK_PRESENT_MODE_FIFO_KHR;
-}
-----
-
-
-----
-bool check_required_device_extensions(VkPhysicalDevice const physicalDevice, vector<char const *> const & requiredExtensions)
-{
-	uint32_t extensionCount{0};
-	if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr) != VK_SUCCESS)
-		return false;
-	
-	vector<VkExtensionProperties> availableExtensions(extensionCount);
-	if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data()) != VK_SUCCESS)
-		return false;
-	
-	for (char const * element : requiredExtensions)
-	{
-		if (find_if(begin(availableExtensions), end(availableExtensions), [element](VkExtensionProperties const & extensionProp) { return strcmp(element, extensionProp.extensionName) == 0; }) == end(availableExtensions))
-			return false;
-	}
-	
-	return true;
-}
-----
-
-
-----
-bool check_device_suitability(VkPhysicalDevice const physicalDevice, vector<char const *> const & requiredExtensions)
-{
-	VkPhysicalDeviceProperties deviceProperties{};
-	vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
-	
-	if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-		return false;
-	
-	VkPhysicalDeviceFeatures deviceFeatures{};
-	vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
-	
-	if (!deviceFeatures.tessellationShader)
-		return false;
-	
-	if (deviceProperties.limits.maxTessellationPatchSize < 16)
-		return false;
-	
-	if (!deviceFeatures.fillModeNonSolid)
-		return false;
-	
-	if (!check_required_device_extensions(physicalDevice, requiredExtensions))
-		return false;
-	
-	return true;
-}
-----
-
-
-----
-MaybeQueueFamilies get_device_graphics_and_present_queue_families(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
-{
-	vector<VkQueueFamilyProperties> const queueFamilies{app::helpers::get_queue_family_properties(physicalDevice)};
-	
-	for (size_t i{0}; i < queueFamilies.size(); ++i)
-	{
-		VkQueueFamilyProperties queueFamily{queueFamilies[i]};
-		
-		if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
-		{
-			VkBool32 presentSupported{VK_FALSE};
-			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, static_cast<uint32_t>(i), surface, &presentSupported);
-			
-			if (presentSupported)
-				return make_tuple(static_cast<uint32_t>(i), static_cast<uint32_t>(i));
-		}
-	}
-	
-	int graphicsQueueIndex{-1};
-	for (size_t i{0}; i < queueFamilies.size(); ++i)
-	{
-		VkQueueFamilyProperties queueFamily{queueFamilies[i]};
-		
-		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-		{
-			graphicsQueueIndex = static_cast<int>(i);
-			break;
-		}
-	}
-	
-	if (graphicsQueueIndex == -1)
-		return tl::make_unexpected("failed to find graphics queue");
-	
-	int presentQueueIndex{-1};
-	for (size_t i{0}; i < queueFamilies.size(); ++i)
-	{
-		VkQueueFamilyProperties const queueFamily{queueFamilies[i]};
-		
-		if (queueFamily.queueCount > 0)
-		{
-			VkBool32 presentSupported{VK_FALSE};
-			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, static_cast<uint32_t>(i), surface, &presentSupported);
-			
-			if (presentSupported)
-			{
-				presentQueueIndex = static_cast<int>(i);
-				break;
-			}
-		}
-	}
-	
-	if (presentQueueIndex == -1)
-		return tl::make_unexpected("failed to find present queue");
-	
-	return make_tuple(static_cast<uint32_t>(graphicsQueueIndex), static_cast<uint32_t>(presentQueueIndex));
-}
-----
 
 
 ----
