@@ -493,7 +493,7 @@ bool check_device_suitability(VkPhysicalDevice const physicalDevice, vector<char
 
 .. Here I check that a _tesselation feature_ can be enabled for the considered device.
 
-.. Next I check the size of a patch. Remember that I'm using 16 point patches so I need to be sure the GPU knows how to deal with them.
+.. Next I check the size of a patch. Remember that I'm using 16 point patches so I need to be sure the GPU knows how to deal with them. This is a GPU _property_ and it can be requested only if the corresponding _feature_ (`deviceFeatures.tessellationShader`) is supported.
 
 
 . Next I try to get underlying window surface format - we need to know it since we want to render to that surface and we want our bicture to be correct.
