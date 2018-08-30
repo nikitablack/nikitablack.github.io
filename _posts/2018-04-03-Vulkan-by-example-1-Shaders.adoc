@@ -497,7 +497,7 @@ bool check_device_suitability(VkPhysicalDevice const physicalDevice, vector<char
 
 .. Next feature to check is an ability to draw in wireframe mode.
 
-.. And the last one thing to do for now is to check if required extensions are supported by the selected device.
+.. And the last one thing to do for now is to check if required extensions are supported by the selected device. Remember, in https://TODO[previous lesson] I mentioned some extensions we need for sure - 
 
 
 . Next I try to get underlying window surface format - we need to know it since we want to render to that surface and we want our bicture to be correct.
