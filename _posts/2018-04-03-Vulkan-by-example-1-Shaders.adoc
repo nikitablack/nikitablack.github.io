@@ -217,7 +217,7 @@ VkResult vkCreateInstance(
     VkInstance*                                 pInstance);
 ----
 
-Previously I wrote that `GLFW` library helps with creation of a surface. But this surface thing is special. `VkSurfaceKHR` - this `KHR` ending means that this object is not a part of a _standard_ vulkan, but object which can be obtained through *extensions*. Indeed, presentation is so OS specific that it's very hard to make it as a part of a standard. Or there could be some vendor specific extensions that adds some new functionality. There are instance-level extensions and device-level extensions. For the surface we need to include instance-level extensions. Extensions are just strings and I specify them like this in the application:
+Previously I wrote that `GLFW` library helps with creation of a surface. But this surface thing is special. `VkSurfaceKHR` - this `KHR` ending means that this object is not a part of a _standard_ vulkan, but object which can be obtained through *extensions*. Indeed, presentation is so OS specific that it's very hard to make it as a part of a standard. Or there could be some vendor specific extensions that adds some new functionality. There are instance-level extensions and device-level extensions. Extensions are just strings and I specify them like this in the application:
 
 ----
 _appData.instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
@@ -292,7 +292,7 @@ AppData get_required_window_extensions(AppData data)
 }
 ----
 
-http://www.glfw.org/docs/latest/group__vulkan.html#ga1abcbe61033958f22f63ef82008874b1[`glfwGetRequiredInstanceExtensions`] returns a list of extesion names required for surface creation. I need this list to create a `VkInstance`.
+http://www.glfw.org/docs/latest/group__vulkan.html#ga1abcbe61033958f22f63ef82008874b1[`glfwGetRequiredInstanceExtensions`] returns a list of extesion names required for surface creation. I need this list to create a `VkInstance`, i.e. I need to be sure that my system can draw anything on the screen.
 
 NOTE: I could pass a const reference to `AppData` to avoid copying, but since I need a copy anyway to return a new the state (remember - all functions should be pure) I just let the runtime to do one.
 
@@ -497,18 +497,98 @@ bool check_device_suitability(VkPhysicalDevice const physicalDevice, vector<char
 
 .. Next feature to check is an ability to draw in wireframe mode.
 
-.. And the last one thing to do for now is to check if required extensions are supported by the selected device. Remember, in https://TODO[previous lesson] I mentioned some extensions we need for sure - 
+.. And the last one thing to do for now is to check if required extensions are supported by the selected device. Remember, earlier I mentioned extensions and we even added some for the instance creation. You can think of instance extensions as global ones, i.e. you turn them on once per application. But device extensions can be turned on, well, per device. One of the examples of such extensions is `VK_KHR_SWAPCHAIN_EXTENSION_NAME` - the extension that is needed for swap chain creation. Since we don't know yet what is it this list of required extensions is empty. But later when we need one we just add the string to the vector. The `check_required_device_extensions` defined so:
 
+----
+bool check_required_device_extensions(VkPhysicalDevice const physicalDevice, vector<char const *> const & requiredExtensions)
+{
+	app::helpers::MaybeExtensionProperties mbExtensions{app::helpers::get_physical_device_device_extension_properties(physicalDevice)};
+	if(!mbExtensions)
+		return false;
+	
+	vector<VkExtensionProperties> const & availableExtensions{*mbExtensions};
+	
+	for (char const * element : requiredExtensions)
+	{
+		if (find_if(begin(availableExtensions), end(availableExtensions), [element](VkExtensionProperties const & extensionProp) { return strcmp(element, extensionProp.extensionName) == 0; }) == end(availableExtensions))
+			return false;
+	}
+	
+	return true;
+}
+----
 
+Where the helper function lools like this:
+
+----
+MaybeExtensionProperties get_physical_device_device_extension_properties(VkPhysicalDevice const physicalDevice)
+{
+	assert(physicalDevice);
+	
+	uint32_t extensionCount{0};
+	if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr) != VK_SUCCESS)
+		return make_unexpected("failed to get physical device extension properties");
+	
+	vector<VkExtensionProperties> extensions(extensionCount);
+	if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, extensions.data()) != VK_SUCCESS)
+		return make_unexpected("failed to get physical device extension properties");
+	
+	return extensions;
+}
+----
+
+Here we see the familiar pattern for obtaining the list of elements of unknown size in Vulkan.
+
+[start=3]
 . Next I try to get underlying window surface format - we need to know it since we want to render to that surface and we want our bicture to be correct.
 
+----
+MaybeSurfaceFormat get_device_surface_format(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
+{
+	app::helpers::MaybePhysicalDevicesSurfaceFormats const mbFormats{app::helpers::get_physical_devices_surface_formats(physicalDevice, surface)}; // #a
+	if (!mbFormats)
+		return tl::make_unexpected(mbFormats.error());
+	
+	vector<VkSurfaceFormatKHR> const formats{*mbFormats};
+
+	if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED)
+		return VkSurfaceFormatKHR{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}; // #b
+	
+	if (auto const it = find_if(begin(formats), end(formats), [](VkSurfaceFormatKHR const f) { return f.format == VK_FORMAT_B8G8R8A8_UNORM && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR; }); it != end(formats))
+		return VkSurfaceFormatKHR{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}; // #c
+	
+	return formats[0]; // #d
+}
+----
+
+.. `get_physical_devices_surface_formats` lives in the helper file:
+
+----
+MaybePhysicalDevicesSurfaceFormats get_physical_devices_surface_formats(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
+{
+	assert(physicalDevice);
+	assert(surface);
+	
+	uint32_t formatsCount{0};
+	if (vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatsCount, nullptr) != VK_SUCCESS)
+		return make_unexpected("failed to get physical device surface formats");
+	
+	vector<VkSurfaceFormatKHR> formats(formatsCount);
+	if (formatsCount == 0 || vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatsCount, formats.data()) != VK_SUCCESS)
+		return make_unexpected("failed to get physical device surface formats");
+	
+	return formats;
+}
+----
+
+Nothing new or anything to talk about.
+
+[start=2]
+.. Having a list of supported formats for the selected device we need to choose the one we will use.
 
 
-.. Here `get_physical_devices_surface_formats` uses the pattern we already saw:
 
 
-
-[start=4]
 . Next
 
 ----
