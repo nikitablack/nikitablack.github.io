@@ -599,7 +599,7 @@ So if this condition is true I simply return `VK_FORMAT_B8G8R8A8_UNORM` as forma
 .. Finally if the desired format was not found I just return the first one.
 
 [start=4]
-. Next I try to get an underlying window surface pesent mode. As you now a monitor works with some fequency. For example, if the monitor have the frequency 60Hz it needs to present a picture every 1/60th of a second. The OS takes care about this presentation and all we need to do is to provide presentation engine an image to show. Also you may know that a monitors displays a picture not immidiately but line by line, it just do it very fast. Now think what can happen if,say the engine displayed a half of the picture and we provided a new one? Right - the engine continues to present but the picture it started with but the new one. So on the screen we have the combination of two images. Sometimes this is a desirable behavior and sometimes we want to avoid it. This is why we need to specify a presentation mode. And this is how I do it in code:
+. Next I try to get an underlying window surface pesent mode. As you now a monitor works with some fequency. For example, if the monitor have the frequency 60Hz it needs to present a picture every 1/60th of a second. The OS takes care about this presentation and all we need to do is to provide presentation engine an image to show. Also you may know that a monitors displays a picture not immidiately but line by line, it just do it very fast. Now think what can happen if,say the engine displayed a half of the picture and we provided a new one? Right - the engine continues to present but the picture it started with but the new one. So on the screen we have the combination of two images - so called _tearing_. Sometimes this is a desirable behavior and sometimes we want to avoid it. This is why we need to specify a presentation mode. And this is how I do it in code:
 
 ----
 MaybePresentMode get_device_surface_present_mode(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
@@ -620,6 +620,34 @@ MaybePresentMode get_device_surface_present_mode(VkPhysicalDevice const physical
 }
 ----
 
+.. `get_physical_device_surface_present_modes` is in the helper file:
+
+----
+MaybePhysicalDevicesSurfacePresentModes get_physical_device_surface_present_modes(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
+{
+	assert(physicalDevice);
+	assert(surface);
+	
+	uint32_t presentModesCount{0};
+	if (vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, nullptr) != VK_SUCCESS)
+		return make_unexpected("failed to get physical device surface present modes");
+	
+	vector<VkPresentModeKHR> presentModes(presentModesCount);
+	if (presentModesCount == 0 || vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, presentModes.data()) != VK_SUCCESS)
+		return make_unexpected("failed to get physical device surface present modes");
+	
+	return presentModes;
+}
+----
+
+Nothing spesial here.
+
+[start=2]
+.. If we don't want the tearing in our application we tell presentation engine to use it's internal queue - now the pending requests will be added to that queue and when the engine is ready to display it aquires the image from the queue begining by removing it. So we never see the tearing. `VK_PRESENT_MODE_MAILBOX_KHR` tells engine to use a single-entry queue, meaning that the pending requests will be replaced by newest ones. There's no guarantee that the GPU supports this mode.
+
+.. If the previous attempt to find a mode was not succesfull we try to find another one - `VK_PRESENT_MODE_IMMEDIATE_KHR`. This mode does not use a queue so it behaves like I described above - with a possible tearing. The mode is not guaranteed to be presented.
+
+.. `VK_PRESENT_MODE_FIFO_KHR` is the only mode required to be supported so I return it if previous attempts failed. This mode uses a queue as well but the size is not specified (I suppose it's implementation-defined). The difference with `VK_PRESENT_MODE_MAILBOX_KHR` is  that if the queue is full the application will be blocked until the engine remove available image freeing the place in the queue.
 
 
 
