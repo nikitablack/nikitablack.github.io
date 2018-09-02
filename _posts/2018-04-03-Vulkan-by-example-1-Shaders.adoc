@@ -654,6 +654,67 @@ Nothing spesial here.
 
 So why do we need multiple queue families? Well, in theory using multiple queues can speed up the application - the submission of commands hapeens in parallel. And you know the word _parralel_ is the sinonym to _good_. How this works is described by Matt Pettineo (aka MJP) in these https://mynameismjp.wordpress.com/2018/03/06/breaking-down-barriers-part-1-whats-a-barrier/[amazing article series].
 
+There's another thing. Each queue family can have *multiple* queues, hence the name _family_. So, again in theory, you can use multiple queues from the same family to submit commands faster, you just need a proper GPU. 
+
+----
+MaybeQueueFamilies get_device_graphics_and_present_queue_families(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
+{
+	vector<VkQueueFamilyProperties> const queueFamilies{app::helpers::get_queue_family_properties(physicalDevice)}; // #a
+	
+	for (size_t i{0}; i < queueFamilies.size(); ++i)
+	{
+		VkQueueFamilyProperties queueFamily{queueFamilies[i]};
+		
+		if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
+		{
+			VkBool32 presentSupported{VK_FALSE};
+			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, static_cast<uint32_t>(i), surface, &presentSupported);
+			
+			if (presentSupported)
+				return make_tuple(static_cast<uint32_t>(i), static_cast<uint32_t>(i));
+		}
+	}
+	
+	int graphicsQueueIndex{-1};
+	for (size_t i{0}; i < queueFamilies.size(); ++i)
+	{
+		VkQueueFamilyProperties queueFamily{queueFamilies[i]};
+		
+		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			graphicsQueueIndex = static_cast<int>(i);
+			break;
+		}
+	}
+	
+	if (graphicsQueueIndex == -1)
+		return tl::make_unexpected("failed to find graphics queue");
+	
+	int presentQueueIndex{-1};
+	for (size_t i{0}; i < queueFamilies.size(); ++i)
+	{
+		VkQueueFamilyProperties const queueFamily{queueFamilies[i]};
+		
+		if (queueFamily.queueCount > 0)
+		{
+			VkBool32 presentSupported{VK_FALSE};
+			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, static_cast<uint32_t>(i), surface, &presentSupported);
+			
+			if (presentSupported)
+			{
+				presentQueueIndex = static_cast<int>(i);
+				break;
+			}
+		}
+	}
+	
+	if (presentQueueIndex == -1)
+		return tl::make_unexpected("failed to find present queue");
+	
+	return make_tuple(static_cast<uint32_t>(graphicsQueueIndex), static_cast<uint32_t>(presentQueueIndex));
+}
+----
+
 
 
 . Next
