@@ -647,7 +647,7 @@ Nothing spesial here.
 
 .. If the previous attempt to find a mode was not succesfull we try to find another one - `VK_PRESENT_MODE_IMMEDIATE_KHR`. This mode does not use a queue so it behaves like I described above - with a possible tearing. The mode is not guaranteed to be presented.
 
-.. `VK_PRESENT_MODE_FIFO_KHR` is the only mode required to be supported so I return it if previous attempts failed. This mode uses a queue as well but the size is not specified (I suppose it's implementation-defined). The difference with `VK_PRESENT_MODE_MAILBOX_KHR` is  that if the queue is full the application will be blocked until the engine remove available image freeing the place in the queue.
+.. `VK_PRESENT_MODE_FIFO_KHR` is the only mode required to be supported so I return it if previous attempts failed. This mode uses a queue as well but the size is not specified (I suppose it's implementation-defined). The difference with `VK_PRESENT_MODE_MAILBOX_KHR` is  that if the queue is full the application will be blocked until the engine remove available image and free the place in the queue.
 
 
 
