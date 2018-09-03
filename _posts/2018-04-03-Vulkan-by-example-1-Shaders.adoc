@@ -688,10 +688,10 @@ MaybeQueueFamilies get_device_graphics_and_present_queue_families(VkPhysicalDevi
 	}
 	
 	if (graphicsQueueIndex == -1)
-		return tl::make_unexpected("failed to find graphics queue"); // #d
+		return tl::make_unexpected("failed to find graphics queue");
 	
 	int presentQueueIndex{-1};
-	for (size_t i{0}; i < queueFamilies.size(); ++i) // #e
+	for (size_t i{0}; i < queueFamilies.size(); ++i) // #d
 	{
 		VkQueueFamilyProperties const queueFamily{queueFamilies[i]};
 		
@@ -709,9 +709,9 @@ MaybeQueueFamilies get_device_graphics_and_present_queue_families(VkPhysicalDevi
 	}
 	
 	if (presentQueueIndex == -1)
-		return tl::make_unexpected("failed to find present queue"); // #f
+		return tl::make_unexpected("failed to find present queue");
 	
-	return make_tuple(static_cast<uint32_t>(graphicsQueueIndex), static_cast<uint32_t>(presentQueueIndex)); // #g
+	return make_tuple(static_cast<uint32_t>(graphicsQueueIndex), static_cast<uint32_t>(presentQueueIndex)); // #e
 }
 ----
 
@@ -730,7 +730,15 @@ vector<VkQueueFamilyProperties> get_queue_family_properties(VkPhysicalDevice con
 }
 ----
 
-I bet you already can recognize this pattern with closed eyes.
+I bet you already can recognize this pattern with closed eyes. Function `vkGetPhysicalDeviceQueueFamilyProperties` can't fail and I return the result directly.
+
+[start=2]
+.. Next I try to find proper family queue. In my application I will use 2 different queus. I need to render, i.e. call graphic commands, so `VK_QUEUE_GRAPHICS_BIT` is needed for sure. I check it with a line `queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT`. Also I need to present the final image so I need to be sure that the queue family can do this. Function `vkGetPhysicalDeviceSurfaceSupportKHR` takes a device, a family index and a surface and sets `presentSupported` to `true` if the provided queue supports presentation for the provided device and surface. In this block I try to find a single queue which supports both operations. If it found I return family index - the same for both queue families.
+
+.. If the previous search failed I try to find a queue which can do graphics only. If there's no such queue we are doomed and have to run to the nearest shop to buy a modrn GPU.
+
+.. Here I continue my search - try to find a queue which can do presentation only.
+
 
 
 . Next
