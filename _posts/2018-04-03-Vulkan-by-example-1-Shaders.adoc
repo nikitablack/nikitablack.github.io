@@ -661,7 +661,7 @@ MaybeQueueFamilies get_device_graphics_and_present_queue_families(VkPhysicalDevi
 {
 	vector<VkQueueFamilyProperties> const queueFamilies{app::helpers::get_queue_family_properties(physicalDevice)}; // #a
 	
-	for (size_t i{0}; i < queueFamilies.size(); ++i)
+	for (size_t i{0}; i < queueFamilies.size(); ++i) // #b
 	{
 		VkQueueFamilyProperties queueFamily{queueFamilies[i]};
 		
@@ -676,7 +676,7 @@ MaybeQueueFamilies get_device_graphics_and_present_queue_families(VkPhysicalDevi
 	}
 	
 	int graphicsQueueIndex{-1};
-	for (size_t i{0}; i < queueFamilies.size(); ++i)
+	for (size_t i{0}; i < queueFamilies.size(); ++i) // #c
 	{
 		VkQueueFamilyProperties queueFamily{queueFamilies[i]};
 		
@@ -688,10 +688,10 @@ MaybeQueueFamilies get_device_graphics_and_present_queue_families(VkPhysicalDevi
 	}
 	
 	if (graphicsQueueIndex == -1)
-		return tl::make_unexpected("failed to find graphics queue");
+		return tl::make_unexpected("failed to find graphics queue"); // #d
 	
 	int presentQueueIndex{-1};
-	for (size_t i{0}; i < queueFamilies.size(); ++i)
+	for (size_t i{0}; i < queueFamilies.size(); ++i) // #e
 	{
 		VkQueueFamilyProperties const queueFamily{queueFamilies[i]};
 		
@@ -709,12 +709,13 @@ MaybeQueueFamilies get_device_graphics_and_present_queue_families(VkPhysicalDevi
 	}
 	
 	if (presentQueueIndex == -1)
-		return tl::make_unexpected("failed to find present queue");
+		return tl::make_unexpected("failed to find present queue"); // #f
 	
-	return make_tuple(static_cast<uint32_t>(graphicsQueueIndex), static_cast<uint32_t>(presentQueueIndex));
+	return make_tuple(static_cast<uint32_t>(graphicsQueueIndex), static_cast<uint32_t>(presentQueueIndex)); // #g
 }
 ----
 
+.. First I get all available families for the given device.
 
 ----
 vector<VkQueueFamilyProperties> get_queue_family_properties(VkPhysicalDevice const physicalDevice)
@@ -728,6 +729,8 @@ vector<VkQueueFamilyProperties> get_queue_family_properties(VkPhysicalDevice con
 	return queueFamilies;
 }
 ----
+
+I bet you already can recognize this pattern with closed eyes.
 
 
 . Next
