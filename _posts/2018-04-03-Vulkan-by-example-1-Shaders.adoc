@@ -739,6 +739,8 @@ I bet you already can recognize this pattern with closed eyes. Function `vkGetPh
 
 .. Here I continue my search - try to find a queue which can do presentation only.
 
+.. If queue family indices were found I return them as a tuple.
+
 
 
 . Next
