@@ -749,19 +749,6 @@ That's was a lenghty funtion. Thankfully there are not many such a verbose actio
 ===== Preparing device features.
 
 ----
-using MaybeSurfaceFormat = tl::expected<VkSurfaceFormatKHR, string>;
-using MaybePresentMode = tl::expected<VkPresentModeKHR, string>;
-using MaybeQueueFamilies = tl::expected<tuple<uint32_t, uint32_t>, string>;
-----
-
-
-
-
-
-
-
-
-----
 AppData prepare_device_features(AppData data)
 {
 	data.physicalDeviceFeatures.tessellationShader = VK_TRUE;
