@@ -741,9 +741,12 @@ I bet you already can recognize this pattern with closed eyes. Function `vkGetPh
 
 .. If both graphics and present queue family indices were found I return them as a tuple.
 
+[start=6]
+. If the previousstep was successfull we got aphysical device that fits our needs. Now I save the information we gathered to a state object. If there was a fail during one of the requests I continue to search.
 
+That's was a lenghty funtion. Thankfully there are not many such a verbose actions so let's move on.
 
-. Next
+===== Preparing device features.
 
 ----
 using MaybeSurfaceFormat = tl::expected<VkSurfaceFormatKHR, string>;
