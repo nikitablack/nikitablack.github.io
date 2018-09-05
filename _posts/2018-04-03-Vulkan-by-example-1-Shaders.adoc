@@ -749,51 +749,6 @@ That's was a lenghty funtion. Thankfully there are not many such a verbose actio
 ===== Preparing device features.
 
 
-++++
-<details>
-<summary>Some long text summarised</summary>
-<pre>
-<code>AppData prepare_device_features(AppData data)
-{
-	data.physicalDeviceFeatures.tessellationShader = VK_TRUE; // #a
-	data.physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;  // #b
-	data.physicalDeviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE; // though the patch buffer in the tesselation evaluation shader marked as `readonly` the validation layer still complains ("Shader requires vertexPipelineStoresAndAtomics but is not enabled on the device"). This is a bug - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/73.
-	
-	return data;
-}</code>
-</pre>
-
-<ol type="a" start="3">
-  <li>Coffee</li>
-  <li>Tea</li>
-  
-  <details>
-  <summary>Some long text summarised</summary>
-<pre>
-<code>AppData prepare_device_features(AppData data)
-{
-	data.physicalDeviceFeatures.tessellationShader = VK_TRUE; // #a
-	data.physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;  // #b
-	data.physicalDeviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE; // though the patch buffer in the tesselation evaluation shader marked as `readonly` the validation layer still complains ("Shader requires vertexPipelineStoresAndAtomics but is not enabled on the device"). This is a bug - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/73.
-	
-	return data;
-}</code>
-</pre>
-
-<ol type="1" start="3">
-  <li>Coffee</li>
-  <li>Tea</li>
-</ol>
-</details>
-
-  <li>Milk</li>
-</ol>
-
-</details>
-++++
-
-'''
-
 
 ----
 AppData prepare_device_features(AppData data)
