@@ -587,9 +587,9 @@ Nothing new or anything to talk about. It just gives us the list of all formats 
 .. Having a list of supported formats for the selected device we need to choose the one we will use. Here's a quote from the specification:
 
 [source]
---
+----
 If pSurfaceFormats includes just one entry, whose value for format is VK_FORMAT_UNDEFINED, surface has no preferred format. In this case, the application can use any valid VkFormat value.
---
+----
 
 So if this condition is true I simply return `VK_FORMAT_B8G8R8A8_UNORM` as format and `VK_COLOR_SPACE_SRGB_NONLINEAR_KHR` as a color space.
 
@@ -748,19 +748,29 @@ That's was a lenghty funtion. Thankfully there are not many such a verbose actio
 
 ===== Preparing device features.
 
+Since we have a physical device at this point we can create a logical device `VkDevice` with `vkCreateDevice()`. One of the parameters in this function is `VkPhysicalDeviceFeatures`. We can request these features with `vkGetPhysicalDeviceFeatures` as we did when requested for the device suitability and just pass them as it is. But in this case we will activate all supported features even those we are not interested in. This can lead to performance loss. For example, `robustBufferAccess` is not needed for my application and this is what documantation says:
 
+[source]
+----
+Some features, such as robustBufferAccess, may incur a run-time performance cost. Application writers should carefully consider the implications of enabling all supported features.
+----
+
+So I turn on only what I need - tesselation and wireframe rendering.
 
 ----
 AppData prepare_device_features(AppData data)
 {
 	data.physicalDeviceFeatures.tessellationShader = VK_TRUE;
 	data.physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;
-	data.physicalDeviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE; // though the patch buffer in the tesselation evaluation shader marked as `readonly` the validation layer still complains ("Shader requires vertexPipelineStoresAndAtomics but is not enabled on the device"). This is a bug - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/73.
+	data.physicalDeviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE;
 	
 	return data;
 }
 ----
 
+NOTE: At the moment of writing the validation layers (this topic not covered yet) reports a false error - `Shader requires vertexPipelineStoresAndAtomics but is not enabled on the device`. Though if you look at the tesselation eveluation shader declaration you will see that I marked one of the buffers as `readonly`. This is definitely a bug and already was reported https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/73[here].
+
+===== Creating logical device.
 
 ----
 MaybeAppData create_logical_device(AppData data)
