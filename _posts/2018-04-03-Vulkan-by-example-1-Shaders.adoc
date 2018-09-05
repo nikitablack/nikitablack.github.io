@@ -768,7 +768,7 @@ AppData prepare_device_features(AppData data)
 }
 ----
 
-NOTE: At the moment of writing the validation layers (this topic not covered yet) reports a false error - `Shader requires vertexPipelineStoresAndAtomics but is not enabled on the device`. Though if you look at the tesselation eveluation shader declaration you will see that I marked one of the buffers as `readonly`. This is definitely a bug and already was reported https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/73[here].
+NOTE: At the moment of writing the validation layers (this topic not covered yet) reports a false error - `Shader requires vertexPipelineStoresAndAtomics but is not enabled on the device`. Though if you look at the tesselation eveluation shader declaration you will see that I marked one of the buffers as `readonly`. This is indeed a bug and already was reported https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/73[here].
 
 ===== Creating logical device.
 
