@@ -250,13 +250,13 @@ MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const wind
 	glfwSetWindowSizeLimits(m_appData.window, 640, 480, GLFW_DONT_CARE, GLFW_DONT_CARE);
 	glfwSetFramebufferSizeCallback(m_appData.window, app::framebuffer_size_callback);
 
-	app::MaybeAppData mbData{app::MaybeAppData{app::get_required_window_extensions(std::move(m_appData))}
-	                         .and_then(app::create_instance)
-	                         .and_then(app::create_surface)
-	                         .and_then(app::get_physical_device)
-	                         .map(app::prepare_device_features)
-	                         .and_then(app::create_logical_device)
-	                         .and_then(app::create_shader_modules)};
+	app::MaybeAppData mbData{app::MaybeAppData{app::get_required_window_extensions(std::move(m_appData))} <1>
+	                         .and_then(app::create_instance) <2>
+	                         .and_then(app::create_surface) <3>
+	                         .and_then(app::get_physical_device) <4>
+	                         .map(app::prepare_device_features) <5>
+	                         .and_then(app::create_logical_device) <6>
+	                         .and_then(app::create_shader_modules)}; <7>
 
 	if (!mbData)
 		throw std::runtime_error{mbData.error()};
@@ -267,6 +267,21 @@ MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const wind
 }
 ----
 
+[[anchor-getting-required-extensions-back]]
+<1> <<anchor-getting-required-extensions, Getting required extensions>>
+[[anchor-creating-an-instance-back]]
+<2> <<anchor-creating-an-instance, Creating an instance>>
+[[anchor-creating-a-surface-back]]
+<3> <<anchor-creating-a-surface, Creating a surface>>
+[[anchor-getting-a-physical-device-back]]
+<4> <<anchor-getting-a-physical-device, Getting a physical device>>
+[[anchor-preparing-physical-device-features-back]]
+<5> <<anchor-preparing-physical-device-features, Preparing physical device features>>
+[[anchor-creating-a-logical-device-back]]
+<6> <<anchor-creating-a-logical-device, Creating a logical device>>
+[[anchor-creating-shader-modules-back]]
+<7> <<anchor-creating-shader-modules, Creating shader modules>>
+
 Here `MaybeAppData` is an alias to `tl::expected` (a library as a replacement for non-existent yet `std::expected`, see the https://TODO[previous article]) - it can hold an an `AppData` object or be empty, hence the suffix `maybe`.
 
 ----
@@ -275,6 +290,7 @@ using MaybeAppData = tl::expected<AppData, std::string>;
 
 Just look how beautiful the code is. If the first call fails all other calls will not be executed and `expected` object will hold an error instead of valid value. By this error I can find the fail reason. Each function in the chain is a standalone pure function in separate unit - that's how I'm trying to fight the verbosity of a `Vulkan` application (the number of lines easily gets over 1000 even in a simple triangle application). Now I'm going to visit each function trying to explain what it does.
 
+[[anchor-getting-required-extensions]]
 ===== Getting required extensions
 
 This one is simple because `GLFW` library helps:
@@ -295,6 +311,8 @@ AppData get_required_window_extensions(AppData data)
 http://www.glfw.org/docs/latest/group__vulkan.html#ga1abcbe61033958f22f63ef82008874b1[`glfwGetRequiredInstanceExtensions`] returns a list of extesion names required for surface creation. I need this list to create a `VkInstance`, i.e. I need to be sure that my system can draw anything on the screen.
 
 NOTE: I could pass a const reference to `AppData` to avoid copying, but since I need a copy anyway to return a new the state (remember - all functions should be pure) I just let the runtime to do one.
+
+<<anchor-getting-required-extensions-back, Go back>>
 
 ===== Creating an instance
 
