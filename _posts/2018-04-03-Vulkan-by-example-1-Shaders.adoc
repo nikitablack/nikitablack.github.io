@@ -797,16 +797,16 @@ MaybeAppData create_logical_device(AppData data)
 {
 	assert(data.physicalDevice);
 	
-	std::vector<uint32_t> queueIndices{data.graphicsFamilyQueueIndex};
-	std::vector<std::vector<float>> queueNumAndPriorities{{1.0f}};
+	std::vector<uint32_t> queueIndices{data.graphicsFamilyQueueIndex}; // #1
+	std::vector<std::vector<float>> queueNumAndPriorities{{1.0f}}; // #2
 	
-	if(data.graphicsFamilyQueueIndex != data.presentFamilyQueueIndex)
+	if(data.graphicsFamilyQueueIndex != data.presentFamilyQueueIndex) // #3
 	{
 		queueIndices.push_back(data.presentFamilyQueueIndex);
 		queueNumAndPriorities.push_back({1.0f});
 	}
 	
-	helpers::MaybeDevice const mbDevice{helpers::create_device(data.physicalDevice, &queueIndices, &queueNumAndPriorities, &data.physicalDeviceFeatures, &data.deviceExtensions)};
+	helpers::MaybeDevice const mbDevice{helpers::create_device(data.physicalDevice, &queueIndices, &queueNumAndPriorities, &data.physicalDeviceFeatures, &data.deviceExtensions)}; // #4
 	if(!mbDevice)
 		return tl::make_unexpected(mbDevice.error());
 	
@@ -815,6 +815,78 @@ MaybeAppData create_logical_device(AppData data)
 	return data;
 }
 ----
+
+. When creating a device we need to tell the driver which queues will be used with a selected gpu.
+
+----
+MaybeDevice create_device(VkPhysicalDevice const physicalDevice, vector<uint32_t> const * const queueIndices, vector<vector<float>> const * const queuePriorities, VkPhysicalDeviceFeatures const * const features, vector<char const *> const * const extensions)
+{
+	assert(physicalDevice);
+	assert(queueIndices);
+	assert(!queueIndices->empty());
+	assert(queuePriorities);
+	assert(queueIndices->size() == queuePriorities->size());
+	
+	vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
+	queueCreateInfos.reserve(queueIndices->size());
+	
+	for(size_t i{0}; i < queueIndices->size(); ++i)
+		queueCreateInfos.push_back(get_device_queue_create_info(queueIndices->at(i), &queuePriorities->at(i)));
+	
+	VkDeviceCreateInfo const createInfo{get_device_create_info(&queueCreateInfos, features, extensions)};
+	
+	VkDevice device{VK_NULL_HANDLE};
+	if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
+		return make_unexpected("failed to create logical device");
+	
+	return device;
+}
+----
+
+
+
+----
+VkDeviceQueueCreateInfo get_device_queue_create_info(uint32_t const queueFamilyIndex, vector<float> const * const queuePriorities)
+{
+	assert(queuePriorities);
+	assert(!queuePriorities->empty());
+	
+	VkDeviceQueueCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	info.pNext = nullptr;
+	info.flags = 0;
+	info.queueFamilyIndex = queueFamilyIndex;
+	info.queueCount = static_cast<uint32_t>(queuePriorities->size());
+	info.pQueuePriorities = queuePriorities->data();
+	
+	return info;
+}
+----
+
+
+
+----
+VkDeviceCreateInfo get_device_create_info(vector<VkDeviceQueueCreateInfo> const * const queueCreateInfos, VkPhysicalDeviceFeatures const * const deviceFeatures, vector<char const *> const * const deviceExtensions)
+{
+	assert(queueCreateInfos);
+	assert(!queueCreateInfos->empty());
+	
+	VkDeviceCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	info.pNext = nullptr;
+	info.flags = 0;
+	info.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos->size());
+	info.pQueueCreateInfos = queueCreateInfos->data();
+	info.enabledLayerCount = 0;
+	info.ppEnabledLayerNames = nullptr;
+	info.enabledExtensionCount = deviceExtensions ? static_cast<uint32_t>(deviceExtensions->size()) : 0;
+	info.ppEnabledExtensionNames = deviceExtensions ? deviceExtensions->data() : nullptr;
+	info.pEnabledFeatures = deviceFeatures;
+	
+	return info;
+}
+----
+
 
 
 ----
