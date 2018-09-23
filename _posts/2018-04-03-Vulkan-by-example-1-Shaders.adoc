@@ -820,7 +820,7 @@ MaybeAppData create_logical_device(AppData data)
 
 . If multiple queues are used we can specify priorities. A queue with a higher priority theoretically can get more processing time than a queue with a lower priority. In the demo I will not use this feature so I simply leave priorities set to 1. By the way, the valid range is in 0.0 - 1.0 interval.
 
-. As I told before the application uses two queues - graphics (for rendering and copy operations) and present (for presenting). It is absolutely valid that a single queue can handle both types of operations and most likely your GPU have such a queue. But for the safety we need to deal with the situation when they are different.
+. As I told before the application uses two queues - graphics (for rendering and copy operations) and present (for presenting). It is absolutely valid that a single queue can handle both types of operations and most likely your GPU have such a queue. But for the safety we need to deal with the situation when they are different. So if they are I just provide the index and priority.
 
 ----
 MaybeDevice create_device(VkPhysicalDevice const physicalDevice, vector<uint32_t> const * const queueIndices, vector<vector<float>> const * const queuePriorities, VkPhysicalDeviceFeatures const * const features, vector<char const *> const * const extensions)
