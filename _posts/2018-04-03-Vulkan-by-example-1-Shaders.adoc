@@ -790,6 +790,8 @@ NOTE: At the moment of writing the validation layers (this topic not covered yet
 
 ===== Creating logical device.
 
+Now it's time for the logical device. Remember, the logical device is a software representation of the gpu and it's needed almost for every other Vulkan function call.
+
 ----
 MaybeAppData create_logical_device(AppData data)
 {
