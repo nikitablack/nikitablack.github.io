@@ -9,7 +9,7 @@ I’ll build every next lesson on top of the previous by adding a new stuf, but 
 I'm not an expert guru ninja, I'm just learning. And definitely, there will be mistakes in my lessons. I'm kindly asking you to point to them so I can fix them soon. You can use comments on twitter, where I'm planning to leave links to the articles, or https://khronosdevs.slack.com/[cpp slack Vulkan channel] which I check quite often.
 
 ===== What will be in tutorials
-A teapot of course. We'll build an application which will show a rotating model. The application will accept an input from the user to increase/decrease tesselation level (i.e. how fine the model is) and switch between wireframe/solid rendering. In addition to usual vertex and index buffers we'll use uniform buffers for matrices (model, view, projection), storage buffer for patches transforms and colors and push constants for tesselation level. This setup is not optimal, but it covers a lot of vulkan concepts.
+A teapot of course. We'll build an application which will show a rotating model. The application will accept an input from the user to increase/decrease tesselation level (i.e. how fine the model is) and switch between wireframe/solid rendering. In addition to usual vertex and index buffers we'll use uniform buffers for matrices (model, view, projection), storage buffer for patches transforms and colors and push constants for tesselation level. This setup is not optimal, but it covers lots of `Vvulkan` concepts.
 
 ===== What will not be in tutorials
 In addition to general graphics consepts I assume you know what tesselation is, why there are two related stages in the pipeline (tesselation control and tesselation evaluation), so I'll not explain it in detail. Same goes for curves surfaces - if you need to refresh your memory I recommend http://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article]. I'll not explain math behaind projection and other transformation matrices. Also I assume you already have `Vulkan` SDK installed, have all required environment variables set and know how to use CMake.
@@ -43,31 +43,29 @@ lesson/
 │           └──CMakeLists.txt
 └──CMakeLists.txt
 ----
-This is a typical project structure for each lesson. `resources/` folder holds shader `glsl` files. All application related files go to `app/` folder, helper wrappers around `Vulkan` functions and structs go to `helpers` folder.
-
-I use some libraries as well:
+This is a typical project structure for each lesson. `resources/` folder holds shader files. I chose `glsl` as a shading language, though `Vulkan` does not require it. All created vulkan objects are stored in a big struct called `AppData`. The geometry data is stored in `TeapotData` structure. Also, there're some global variables - I'm not a big fan of it, but some libraries force to use them. And as you guessed I use some libraries as well:
 
 - For window creation and management I use http://www.glfw.org/[`glfw`] library - it's simple and crossplatform. It have `Vulkan` support and simplifies some window related `Vulkan` parts.
 - For math I use http://eigen.tuxfamily.org/index.php[`eigen`] library instead of commonly used `glm` because I'm more familiar with it.
-- As you may already know almost each `Vulkan` function can fail and return some error code. When my procedure calls such a function it needs to report the result to the application - in case of success it should return an object and in case of a failure it should tell what happened. http://en.cppreference.com/w/cpp/utility/optional[`std::optional`] could be a good candidate for the return object - it can be empty or hold object, but it doesn't say why it is empty. http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0323r4.html[`std::expected`] is what I need but it's not a part of the standard. Fortunatelly some smart people wrote an implementation for the current standard. I'm using `tl::expected` implementation from https://blog.tartanllama.xyz/[Simon Brand] (aka TartanLlama), you can read more about it https://blog.tartanllama.xyz/optional-expected/[here]. With it the code will look something like this:
+- As you may already know almost each `Vulkan` function can fail and return some error code. When my procedure calls such a function it needs to report the result to the application - in case of success it should return an object and in case of a failure it should tell what happened. http://en.cppreference.com/w/cpp/utility/optional[`std::optional`] could be a good candidate for the return object - it can be empty or hold object, but it doesn't say why it is empty. http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0323r4.html[`std::expected`] is what I need but it's not a part of the standard yet. Fortunatelly some smart people wrote an implementation for the current standard. I'm using `tl::expected` implementation from https://blog.tartanllama.xyz/[Simon Brand] (aka TartanLlama), you can read more about it https://blog.tartanllama.xyz/optional-expected/[here]. With it the code will look something like this:
 ----
-using MaybeAppData = tl::expected<AppData, std::string>;
-MaybeAppData maybeAppData{MaybeAppData{get_required_window_extensions(_appData)}
-	                          	.and_then(create_instance)
-	                          	.and_then(create_surface)
-	                          	.and_then(get_physical_device)
-	                          	.and_then(create_logical_device)};
+using MaybeAppDataPtr = tl::expected<AppDataPtr, AppDataError>;
+auto mbAppData{get_required_window_extensions(std::move(_appData))
+	           .and_then(create_instance)
+	           .and_then(create_surface)
+	           .and_then(get_physical_device)
+	           .and_then(create_logical_device)};
 ----
-Here `AppData` is a state holder for the application and it gets filled with a data on each new procedure call (or not - if an error occured in one of the calls).
+Here `_appData` have a type `std::unique_ptr<AppData>` and is a state holder for the application. It gets filled with a data on each new procedure call (or not - if an error occured).
 
-If you read https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html[one of my previous posts] you know that I’m a big fan of functional style and I’ll use this approach through tutorials. So prepare yourself to lots of free function and separate translation units!
+If you read https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html[one of my previous posts] you know that I’m a big fan of functional style and I’ll use this approach through tutorials. So prepare yourself for tons of free functions and lack of classes!
 
 ===== The goal
-I want to logically follow toward the goal step by step. But what's my goal? Of course, render a tesselated teapot! I chose it because it covers a lot of pipeline stages so I have to touch a lot of different parts of the API, which is good. I did it before with https://nikitablack.github.io/2016/07/23/Direct-X-12-by-example.html[DirectX 12], so I already know the side to come from to that beast. This will be my goal:
+This is our goal:
 
 video::8RCWeKLlVew[youtube, width=640, height=360]
 
-Amazing, isn't it? Sorry for the blurriness - youtube mercilessly messed up with quality and I don't know how to achieve true HD picture.
+Amazing, isn't it? Sorry for the blurriness - youtube mercilessly messed up with quality and I don't know how to fix it. As I told I chose this because the application covers a lot of pipeline stages so I have to touch a lot of different parts of the API, which is good. I did it before with https://nikitablack.github.io/2016/07/23/Direct-X-12-by-example.html[DirectX 12], so I already have some ideas how to start.
 
 Ok, now I know that I want a rotating teapot but before start I need a data to render.
 
