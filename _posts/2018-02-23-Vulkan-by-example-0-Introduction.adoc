@@ -15,7 +15,7 @@ A teapot of course. We'll build an application which will show a rotating model.
 In addition to general graphics consepts I assume you know what tesselation is, why there are two related stages in the pipeline (tesselation control and tesselation evaluation), so I'll not explain it in detail. Same goes for curves surfaces - if you need to refresh your memory I recommend http://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article]. I'll not explain math behaind projection and other transformation matrices. Also I assume you already have `Vulkan` SDK installed, have all required environment variables set and know how to use CMake.
 
 ===== Code organization
-I use `CMake` for code building. I test my code on `Windows 10` and `Linux Mint`. On `Linux` I use `CLion` (it have nice `CMake` integration) with `gcc 7`, on `Windows` - `Visual Studio Community 2017` which supports `CMake` as well. Also `c++17` is my choice.
+As I already mentioned we'll use `CMake` as a building tool. I test my code on `Windows 10` and `Linux Mint`. On `Linux` I use `CLion` (it have nice `CMake` integration) with `gcc 7`, on `Windows` - `Visual Studio Community 2017` which supports `CMake` as well. Also `c++17` is my choice.
 
 ----
 lesson/
@@ -23,13 +23,15 @@ lesson/
 │   ├──teapot/
 │   │   ├──resources/
 │   │   ├──src/
-│   │   │   ├──app/
+│   │   │   ├──vulkan/
 │   │   │   │  ├──helpers/
 │   │   │   │  │   └──...
 │   │   │   │  └──...
-│   │   │   ├──Main.cpp
-│   │   │   ├──MainApplication.cpp
-│   │   │   ├──MainApplication.h
+│   │   │   ├──window/
+│   │   │   │  └──...
+│   │   │   ├──AppData.h
+│   │   │   ├──Global.h
+│   │   │   ├──main.cpp
 │   │   │   └──TeapotData.h
 │   │   └──CMakeLists.txt
 │   └──third_party/
