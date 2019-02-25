@@ -60,6 +60,8 @@ Here `_appData` have a type `std::unique_ptr<AppData>` and is a state holder for
 
 If you read https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html[one of my previous posts] you know that I’m a big fan of functional style and I’ll use this approach through tutorials. So prepare yourself for tons of free functions and lack of classes!
 
+I started to write the tutorials ultiple times trying to find the best style. In the end I came to conclusion that I don't want to copy the code to the article itself, but leave a link to a file on `Github` - this saves a lot of space and does not reuire to update the article in case the code changes. Of course some parts I have to copy to better explain what's going on. So, let's try, tell me if this is awfull.
+
 ===== The goal
 This is our goal:
 
@@ -82,43 +84,21 @@ Here the right triangle's face points in the positive `x` direction. Clockwise i
 
 All the data is stored in `TeapotData.h` file - 28 patches in total. For visualisation I also added a vector with colors - one color for the patch. Later in shader I'll use patch id (the runtime kindly provides it) to sample transforms and colors and apply the changes to the corresponding patch.
 
-===== The preparing
-The basic code flow is pretty straightforward: in `main` I create an instance of `MainApplication` and call it's method `MainApplication::run()` which starts an infinite loop until I close the window. Here's a `MainApplication` interface:
+===== Preparations
+The basic code flow is pretty straightforward: in `main` we prepare `Vulkan` objects and start an _infinite_ loop. Of course it's not infinite - it will be stopped as soon as window is closed. After that happens everything should be cleared, we don't want to keep the garbage after our party, isn't it?
 
-----
-class MainApplication
-{
-public:
-	MainApplication(uint32_t windowWidth, uint32_t windowHeight, std::string const & appName);
-	MainApplication(MainApplication const &) = delete;
-	MainApplication & operator=(MainApplication const &) = delete;
-	~MainApplication();
-	
-	void run();
-	
-private:
-	MainApplication();
-	
-	void render();
-
-private:
-	app::AppData m_appData{};
-};
-----
-
-`AppData`, as I already told, is a state holder - it holds all objects required by the application. In this first tutorial it's pretty empty:
+`AppData`, as I already told, is a state holder - it holds all the required objects. In this first tutorial it's pretty empty:
 
 ----
 struct AppData
 {
-	GLFWwindow* window{nullptr};
-	bool framebufferResized{false};
+	GLFWwindow * window{nullptr};
 	
 	TeapotData teapotData{};
 };
 ----
 
-All I know for now is that I need to render the `teapotData` onto some surface - a `window`. Ocassionaly the window will be resized so I need to handle that - `framebufferResized` field will help.
+All we know for now is that we need to render the `teapotData` onto some surface - a `window`. The https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/src/main.cpp[main.cpp] file starts with some includes as well with some global variables initialization. Now it's time to talk about globals and code flow in general.
 
 ----
 MainApplication::MainApplication(){}
