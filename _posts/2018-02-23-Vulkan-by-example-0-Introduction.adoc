@@ -3,8 +3,8 @@
 
 Hi everybody. Today I'd like talk about `Vulkan` - the modern API for communication with a GPU device. Though there're already some information and tutorials on the web as well as books I want to try to write about the API for several reasons:
 
-1. I don't want this series to be a general, about the broad application of the API. Instead, I want to focus on a single purpose application, more or less _advanced_, *not* a triangle.
-2. I want to understand `Vulkan` better. And, as you know, trying to explain things helps to understend them better.
+- I don't want this series to be a general, about the broad application of the API. Instead, I want to focus on a single purpose application, more or less _advanced_, *not* a triangle.
+- I want to understand `Vulkan` better. And, as you know, trying to explain things helps to understend them better.
 
 I recommend to start my tutorials after you finished https://vulkan-tutorial.com/[vulkan tutorial] and https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-preface[API without Secrets]. These resources greatly explain the API usage and after reading them you should have a solid understanding what `Vulkan` is. I'll try to continue to build a mental picture around the API, to understand why and when do we need every bit of code, every structure. I’ll build every next lesson on top of the previous by *adding* a new stuf, but without modifying it - I found it easier to follow. Though this rule is not strict and sometimes I’ll have to return back and change the old code, but I’ll try to minimize it. And yes, I’ll use pictures, a lot of them.
 
@@ -22,7 +22,7 @@ The rotating teapot! Amazing, isn't it? Sorry for the blurriness - youtube merci
 In addition to general graphics consepts I assume you know what tesselation is, why there are two related stages in the pipeline (tesselation control and tesselation evaluation), so I'll not explain it in detail. Same goes for curves surfaces - if you need to refresh your memory I recommend http://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article]. I'll not explain math behaind projection and other transformation matrices. Also I assume you already have `Vulkan` SDK installed, have all required environment variables set and know how to use CMake.
 
 ===== Code organization
-As I already mentioned we'll use `CMake` as a building tool. I test my code on `Windows 10` and `Linux Mint`. On `Linux` I use `CLion` (it have nice `CMake` integration) with `gcc 7`, on `Windows` - `Visual Studio Community 2017` which supports `CMake` as well. Also `c++17` is my choice.
+We'll use `CMake` as a building tool. I test my code on `Windows 10` and `Linux Mint`. On `Linux` I use `CLion` (it have nice `CMake` integration) with `gcc`, on `Windows` - `Visual Studio Community 2017` which supports `CMake` as well. Also `c++17` is my choice.
 
 ----
 lesson/
@@ -50,24 +50,48 @@ lesson/
 │           └──CMakeLists.txt
 └──CMakeLists.txt
 ----
-This is a typical project structure for each lesson. `resources/` folder holds shader files. I chose `glsl` as a shading language, though `Vulkan` does not require it. All created vulkan objects are stored in a big struct called `AppData`. The geometry data is stored in `TeapotData` structure. Also, there're some global variables - I'm not a big fan of it, but some libraries force to use them. And as you guessed I use some libraries as well:
+This is a typical project structure for each lesson. `resources/` folder holds shader files. I chose `glsl` as a shading language, though `Vulkan` does not require it. The geometry data is stored in `TeapotData` structure. Also, there're some global variables - I'm not a big fan of it, but some libraries force to use them. And yes, I use some libraries:
 
 - For window creation and management I use http://www.glfw.org/[`glfw`] library - it's simple and crossplatform. It have `Vulkan` support and simplifies some window related `Vulkan` parts.
 - For math I use http://eigen.tuxfamily.org/index.php[`eigen`] library instead of commonly used `glm` because I'm more familiar with it.
 - As you may already know almost each `Vulkan` function can fail and return some error code. When my procedure calls such a function it needs to report the result to the application - in case of success it should return an object and in case of a failure it should tell what happened. http://en.cppreference.com/w/cpp/utility/optional[`std::optional`] could be a good candidate for the return object - it can be empty or hold object, but it doesn't say why it is empty. http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0323r4.html[`std::expected`] is what I need but it's not a part of the standard yet. Fortunatelly some smart people wrote an implementation for the current standard. I'm using `tl::expected` implementation from https://blog.tartanllama.xyz/[Simon Brand] (aka TartanLlama), you can read more about it https://blog.tartanllama.xyz/optional-expected/[here]. With it the code will look something like this:
+
 ----
-using MaybeAppDataPtr = tl::expected<AppDataPtr, AppDataError>;
+// "mb" in mbAppData stands for "maybe"
 auto mbAppData{get_required_window_extensions(std::move(_appData))
 	           .and_then(create_instance)
 	           .and_then(create_surface)
 	           .and_then(get_physical_device)
 	           .and_then(create_logical_device)};
 ----
-Here `_appData` have a type `std::unique_ptr<AppData>` and is a state holder for the application. It gets filled with a data on each new procedure call (or not - if an error occured).
 
-If you read https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html[one of my previous posts] you know that I’m a big fan of functional style and I’ll use this approach through tutorials. So prepare yourself for tons of free functions and lack of classes!
+Where each function have a similar signature, something like this:
 
-I started to write the tutorials ultiple times trying to find the best style. In the end I came to conclusion that I don't want to copy the code to the article itself, but leave a link to a file on `Github` - this saves a lot of space and does not reuire to update the article in case the code changes. Of course some parts I have to copy to better explain what's going on. So, let's try, tell me if this is awfull.
+----
+MaybeAppDataPtr create_window(AppDataPtr appData) noexcept;
+----
+
+All created vulkan objects are stored in a big struct of the `AppData` type. Many functions fill the structure with created objects. `AppDataPtr` is an alias to `unique_ptr<AppData>`. `MaybeAppDataPtr` is an alias to `expected<AppDataPtr, AppDataError>`, where `AppDataError` is an error type. The object of this type will be returned if the function need to report about an error. `AppDataError` declared as:
+
+----
+struct AppDataError
+{
+    std::string message{};
+    AppDataPtr appData{};
+};
+----
+
+Next I'll try to explain why the error have `appData` and why it is a `unique_ptr`.
+
+If you read https://nikitablack.github.io/2017/03/23/Functional-programming-in-c-by-example.html[one of my previous posts] you know that I’m a big fan of functional style' I’ll use this approach through tutorials, so be prepared for tons of free functions and lack of classes! So,why not to pass a data as a reference or a pointer? The reason is that a free function have to be pure, have to be safe to call from different threads. If we pass the same object by reference we need to use some sort of synchronization to avoid data races, which we don't want, because it complicates a lot. It is possible to pass the data by copy, making every function _pure_, but since this struct can be lenghty I decided to use a unique pointer. So if we have an agreement that all functions accept a `unique_ptr` as a parameter, we can guarantee that the application is thread safe, since the `unique_ptr` can't be in two different places (threads) at the same time. Let's see how this works step by step:
+
+- First the data is passed to a function by moving it, since unique pointer can't be copied. At this point the calling procedure does not own the data any more.
+- In the function, if everything is went well, some fields of data gets updated and the entire struct returns back in an instance of `expected` type by moving it to that instance.
+- If something went wrong, the object of type `AppDataError` is created with a message, explaining the reason of the fail. Since the data at this point _can_ hold some state, it needs to be returned back, because the outer code may use that state (for clearing, for example).
+
+Though in the tutorials I'll use only one thread, I'd like to follow this code organization anyway, because I got used to it, it simple and readable, by my opinion.
+
+I started to write the tutorials multiple times trying to find the best style. In the end I came to conclusion that I don't want to copy the code to the article itself, but leave a link to a file on `Github` - this saves a lot of space and does not reuire to update the article in case the code changes. Of course some parts I have to copy to better explain what's going on. So, let's try, tell me if this is awfull.
 
 
 
