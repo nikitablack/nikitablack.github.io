@@ -91,7 +91,7 @@ If you read https://nikitablack.github.io/2017/03/23/Functional-programming-in-c
 
 Though in the tutorials I'll use only one thread, I'd like to follow this code organization anyway, because I got used to it, it simple and readable, by my opinion.
 
-I rewrote the tutorials multiple times trying to find the best style. In the end I came to conclusion that I don't want to copy the code to the article, but leave a link to a file on `Github` - this saves a lot of space and does not reuire to update the article in case the code changes. If you find this not very comfortable to read -buy a second monitor- tell me and we'll try to come up with something to solve the problem.
+I rewrote the tutorials multiple times trying to find the best style. In the end I came to conclusion that I don't want to copy the code to the article, but leave a link to a file on `Github` - this saves a lot of space and does not reuire to update the article in case the code changes. If you find this not very comfortable to read b̶u̶y̶ ̶a̶ ̶s̶e̶c̶o̶n̶d̶ ̶m̶o̶n̶i̶t̶o̶r̶ tell me and we'll try to come up with something to solve the problem.
 
 
 
