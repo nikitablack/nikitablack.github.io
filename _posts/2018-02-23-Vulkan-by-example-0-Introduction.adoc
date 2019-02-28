@@ -93,8 +93,6 @@ Though in the tutorials I'll use only one thread, I'd like to follow this code o
 
 I rewrote the tutorials multiple times trying to find the best style. In the end I came to conclusion that I don't want to copy the code to the article, but leave a link to a file on `Github` - this saves a lot of space and does not reuire to update the article in case the code changes. If you find this not very comfortable to read b̶u̶y̶ ̶a̶ ̶s̶e̶c̶o̶n̶d̶ ̶m̶o̶n̶i̶t̶o̶r̶ tell me and we'll try to come up with something to solve the problem.
 
-Ok, we know what we want to see, now we need a data to show it.
-
 ===== The data
 One of the first https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot[links] in Google offers us a nice teapot dataset. Though it looks good it requires some processing - if we use it as it is we'll not get a complete model:
 
@@ -108,16 +106,16 @@ Here the right triangle's face points in the positive `x` direction. Clockwise i
 
 All the data is stored in `TeapotData.h` file - 28 patches in total. For visualisation I also added a vector with colors - one color for the patch. Later in shader I'll use patch id (the runtime kindly provides it) to sample transforms and colors and apply the changes to the corresponding patch.
 
-===== Preparations
-The basic code flow is pretty straightforward: in `main` we prepare `Vulkan` objects and start an _infinite_ loop. Of course it's not _that_ infinite - it will be stopped as soon as window is closed. After that happens everything should be cleared, we don't want to keep the garbage after our party, isn't it?
+===== The beginning
+https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/src/AppData.h[`AppData`], as I already told, is a state holder. In this first tutorial it's pretty empty.
 
-https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/src/AppData.h[`AppData`], as I already told, is a state holder - it holds all the required objects. In this first tutorial it's pretty empty.
+The https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/src/main.cpp[main.cpp] file starts with some includes as well with some global variables initialization. Globals are bad, you say. Indeed, I'm not a fan as well. But here's the deal: `glfw` library, which I use for window manipulation, uses callbacks for communication. For example, `glfwSetKeyCallback` calls user provided function on a keyboard press. The callback defined in https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/src/window/on_key_press.cpp[on_key_press.cpp] file. As you see, there's no way to pass `AppDataPtr` to that function. It is still possible to pass data around with `glfwSetWindowUserPointer` and `glfwGetWindowUserPointer`, but that breaks the agreement of a _single-unique-pointer_. So I decided to go with global variables. For now, there are https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/src/Global.h[three] They are used in callbacks, provided in https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/src/window/create_window.cpp[window creation function]. The function https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/src/window/on_key_press.cpp[on_key_press] you already know - on `+` press the tesselation level increaes, on `-` - decreases, `space` press changes the rendering mode.
 
-All we know for now is that we need to render the `teapotData` onto some surface - a `window`. The https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/src/main.cpp[main.cpp] file starts with some includes as well with some global variables initialization. Now it's time to talk about globals and code flow in general.
+NOTE: The maximum tesselation level for your GPU can be found in an instance of `VkPhysicalDeviceLimits`, it's too early to know about it right now. But what is important to know, the specification guarantees certain values limits. `maxTessellationGenerationLevel`, for example, is guaranteed to be in the range 0 to 64.
 
-First I initialize `glfw`, next check if `Vulkan` is supported, next tell `glfw` to http://www.glfw.org/docs/latest/context_guide.html#context_object[not use a context] and create resizable windows and finally create a window.
+After the window creation the _infinite_ loop is started. Of course it's not _that_ infinite - it will be stopped as soon as window is closed. After that happens everything should be cleared - we don't want to leave the garbage after the party, right?
 
-Next step is to assosiate a data (instance of the `AppData`) with the window - later in different `glfw` callbacks I'll be able to retrieve this data. Then I set a callback with http://www.glfw.org/docs/latest/group__input.html#ga7e496507126f35ea72f01b2e6ef6d155[`glfwSetKeyCallback`] which listens for `+`, `-` or `space` keys to change tesselation level or rendering mode.
+
 
 ----
 void on_key_press(GLFWwindow * const window, int const key, int const /*scancode*/, int const action, int const /*mods*/)
