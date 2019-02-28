@@ -117,7 +117,7 @@ NOTE: The maximum tesselation level for your GPU can be found in an instance of 
 
 https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/src/window/framebuffer_size_callback.cpp[framebuffer_size_callback] will be called on window resize.
 
-After the window creation the _infinite_ loop is started. Of course it's not _that_ infinite - it will be stopped as soon as window is closed. After that happens everything should be cleared - we don't want to leave the garbage after the party, right?
+Back to https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/src/main.cpp[main] - after the window creation (if the creation didn't fail) the _infinite_ loop is started. Of course it's not _that_ infinite - it will be stopped as soon as window is closed. After that happens everything should be cleared - we don't want to leave the garbage after the party, right?
 
 ===== Conclusion
 Wow, the whole post and no any single `Vulkan` related line of code! Sorry for that, it was a necessary long indroduction but I promise the next lesson will be much more interesting.
