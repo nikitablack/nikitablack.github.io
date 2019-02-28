@@ -113,76 +113,9 @@ The https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/
 
 NOTE: The maximum tesselation level for your GPU can be found in an instance of `VkPhysicalDeviceLimits`, it's too early to know about it right now. But what is important to know, the specification guarantees certain values limits. `maxTessellationGenerationLevel`, for example, is guaranteed to be in the range 0 to 64.
 
+https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_0/src/teapot/src/window/framebuffer_size_callback.cpp[framebuffer_size_callback] will be called on window resize.
+
 After the window creation the _infinite_ loop is started. Of course it's not _that_ infinite - it will be stopped as soon as window is closed. After that happens everything should be cleared - we don't want to leave the garbage after the party, right?
-
-
-
-----
-void on_key_press(GLFWwindow * const window, int const key, int const /*scancode*/, int const action, int const /*mods*/)
-{
-	AppData * const appData{static_cast<AppData *>(glfwGetWindowUserPointer(window))};
-	
-	assert(appData);
-
-	if (key == GLFW_KEY_KP_ADD && (action == GLFW_PRESS || action == GLFW_REPEAT))
-	{
-		// TODO increase tesselation level
-	}
-	else if (key == GLFW_KEY_KP_SUBTRACT && (action == GLFW_PRESS || action == GLFW_REPEAT))
-	{
-		// TODO decrease tesselation level
-	}
-	else if (key == GLFW_KEY_SPACE && (action == GLFW_RELEASE))
-	{
-		// TODO switch wireframe/solid rendering
-	}
-}
-----
-
-Here I obtain the data I passed earlier to `glfwSetWindowUserPointer()`.
-
-Next I set some window size limit and finaly set a callback for the window resize.
-
-----
-void framebuffer_size_callback(GLFWwindow * const window, int const /*width*/, int const /*height*/)
-{
-	AppData * const appData{static_cast<AppData *>(glfwGetWindowUserPointer(window))};
-
-	assert(appData);
-	
-	appData->framebufferResized = true;
-}
-----
-
-All it's do is set the mentioned `framebufferResized` field to `true` but actual handling will be done in a main loop. This is done because there's no way to return an error from `glfw` callback, so if during the resize process there will be an exception we'll not know why.
-
-NOTE: Almost all free functions in the application are _pure_, i.e. they don't change any state and don't have side effects. They always accept arguments by copy or const reference. I store each function in a separate unit (cpp file) and have all declarations in one place (`App.h` file).
-
-After initializaition `MainApplication::run()` is called which loops until the window is closed:
-
-----
-void MainApplication::run()
-{
-	while (!glfwWindowShouldClose(_appData.window))
-	{
-		glfwPollEvents();
-		render();
-	}
-}
-----
-
-Here in the loop I tell `glfw` to invoke registered callbacks with `glfwPollEvents` and do rendering (empty in this lesson).
-
-In the `MainApplication` destructor I make cleaning:
-
-----
-MainApplication::~MainApplication()
-{
-	glfwTerminate();
-}
-----
-
-For now only the window needs to be destroyed.
 
 ===== Conclusion
 Wow, the whole post and no any single `Vulkan` related line of code! Sorry for that, it was a necessary long indroduction but I promise the next lesson will be much more interesting.
