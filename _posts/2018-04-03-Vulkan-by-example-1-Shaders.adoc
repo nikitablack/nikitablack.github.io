@@ -37,7 +37,7 @@ I think it's obvious that a number of executions of this shader is equal to a nu
 
 https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/resources/FragmentShader.frag]Fragment shader] is another one _"lazy"_ shader - the data is coming from the previous stage at *input location 0* and going to the *output location 0* (which is a swapchain image, the window surface).
 
-Hurray! The application is almost done! Joking. Once I read the sentense which describes `Vulkan` in a nutshell: _"Show me your triangle in three months."_ So be patient. I'm planning to write `7` or `8` parts in total. Shaders were the easiest part, and all the remaining code we need to write should serve a single purpose - to make the shaders run. And run *correctly*. By correctness I mean that there should not be undefined behavior, data races, pipeline stalls.
+Hurray! The application is almost done! Joking. Once I read the sentense which describes `Vulkan` in a nutshell: _"Show me your triangle in three months."_ So be patient. I'm planning to write `7` or `8` parts in total. Shaders were the easiest part, and all the remaining code we need to write should serve a single purpose - to make the shaders run. And run *correctly*. By correctness I mean that there should not be undefined behavior, data races, gpu stalls.
 
 ===== Finally some Vulkan
 
