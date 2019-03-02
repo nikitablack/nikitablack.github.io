@@ -11,25 +11,9 @@ The main question for now - where to start? There are so many things to do, ther
 
 ===== Vertex shader
 
-This is the first stage in the pipeline and it's pretty simple. Looking back to the teapot data I know which information needs to be passed - since I'm using patches I need to provide points describing them - `16` points for every patch.
+https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/resources/VertexShader.vert[Vertex shader] is the first stage in the pipeline and it's pretty simple. Looking back to the teapot data I know what information needs to be passed - since I'm using patches I need to provide points describing them - `16` points for every patch.
 
-----
-#version 450
-
-layout(location = 0) in vec3 inPosition;
-
-out gl_PerVertex
-{
-    vec4 gl_Position;
-};
-
-void main()
-{
-    gl_Position = vec4(inPosition, 1.0);
-}
-----
-
-A patch point arrives to the shader at location `0` and simply gets passed to the next stage. This stage will be executed for every point (vertex) provided. Since I use `28` patches `16` point each it will be called at least `28 * 16 = 448` times (it's not an important information - just for fun).
+A patch point arrives to the shader at location `0` and simply passed through to the next stage. This stage will be executed for every point (vertex) provided. Since I use `28` patches `16` point each it will be called at least `28 * 16 = 448` times (it's not an important information - just for fun).
 
 ===== Tessellation control shader
 
