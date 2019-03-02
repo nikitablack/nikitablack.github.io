@@ -104,7 +104,7 @@ To summarize: here's the dependency chain:
 VkShaderModule 🡢 VkDevice 🡢 VkPhysicalDevice 🡢 VkSurfaceKHR 🡢 VkInstance 🡢 extensions
 ----
 
-And here's how this chain is managed in the code:
+And here's how we'll do it:
 
 ----
 // MainApplication.cpp
