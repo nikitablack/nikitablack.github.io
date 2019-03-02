@@ -19,7 +19,7 @@ A patch point arrives to the shader at *location 0* and simply passed through to
 
 The next shader - https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/resources/TesselationControlShader.tesc[tesselation control shader] -  is simple as well since it doesn't do a lot of work. But still it have a couple of interesting things. The first one is how the tesselation level (how many new triangles a tesselator should create) is updated. I decided to use the so called `Push Constant` - a feature that allows to pass a constant directly in a command buffer, for now read it as fast and simple way and later I'll explain what this means when we'll reach the actual code. As you can see the tesselation level is a float variable and it is somehow updated from the CPU.
 
-Next we tell the GPU that this stage produces 16 control points for the patch, i.e. doesn't changes the amount (yes, this stage can generate new points as well as remove some).
+Next we tell the GPU that this stage produces 16 control points for the patch, i.e. we doesn't change the amount (yes, this stage can generate new points as well as remove some). And the number of executions of this shader is equal to the number specified out poinst times number of patches, i.e. `28 * 16 = 448` in our case.
 
 ===== Tessellation Evaluation shader
 
@@ -29,7 +29,7 @@ First we specify tesselation rules: domain (`quad`), spacing (`fractional_odd_sp
 
 Next is a scary math - calculation of a 3d point using a `gl_TessCoord` that came from the tesselator. Actually the math is not that complicated, I found https://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article] very good at explaining the theory behind curves. And the code itself (functions `bernsteinBasis()` and `evaluateBezier()`) I shamelesly took from http://www.gdcvault.com/play/1012740/direct3d[this gdc presentation].
 
-The outputs of this shader are newly generated vertex and color. Since the entire patch colored with a solid color every vertex from the same patch will have the same attribute.
+The outputs of this shader are newly generated vertex position and color. Since the entire patch colored with a solid color every vertex from the same patch will have the same attribute.
 
 I think it's obvious that a number of executions of this shader is equal to a number vertices produced by the tesselator.
 
