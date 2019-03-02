@@ -74,7 +74,7 @@ VkResult vkEnumeratePhysicalDevices(
     VkPhysicalDevice*                           pPhysicalDevices);
 ----
 
-It will never end... Here again we see an unknown variable `instance`. Moreover, this function can return a list of *all* available devices in the system but I'm interested only in one. For the application I need a GPU that supports tesselation and can output images to the operating system's presentation engine. Yes, it sounds weird but it looks like there are devices that can't render, at least in theory. In order to check device's _"presentability"_ I need some information about render surface. In `Vulkan` this information stored in `VkSurfaceKHR` object and I need to get this object. Fortunately with `GLFW` library this is an easy task:
+This will never end... Here again we see an unknown variable `instance`. Moreover, this function can return a list of *all* available devices in the system but we're interested only in one. For the application we need a GPU that supports tesselation and can output images to the operating system's presentation engine. Yes, it sounds weird but it looks like there are devices that can't render, at least in theory. In order to check device's _"presentability"_ I need some information about render surface. In `Vulkan` this information is stored in `VkSurfaceKHR` object. Fortunately with `GLFW` library getting of this object is an easy task:
 
 ----
 VkResult glfwCreateWindowSurface(
@@ -94,12 +94,7 @@ VkResult vkCreateInstance(
     VkInstance*                                 pInstance);
 ----
 
-Previously I wrote that `GLFW` library helps with creation of a surface. But this surface thing is special. `VkSurfaceKHR` - this `KHR` ending means that this object is not a part of a _standard_ vulkan, but object which can be obtained through *extensions*. Indeed, presentation is so OS specific that it's very hard to make it as a part of a standard. Or there could be some vendor specific extensions that adds some new functionality. There are instance-level extensions and device-level extensions. Extensions are just strings and I specify them like this in the application:
-
-----
-_appData.instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-_appData.deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-----
+Previously I wrote that `GLFW` library helps with creation of a surface. But this surface thing is special. `VkSurfaceKHR` - this `KHR` ending means that this object is not a part of a _standard_ vulkan, but object which can be obtained through *extensions*. Indeed, presentation is so OS specific that it's very hard to make it as a part of a standard. Or there could be some vendor specific extensions that adds some new functionality. There are instance-level extensions and device-level extensions. Extensions are just strings and for the surface we need to find out the extension name.
 
 Finally no more unknown variables! But I already forgot why do I need all this... Ah, I wanted to create `Shader Modules`.
 
