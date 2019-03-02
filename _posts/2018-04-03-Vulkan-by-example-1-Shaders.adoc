@@ -41,7 +41,7 @@ Hurray! The application is almost done! Joking. Once I read the sentense which d
 
 ===== Finally some Vulkan
 
-So I have some shaders written as text which I can't use directly. In `Vulkan` shaders have to be compiled to so called `SPIR-V` binary format and supplied to the API via `VkShaderModule`. I can create one with `vkCreateShaderModule` function. Here's the definition of this function:
+So we have some shaders written as text which I can't use directly. In `Vulkan` shaders have to be compiled to so called `SPIR-V` binary format and supplied to the API via `VkShaderModule`. I can create one with `vkCreateShaderModule` function. Here's the declaration of this function:
 
 ----
 VkResult vkCreateShaderModule(
@@ -51,9 +51,9 @@ VkResult vkCreateShaderModule(
     VkShaderModule*                             pShaderModule);
 ----
 
-Last parameter (`pShaderModule`) is a return value I'm interesting in. Third parameter (`pAllocator`) used for custom allocation and *never* will be used in these lessons (always `nullptr`). Second parameter (`pCreateInfo`) is an information which describes a shader. But the first parameter (`device`) is an unknown variable.
+Last parameter (`pShaderModule`) is a return value I'm interesting in - yes, in `Vulkan` functions return a result of a call and the parameters we want to get are passed as pointers to be filled. Third parameter (`pAllocator`) used for custom allocation and *never* will be used in these lessons (always `nullptr`). Second parameter (`pCreateInfo`) is an information which describes a shader and we can fill it right now. But the first parameter (`device`) is an unknown variable.
 
-`VkDevice` is a software representation of `GPU`. I think about it like an instance of a real physical `GPU` - it is possible to have multiple instances of it (though we will use only one). I can create a device with `vkCreateDevice` function:
+`VkDevice` is a software representation of `GPU`. I think about it like an instance of a real physical `GPU` - it is possible to have multiple instances of it in one application (though we will use only one). I can create a device with `vkCreateDevice` function:
 
 ----
 VkResult vkCreateDevice(
