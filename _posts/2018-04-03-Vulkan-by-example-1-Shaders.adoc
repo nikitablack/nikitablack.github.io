@@ -13,115 +13,21 @@ The main question for now - where to start? There are so many things to do, ther
 
 https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/resources/VertexShader.vert[Vertex shader] is the first stage in the pipeline and it's pretty simple. Looking back to the teapot data I know what information needs to be passed - since I'm using patches I need to provide points describing them - `16` points for every patch.
 
-A patch point arrives to the shader at location `0` and simply passed through to the next stage. This stage will be executed for every point (vertex) provided. Since I use `28` patches `16` point each it will be called at least `28 * 16 = 448` times (it's not an important information - just for fun).
+A patch point arrives to the shader at *location 0* and simply passed through to the next stage. This stage will be executed for every point (vertex) provided. Since I use `28` patches `16` point each it will be called at least `28 * 16 = 448` times (it's not an important information - just for fun).
 
 ===== Tessellation control shader
 
-----
-#version 450
+The next shader - https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/resources/TesselationControlShader.tesc[tesselation control shader] -  is simple as well since it doesn't do a lot of work. But still it have a couple of interesting things. The first one is how the tesselation level (how many new triangles a tesselator should create) is updated. I decided to use the so called `Push Constant` - a feature that allows to pass a constant directly in a command buffer, for now read it as fast and simple way and later I'll explain what this means when we'll reach the actual code. As you can see the tesselation level is a float variable and it is somehow updated from the CPU.
 
-layout(push_constant) uniform TessLevel
-{
-	float value;
-} tessLevel;
-
-layout(vertices = 16) out;
-
-void main()
-{
-    if (gl_InvocationID == 0)
-    {
-        gl_TessLevelInner[0] = tessLevel.value;
-        gl_TessLevelInner[1] = tessLevel.value;
-
-        gl_TessLevelOuter[0] = tessLevel.value;
-        gl_TessLevelOuter[1] = tessLevel.value;
-        gl_TessLevelOuter[2] = tessLevel.value;
-        gl_TessLevelOuter[3] = tessLevel.value;
-    }
-
-    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-}
-----
-
-This shader is simple as well as it doesn't do a lot of work, but it have a couple of interesting things. The first one is how I update a tesselation level (how many new triangles a tesselator should create). I decided to use the so called `Push Constant` - a feature that allows to pass a constant directly in command buffer. Don't be affraid of all these terms right now - I'll explain what all this means when I reach the actual code that uses them. For now it's enough to know that the tesselation level is a float variable (to make a subdivision more smooth) that somehow gets updated from a CPU. Next I tell the GPU that this stage produces 16 control points for the patch, i.e. doesn't change the amount (yes, this stage can generate new points as well as remove some).
+Next we tell the GPU that this stage produces 16 control points for the patch, i.e. doesn't changes the amount (yes, this stage can generate new points as well as remove some).
 
 ===== Tessellation Evaluation shader
 
-This shader is the actual workhorse of the whole application - all the magic happens here.
+The https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/resources/TesselationEvaluationShader.tese[tessellation evaluation shader] is the actual workhorse of the whole application - all the magic happens here.
 
-----
-#version 450
+First we specify tesselation rules: domain (`quad`), spacing (`fractional_odd_spacing`) and winding order (`cw` - clockwise). Next we define the patch information in the form of a buffer. Again, no information right now - just know that each patch should be transformed and colored (see previous lesson for more details why) and the information incoming as an array of `PatchData` at a *binding slot 0*. Also I need transformation matrices. I could provide one MVP-matrix and reduce the number of calculations but I want to show how to deal with multiple uniform buffers in `Vulkan`. That's why there are three matrices: model, view and projection. And they are *binded to slots 1, 2, and 3*.
 
-layout (quads, fractional_odd_spacing, cw) in;
-
-struct PatchData
-{
-    mat4 transform;
-    vec4 color;
-};
-
-layout(binding = 0, row_major) readonly buffer PatchDataBuffer
-{
-    PatchData data[];
-} patchData;
-
-layout(binding = 1) uniform Proj
-{
-    layout(row_major) mat4 mat;
-} proj;
-
-layout(binding = 2) uniform View
-{
-    layout(row_major) mat4 mat;
-} view;
-
-layout(binding = 3) uniform Model
-{
-    layout(row_major) mat4 mat;
-} model;
-
-layout (location = 0) out vec3 outColor;
-
-vec4 bernsteinBasis(float t)
-{
-	float invT = 1.0f - t;
-
-	return vec4(invT * invT * invT, // (1-t)^3
-	            3.0f * t * invT * invT, // 3t(1-t)^2
-	            3.0f * t * t * invT, // 3t2(1-t)
-	            t * t * t); // t3
-}
-
-vec4 evaluateBezier(vec4 basisU, vec4 basisV)
-{
-	vec4 value = vec4(0.0, 0.0, 0.0, 0.0);
-
-	value = basisV.x * (gl_in[0].gl_Position * basisU.x + gl_in[1].gl_Position * basisU.y + gl_in[2].gl_Position * basisU.z + gl_in[3].gl_Position * basisU.w);
-	value += basisV.y * (gl_in[4].gl_Position * basisU.x + gl_in[5].gl_Position * basisU.y + gl_in[6].gl_Position * basisU.z + gl_in[7].gl_Position * basisU.w);
-	value += basisV.z * (gl_in[8].gl_Position * basisU.x + gl_in[9].gl_Position * basisU.y + gl_in[10].gl_Position * basisU.z + gl_in[11].gl_Position * basisU.w);
-	value += basisV.w * (gl_in[12].gl_Position * basisU.x + gl_in[13].gl_Position * basisU.y + gl_in[14].gl_Position * basisU.z + gl_in[15].gl_Position * basisU.w);
-	value.w = 1.0;
-
-	return value;
-}
-
-void main(void)
-{
-    vec4 basisU = bernsteinBasis(gl_TessCoord.x);
-    vec4 basisV = bernsteinBasis(gl_TessCoord.y);
-
-    vec4 localPos = evaluateBezier(basisU, basisV);
-
-	gl_Position = localPos * patchData.data[gl_PrimitiveID].transform * model.mat * view.mat * proj.mat;
-
-	outColor = patchData.data[gl_PrimitiveID].color.xyz;
-}
-----
-
-First I need to specify tesselation rules: domain (`quad`), spacing (`fractional_odd_spacing`) and winding order (`cw` - clockwise). Next I define the patch information in the form of a buffer. Again, no information right now - just know that each patch should be transformed and colored (see https://TODO[introduction lesson] for more details why) and the information incoming as an array of `PatchData`. Also I need usual transformation matrices. I could provide one MVP-matrix and reduce the number of calculations but I want to show how to deal with multiple uniform buffers in `Vulkan`. That's why there are three matrices: model, view and projection.
-
-Next is a scary math - calculation of a 3d point having a `gl_TessCoord` that came from the tesselator. Actually the math is not that complicated, I found https://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article] very good at explaining the theory behind curves.And the code itself (functions `bernsteinBasis()` and `evaluateBezier()`) I shamelesly took from http://www.gdcvault.com/play/1012740/direct3d[this gdc presentation].
+Next is a scary math - calculation of a 3d point using a `gl_TessCoord` that came from the tesselator. Actually the math is not that complicated, I found https://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php[this gamasutra article] very good at explaining the theory behind curves. And the code itself (functions `bernsteinBasis()` and `evaluateBezier()`) I shamelesly took from http://www.gdcvault.com/play/1012740/direct3d[this gdc presentation].
 
 The outputs of this shader are newly generated vertex and color. Since the entire patch colored with a solid color every vertex from the same patch will have the same attribute.
 
