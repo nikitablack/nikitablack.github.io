@@ -1,13 +1,13 @@
 = Vulkan by example 1 - Shaders
 :hp-tags: c++, vulkan, glsl
 
-In the https://TODO[previous lesson] I made all preparations necessary to start exploring vulkan. Here is the diagramm of the current state of the application:
+In the https://TODO[previous lesson] we made all necessary preparations to start exploring vulkan. Here is the diagramm of the current state of the application:
 
 [picture]
 
-The diagramm is pretty empty now but it will grow as I progress through tutorials. For now it's enough to know that there's a CPU, which controls the application and sends commands to the GPU; a GPU itself, which do magic and produces nice pictures (not necessarily); a window which should show these pictures. The window put in a separate category because the presentation of the picture in it controlled by an OS and not by an application or a GPU.
+The diagramm is pretty empty now but it will grow as we progress through tutorials. For now it's enough to know that there's a CPU, which controls the application and sends commands to the GPU; a GPU itself, which do magic and produces nice pictures (not necessarily); a window which should these pictures to show. The window put in a separate category because the presentation of the picture controlled by an OS and not by an application or a GPU.
 
-Now the logic question - what's next? There are so many things to do, there are so many ways to do. I will start from the heart of every graphics application - shaders. After all this is exactly what GPU runs and we're here to programm the GPU. In my app I will use 4 shader stages - Vertex, Tesselation Control, Tesselation Eveluation, Fragment. I will step over all of these stages briefly explaining the purpose of each.
+The main question for now - where to start? There are so many things to do, there are so many ways to do it. We start from the heart of every graphics application - shaders. After all this is exactly what GPU runs and we're here to programm the GPU. In the app we will use 4 shader stages - Vertex, Tesselation Control, Tesselation Evaluation, Fragment. Let's step over all of these stages briefly explaining the purpose of each.
 
 ===== Vertex shader
 
