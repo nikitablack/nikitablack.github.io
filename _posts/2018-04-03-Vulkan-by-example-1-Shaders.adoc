@@ -104,6 +104,27 @@ To summarize: here's the dependency chain:
 VkShaderModule 🡢 VkDevice 🡢 VkPhysicalDevice 🡢 VkSurfaceKHR 🡢 VkInstance 🡢 extensions
 ----
 
+The https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/main.cpp[updated main function] now have calls to helper functions and we are going to visit each.
+
+First is https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/get_required_window_extensions.cpp[get_required_window_extensions]. Here the `glfw` helps a lot - the `glfwGetRequiredInstanceExtensions` hides from us the platform dependent code and returns the list of instance extensions, required for displaying a picture on a given platform.
+
+Now when we have a list of extensions we are ready to create an instance, what we do in https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/create_instance.cpp[create_instance] function. Here we can see the typical `Vulkan` approach to object creation - first we fill a special structure and second, provide this structure to a special function. Each structure has `sType` field and `pNext` field. The former is used to specify the type of object we want to create and obviously is different for different structures. The latter is used for some advanced things and never will be used in the tutorials. In the future I will not describe these fields for other objects. Also I will not write about fields which stay default for our case. For eexample, the field `flags` is not used so there's nothing to say about it. In this tutorial we don't need players, so the array is empty. and you are already familiar with the extensions. Next we call the `Vulkan` function which on success updates the `appData` and return either of the data or an error.
+
+Next is https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/create_surface.cpp[create_survace] function. Here again we use `glfw` to obtain a platform dependent object.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 And here's how we'll do it:
 
 ----
@@ -123,7 +144,21 @@ MainApplication::MainApplication(uint32_t const windowWidth, uint32_t const wind
 	glfwSetFramebufferSizeCallback(m_appData.window, app::framebuffer_size_callback);
 
 	app::MaybeAppData mbData{app::MaybeAppData{app::get_required_window_extensions(std::move(m_appData))} // #1
-	                         .and_then(app::create_instance) // #2
+	                         .and_then(a	                         .and_then(app::create_instance) // #2
+	                         .and_then(app::create_surface) // #3
+	                         .and_then(app::get_physical_device) // #4
+	                         .map(app::prepare_device_features) // #5
+	                         .and_then(app::create_logical_device) // #6
+	                         .and_then(app::create_shader_modules)}; // #7
+
+	if (!mbData)
+		throw std::runtime_error{mbData.error()};
+
+	m_appData = std::move(*mbData);
+
+	glfwSetWindowUserPointer(m_appData.window, &m_appData);
+}
+----pp::create_instance) // #2
 	                         .and_then(app::create_surface) // #3
 	                         .and_then(app::get_physical_device) // #4
 	                         .map(app::prepare_device_features) // #5
