@@ -110,9 +110,11 @@ First is https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/te
 
 Now when we have a list of extensions we are ready to create an instance, what we do in https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/create_instance.cpp[create_instance] function. Here we can see the typical `Vulkan` approach to object creation - first we fill a special structure and second, provide this structure to a special function. Each structure has `sType` field and `pNext` field. The former is used to specify the type of object we want to create and obviously is different for different structures. The latter is used for some advanced things and never will be used in the tutorials. In the future I will not describe these fields for other objects. Also I will not write about fields which stay default for our case. For eexample, the field `flags` is not used so there's nothing to say about it. In this tutorial we don't need players, so the array is empty. and you are already familiar with the extensions. Next we call the `Vulkan` function which on success updates the `appData` and return either of the data or an error.
 
-Next is https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/create_surface.cpp[create_survace] function. Here again we use `glfw` to obtain a platform dependent object.
+Next is https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/create_surface.cpp[create_surface] function. Here again we use `glfw` to obtain a platform dependent object.
 
-
+Now we can try to find a gpu device in 
+https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/get_physical_device.cpp[get_physical_device] function. it's a bit lengthy function because we need to do a couple of things. First we need to get all available devices in the system. For that we use another typical `Vulkan` pattern for obtaining a list of something - we call a function with a ` nullptr` instead of a pointer to a list - this 
+returns the total number of GPUs. The second call to the same function but with a list fills that list. 
 
 
 
