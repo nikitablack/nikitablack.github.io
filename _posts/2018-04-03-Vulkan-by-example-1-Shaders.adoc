@@ -113,8 +113,8 @@ Now when we have a list of extensions we are ready to create an instance, what w
 Next is https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/create_surface.cpp[create_surface] function. Here again we use `glfw` to obtain a platform dependent object.
 
 Now we can try to find a gpu device in 
-https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/get_physical_device.cpp[get_physical_device] function. it's a bit lengthy function because we need to do a couple of things. First we need to get all available devices in the system. For that we use another typical `Vulkan` pattern for obtaining a list of something - we call a function with a ` nullptr` instead of a pointer to a list - this 
-returns the total number of GPUs. The second call to the same function but with a list fills that list. 
+https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/get_physical_device.cpp[get_physical_device] function. it's a bit lengthy because we need to do more than a couple of things. First we need to get all available devices in the system. For that we use another typical `Vulkan` pattern for obtaining a list of something - we call a function with a ` nullptr` instead of a pointer to a list - this 
+returns the total number of GPUs. The second call to the same function but with a list fills that list. Next we iterate over the devices trying to find one that works for us. In `check_device_suitability` we accept only a discrete device which supports tesselation, can draw in wireframe and supports all required device extensions. Device extensions are very similar to instance extensions we already discussed but works per device, not globally. We're not using any in this tutorial so the list is empty.
 
 
 
