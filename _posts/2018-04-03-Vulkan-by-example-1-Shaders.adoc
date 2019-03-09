@@ -116,67 +116,15 @@ Now we can try to find a gpu device in
 https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/get_physical_device.cpp[get_physical_device] function. it's a bit lengthy because we need to do more than a couple of things. First we need to get all available devices in the system. For that we use another typical `Vulkan` pattern for obtaining a list of something - we call a function with a ` nullptr` instead of a pointer to a list - this 
 returns the total number of GPUs. The second call to the same function but with a list fills that list. Next we iterate over the devices trying to find one that works for us. In `check_device_suitability` we accept only a discrete device (one of my test machines have 2 GPUs and I want to use the more powerfull one so I ignore all non discrete adapters but if you are fine with integrated GPU you can remove this check) which supports tesselation, can draw in wireframe and supports all required device extensions. Device extensions are very similar to instance extensions we already discussed but work per device, not globally. We're not using any in this tutorial so the list is empty.
 
-
-
-
-
-Next I try to get an underlying window surface format - we need to know it since we want to render to that surface and we want our picture to be correct.
-
-----
-MaybeSurfaceFormat get_device_surface_format(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
-{
-	app::helpers::MaybePhysicalDevicesSurfaceFormats const mbFormats{app::helpers::get_physical_devices_surface_formats(physicalDevice, surface)}; // #a
-	if (!mbFormats)
-		return tl::make_unexpected(mbFormats.error());
-	
-	vector<VkSurfaceFormatKHR> const formats{*mbFormats};
-
-	if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED)
-		return VkSurfaceFormatKHR{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}; // #b
-	
-	if (auto const it = find_if(begin(formats), end(formats), [](VkSurfaceFormatKHR const f) { return f.format == VK_FORMAT_B8G8R8A8_UNORM && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR; }); it != end(formats))
-		return VkSurfaceFormatKHR{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}; // #c
-	
-	return formats[0]; // #d
-}
-----
-
-.. `get_physical_devices_surface_formats` lives in the helper file:
-
-----
-MaybePhysicalDevicesSurfaceFormats get_physical_devices_surface_formats(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
-{
-	assert(physicalDevice);
-	assert(surface);
-	
-	uint32_t formatsCount{0};
-	if (vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatsCount, nullptr) != VK_SUCCESS)
-		return make_unexpected("failed to get physical device surface formats");
-	
-	vector<VkSurfaceFormatKHR> formats(formatsCount);
-	if (formatsCount == 0 || vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatsCount, formats.data()) != VK_SUCCESS)
-		return make_unexpected("failed to get physical device surface formats");
-	
-	return formats;
-}
-----
-
-Nothing new or anything to talk about. It just gives us the list of all formats gpu supports for the given device and the surface.
-
-[start=2]
-.. Having a list of supported formats for the selected device we need to choose the one we will use. Here's a quote from the specification:
+If the proper GPU was found we continue to the next step - we need to know the format of the surface we are going to render to. A given device and a surface can support multiple formats and we choose one in 
+`get_device_surface_format` helper function. So first we get all supported formats. Next we check for the special case.  Here's a quote from the specification:
 
 [source]
 ----
 If pSurfaceFormats includes just one entry, whose value for format is VK_FORMAT_UNDEFINED, surface has no preferred format. In this case, the application can use any valid VkFormat value.
 ----
 
-So if this condition is true I simply return `VK_FORMAT_B8G8R8A8_UNORM` as format and `VK_COLOR_SPACE_SRGB_NONLINEAR_KHR` as a color space.
-
-[start=3]
-.. If the previous condition was not true I iterate over all supported formats searching for the one I like (`{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}`).
-
-.. Finally if the desired format was not found I just return the first one.
+So if this condition is true we simply return `VK_FORMAT_B8G8R8A8_UNORM` as format and `VK_COLOR_SPACE_SRGB_NONLINEAR_KHR` as a color space. But if the condition is not true we iterate over all supported formats searching for the one we would like to work with. I like `VkSurfaceFormatKHR{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}`.And if the desired format was not found we just return the first one from the list.
 
 <<anchor-getting-physical-device-surface-format-back, Back>>
 
