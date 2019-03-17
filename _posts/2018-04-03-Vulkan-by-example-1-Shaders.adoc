@@ -116,8 +116,8 @@ Now we can try to find a gpu device in
 https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/get_physical_device.cpp[get_physical_device] function. it's a bit lengthy because we need to do more than a couple of things. First we need to get all available devices in the system. For that we use another typical `Vulkan` pattern for obtaining a list of something - we call a function with a ` nullptr` instead of a pointer to a list - this 
 returns the total number of GPUs. The second call to the same function but with a list fills that list. Next we iterate over the devices trying to find one that works for us. In `check_device_suitability` we accept only a discrete device (one of my test machines have 2 GPUs and I want to use the more powerfull one so I ignore all non discrete adapters but if you are fine with integrated GPU you can remove this check) which supports tesselation, can draw in wireframe and supports all required device extensions. Device extensions are very similar to instance extensions we already discussed but work per device, not globally. We're not using any in this tutorial so the list is empty.
 
-If the proper GPU was found we continue to the next step - we need to know the format of the surface we are going to render to. A given device and a surface can support multiple formats and we choose one in 
-`get_device_surface_format` helper function. So first we get all supported formats. Next we check for the special case.  Here's a quote from the specification:
+If the proper GPU was found we can continue to the next step. We can try to obtain some information which depends on a device and a surface. We start with the format of the surface we are going to render to. A given device and a surface can support multiple formats and we choose one in 
+TODO[`get_device_surface_format`] helper function. First we get all supported formats. Next we check for the special case.  Here's a quote from the specification:
 
 [source]
 ----
@@ -126,310 +126,25 @@ If pSurfaceFormats includes just one entry, whose value for format is VK_FORMAT_
 
 So if this condition is true we simply return `VK_FORMAT_B8G8R8A8_UNORM` as format and `VK_COLOR_SPACE_SRGB_NONLINEAR_KHR` as a color space. But if the condition is not true we iterate over all supported formats searching for the one we would like to work with. I like `VkSurfaceFormatKHR{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}`.And if the desired format was not found we just return the first one from the list.
 
-<<anchor-getting-physical-device-surface-format-back, Back>>
+After the format was found we proceed to a surface pesent mode. As you know a monitor works with some fequency. For example, if the monitor have the frequency 60Hz it presents something on the screen every 1/60th of a second. The OS takes care about this presentation and all we need to do is to provide an image to show to the presentation engine. Also you may know that a monitor displays the entire picture not immediately at the some moment in time but fills the screen line by line from top to bottom for example, and do it very fast. Now think what can happen if, say the engine displayed a half of the picture from ta previous frame and we provided a new one? Right - the engine continues to present a picture but the new one, not the one it started with. So on the screen we have the combination of two images - so called _tearing_. Sometimes this is an admissible behavior and sometimes we want to avoid this. That's why we need to specify a presentation mode and do it in TODO['get_device_surface_present_mode'] helper function. First we get all available present modes for a given device and a surface. Next we choose the desired mode:
 
-[[anchor-getting-physical-device-surface-present-mode]]
-*Getting physical device surface present mode*
+.. If we don't want the tearing in our application we tell the presentation engine to use it's internal queue - now the pending requests will be added to that queue and when the engine is ready to display it aquires the image from the begining of the queue by removing it. And we never see the tearing. `VK_PRESENT_MODE_MAILBOX_KHR` tells the engine to use a single-entry queue, meaning that the pending requests will be replaced by newest ones. This mode is what I want for the application but there's no guarantee that it is supported.
 
-Next I try to get an underlying window surface pesent mode. As you now a monitor works with some fequency. For example, if the monitor have the frequency 60Hz it needs to present a picture every 1/60th of a second. The OS takes care about this presentation and all we need to do is to provide presentation engine an image to show. Also you may know that a monitors displays a picture not immidiately but line by line, it just do it very fast. Now think what can happen if,say the engine displayed a half of the picture and we provided a new one? Right - the engine continues to present but the picture it started with but the new one. So on the screen we have the combination of two images - so called _tearing_. Sometimes this is a desirable behavior and sometimes we want to avoid it. This is why we need to specify a presentation mode. And this is how I do it in code:
+.. If we failed to find 'VK_PRESENT_MODE_MAILBOX_KHR' we try to find the next one - `VK_PRESENT_MODE_IMMEDIATE_KHR`. This mode does not use a queue so the tearing is possible. The mode is not guaranteed to be presented.
 
-----
-MaybePresentMode get_device_surface_present_mode(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
-{
-	app::helpers::MaybePhysicalDevicesSurfacePresentModes const mbPresentModes{app::helpers::get_physical_device_surface_present_modes(physicalDevice, surface)}; // #a
-	if (!mbPresentModes)
-		return tl::make_unexpected(mbPresentModes.error());
-	
-	vector<VkPresentModeKHR> const presentModes{*mbPresentModes};
+.. `VK_PRESENT_MODE_FIFO_KHR` is the only mode required to be supported so we return it if the previous attempts failed. This mode uses a queue as well but the size is not specified. The difference with `VK_PRESENT_MODE_MAILBOX_KHR` is that if the queue is full the application will be blocked until the engine removes available image and frees the place in the queue.
 
-	if (auto const it = find(begin(presentModes), end(presentModes), VK_PRESENT_MODE_MAILBOX_KHR); it != end(presentModes)) // #b
-		return VK_PRESENT_MODE_MAILBOX_KHR;
-	
-	if (auto const it = find(begin(presentModes), end(presentModes), VK_PRESENT_MODE_IMMEDIATE_KHR); it != end(presentModes)) // #c
-		return VK_PRESENT_MODE_IMMEDIATE_KHR;
-	
-	return VK_PRESENT_MODE_FIFO_KHR; // #d
-}
-----
+After the present mode we proceed to the next step where we get so called _queue families_ for the device. As you may know the CPU communicates with the GPU via commands. In 'Vulkan' we record these commands with special functions like `vkCmdDraw` or `vkCmdBindVertexBuffers` to a so called _command buffer_. After a set of commands is ready it needs to be sent to the device. We don't send it directly but put to some queue and the implementation later consumes that queue. Just think of these queues as connections between the CPU and the GPU. Vulkan defines 5 different family queues - `VK_QUEUE_GRAPHICS_BIT`, `VK_QUEUE_COMPUTE_BIT`, `VK_QUEUE_TRANSFER_BIT`, `VK_QUEUE_SPARSE_BINDING_BIT` and `VK_QUEUE_PROTECTED_BIT`. Each queue supports certain operations so we need to be carefull when submiting commands. The specification have a special section for every command where it specifies the queue the command can be used with. There's a guarantee from Vulkan that graphics queue (`VK_QUEUE_GRAPHICS_BIT`) supports transfer operations as well, so if you have to submit a transfer command you can do it with that queue, no need to create a transfer queue (`VK_QUEUE_TRANSFER_BIT`). But why do we need multiple queue families at all? Well, in theory using multiple queues can speed up the application - the submission of commands happens in parallel. And you know the word _parralel_ is the sinonym of _good_. How this works is described by Matt Pettineo (aka MJP) in these https://mynameismjp.wordpress.com/2018/03/06/breaking-down-barriers-part-1-whats-a-barrier/[amazing article series]. There's one more thing. Each queue family can have *multiple* queues, hence the name _family_. So, again in theory, you can use multiple queues from the same family to submit commands faster, you just need a proper GPU.
 
-.. `get_physical_device_surface_present_modes` is in the helper file:
+In TODO['get_device_graphics_and_present_queue_families'] helper function we first get all available families for a given device. Next we try to find proper family queue indices. In the application we will use 2 different queues - one for rendering and transfer operations and one for presenting. There are huges chances that your GPU have a queue the supports both of these operations but specification does not guarantee that so we check all possible cases. Anyway we check first for this case and if it was not successfull we try to find two separate queue families. If we could not find we continue with another device in the system or run to the nearest shop to buy a modern GPU. If both graphics and present queue families were found we return their indices as a tuple.
 
-----
-MaybePhysicalDevicesSurfacePresentModes get_physical_device_surface_present_modes(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
-{
-	assert(physicalDevice);
-	assert(surface);
-	
-	uint32_t presentModesCount{0};
-	if (vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, nullptr) != VK_SUCCESS)
-		return make_unexpected("failed to get physical device surface present modes");
-	
-	vector<VkPresentModeKHR> presentModes(presentModesCount);
-	if (presentModesCount == 0 || vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, presentModes.data()) != VK_SUCCESS)
-		return make_unexpected("failed to get physical device surface present modes");
-	
-	return presentModes;
-}
-----
+If everything went well we can finish with a device selection. But before that we get the device properties. The structure have a lot of useful information, like a device name or device limits (for example, how many compute groups the device can dispatch). And now we are done.
 
-Nothing spesial here.
-
-[start=2]
-.. If we don't want the tearing in our application we tell presentation engine to use it's internal queue - now the pending requests will be added to that queue and when the engine is ready to display it aquires the image from the queue begining by removing it. So we never see the tearing. `VK_PRESENT_MODE_MAILBOX_KHR` tells engine to use a single-entry queue, meaning that the pending requests will be replaced by newest ones. There's no guarantee that the GPU supports this mode.
-
-.. If the previous attempt to find a mode was not succesfull we try to find another one - `VK_PRESENT_MODE_IMMEDIATE_KHR`. This mode does not use a queue so it behaves like I described above - with a possible tearing. The mode is not guaranteed to be presented.
-
-.. `VK_PRESENT_MODE_FIFO_KHR` is the only mode required to be supported so I return it if previous attempts failed. This mode uses a queue as well but the size is not specified (I suppose it's implementation-defined). The difference with `VK_PRESENT_MODE_MAILBOX_KHR` is  that if the queue is full the application will be blocked until the engine remove available image and free the place in the queue.
-
-<<anchor-getting-physical-device-surface-present-mode-back, Back>>
-
-[[anchor-getting-queues-families]]
-*Getting queues families*
-
-In this step I'm trying to get so called _queue families_ for the device. As you may know the CPU communicates with the GPU via commands. In Vulkan we record these commands with special functions like `vkCmdDraw` or `vkCmdBindVertexBuffers` to a so called _command buffer_. After a set of commands is ready it needs to be sent to the device. We don't send it directly but put to some queue and the implementation later consumes that queue. I understand these queues as connections between the CPU and the GPU (software connections of course). Vulkan defines 5 different family queues - `VK_QUEUE_GRAPHICS_BIT`, `VK_QUEUE_COMPUTE_BIT`, `VK_QUEUE_TRANSFER_BIT`, `VK_QUEUE_SPARSE_BINDING_BIT` and `VK_QUEUE_PROTECTED_BIT`. Each queue supports certain operations so we need to be carefull when submiting commands. Specification tells supported queue type for every command. There's one guarantee from Vulkan that graphics queue (`VK_QUEUE_GRAPHICS_BIT`) supports transfer operations as well, so if you have to submit a transfer command you can do it with that queue, no need to create a transfer queue (`VK_QUEUE_TRANSFER_BIT`).
-
-So why do we need multiple queue families? Well, in theory using multiple queues can speed up the application - the submission of commands hapeens in parallel. And you know the word _parralel_ is the sinonym to _good_. How this works is described by Matt Pettineo (aka MJP) in these https://mynameismjp.wordpress.com/2018/03/06/breaking-down-barriers-part-1-whats-a-barrier/[amazing article series].
-
-There's another thing. Each queue family can have *multiple* queues, hence the name _family_. So, again in theory, you can use multiple queues from the same family to submit commands faster, you just need a proper GPU. 
-
-----
-MaybeQueueFamilies get_device_graphics_and_present_queue_families(VkPhysicalDevice const physicalDevice, VkSurfaceKHR const surface)
-{
-	vector<VkQueueFamilyProperties> const queueFamilies{app::helpers::get_queue_family_properties(physicalDevice)}; // #a
-	
-	for (size_t i{0}; i < queueFamilies.size(); ++i) // #b
-	{
-		VkQueueFamilyProperties queueFamily{queueFamilies[i]};
-		
-		if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
-		{
-			VkBool32 presentSupported{VK_FALSE};
-			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, static_cast<uint32_t>(i), surface, &presentSupported);
-			
-			if (presentSupported)
-				return make_tuple(static_cast<uint32_t>(i), static_cast<uint32_t>(i));
-		}
-	}
-	
-	int graphicsQueueIndex{-1};
-	for (size_t i{0}; i < queueFamilies.size(); ++i) // #c
-	{
-		VkQueueFamilyProperties queueFamily{queueFamilies[i]};
-		
-		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-		{
-			graphicsQueueIndex = static_cast<int>(i);
-			break;
-		}
-	}
-	
-	if (graphicsQueueIndex == -1)
-		return tl::make_unexpected("failed to find graphics queue");
-	
-	int presentQueueIndex{-1};
-	for (size_t i{0}; i < queueFamilies.size(); ++i) // #d
-	{
-		VkQueueFamilyProperties const queueFamily{queueFamilies[i]};
-		
-		if (queueFamily.queueCount > 0)
-		{
-			VkBool32 presentSupported{VK_FALSE};
-			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, static_cast<uint32_t>(i), surface, &presentSupported);
-			
-			if (presentSupported)
-			{
-				presentQueueIndex = static_cast<int>(i);
-				break;
-			}
-		}
-	}
-	
-	if (presentQueueIndex == -1)
-		return tl::make_unexpected("failed to find present queue");
-	
-	return make_tuple(static_cast<uint32_t>(graphicsQueueIndex), static_cast<uint32_t>(presentQueueIndex)); // #e
-}
-----
-
-.. First I get all available families for the given device.
-
-----
-vector<VkQueueFamilyProperties> get_queue_family_properties(VkPhysicalDevice const physicalDevice)
-{
-	uint32_t queueFamilyCount{0};
-	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
-
-	vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
-
-	return queueFamilies;
-}
-----
-
-I bet you already can recognize this pattern with closed eyes. Function `vkGetPhysicalDeviceQueueFamilyProperties` can't fail and I return the result directly.
-
-[start=2]
-.. Next I try to find proper family queue. In my application I will use 2 different queus. I need to render, i.e. call graphic commands, so `VK_QUEUE_GRAPHICS_BIT` is needed for sure. I check it with a line `queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT`. Also I need to present the final image so I need to be sure that the queue family can do this. Function `vkGetPhysicalDeviceSurfaceSupportKHR` takes a device, a family index and a surface and sets `presentSupported` to `true` if the provided queue supports presentation for the provided device and surface. In this block I try to find a single queue which supports both operations. If it found I return family index - the same for both queue families.
-
-.. If the previous search failed I try to find a queue which can do graphics only. If there's no such queue we are doomed and have to run to the nearest shop to buy a modrn GPU.
-
-.. Here I continue my search - try to find a queue which can do presentation only.
-
-.. If both graphics and present queue family indices were found I return them as a tuple.
-
-<<anchor-getting-queues-families-back, Back>>
-
-[[anchor-getting-physical-device-properties]]
-*Getting physical device properties*
-
-If the previous step was successfull we got aphysical device that fits our needs. Now I save the information we gathered to a state object. If there was a fail during one of the requests I continue to search.
-
-<<anchor-getting-physical-device-properties-back, Back>>
-
-That's was a lenghty funtion. Thankfully there are not many such a verbose actions so let's move on.
-
-<<anchor-getting-a-physical-device-back, Back>>
-
-[[anchor-preparing-physical-device-features]]
-===== Preparing device features.
-
-Since we have a physical device at this point we can create a logical device `VkDevice` with `vkCreateDevice()`. One of the parameters in this function is `VkPhysicalDeviceFeatures`. We can request these features with `vkGetPhysicalDeviceFeatures` as we did when requested for the device suitability and just pass them as it is. But in this case we will activate all supported features even those we are not interested in. This can lead to performance loss. For example, `robustBufferAccess` is not needed for my application and this is what documantation says:
-
-[source]
-----
-Some features, such as robustBufferAccess, may incur a run-time performance cost. Application writers should carefully consider the implications of enabling all supported features.
-----
-
-So I turn on only what I need - tesselation and wireframe rendering.
-
-----
-AppData prepare_device_features(AppData data)
-{
-	data.physicalDeviceFeatures.tessellationShader = VK_TRUE;
-	data.physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;
-	data.physicalDeviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE;
-	
-	return data;
-}
-----
+Now it's time for the https://github.com/nikitablack/vulkan_by_example_2/blob/lesson_1/src/teapot/src/vulkan/create_logical_device.cpp[logical device]. Remember, the logical device is a software representation of a GPU and is needed almost for every other `Vulkan` function. First we tell a driver which queue families will be used with the selected gpu. When we selected a physical device we got a couple of queue families (graphics and present) in the form of indices. Together with the families we need to specify a number of actual queues and their priorities within a family. A queue with a higher priority theoretically can get more processing time than a queue with a lower priority. In the demo we use only one queue per family so we simply set priorities to 1. When the logical device is created the specified queues will be created as well. Next we enable device features. The application need `tessellationShader`, `fillModeNonSolid` and `vertexPipelineStoresAndAtomics` to be turned on.
 
 NOTE: At the moment of writing the validation layers (this topic not covered yet) reports a false error - `Shader requires vertexPipelineStoresAndAtomics but is not enabled on the device`. Though if you look at the tesselation eveluation shader declaration you will see that I marked one of the buffers as `readonly`. This is indeed a bug and already was reported https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/73[here].
 
-<<anchor-preparing-physical-device-features-back, Back>>
-
-[[anchor-creating-a-logical-device]]
-===== Creating logical device
-
-Now it's time for the logical device. Remember, the logical device is a software representation of the gpu and it's needed almost for every other Vulkan function call.
-
-----
-MaybeAppData create_logical_device(AppData data)
-{
-	assert(data.physicalDevice);
-	
-	std::vector<uint32_t> queueIndices{data.graphicsFamilyQueueIndex}; // #1
-	std::vector<std::vector<float>> queueNumAndPriorities{{1.0f}}; // #2
-	
-	if(data.graphicsFamilyQueueIndex != data.presentFamilyQueueIndex) // #3
-	{
-		queueIndices.push_back(data.presentFamilyQueueIndex);
-		queueNumAndPriorities.push_back({1.0f});
-	}
-	
-	helpers::MaybeDevice const mbDevice{helpers::create_device(data.physicalDevice, &queueIndices, &queueNumAndPriorities, &data.physicalDeviceFeatures, &data.deviceExtensions)}; // #4
-	if(!mbDevice)
-		return tl::make_unexpected(mbDevice.error());
-	
-	data.device = *mbDevice;
-	
-	return data;
-}
-----
-
-. When creating a logical device we need to tell the driver which queues will be used with the selected gpu. When we selected a physical device we got a couple of queues we need for the application (graphics and present queues) in the form of indices. When the logical device is created the specified queues will be creatte as well.
-
-. If within the family multiple queues are used we can specify priorities for them. A queue with a higher priority theoretically can get more processing time than a queue with a lower priority. In the demo I will use only one queue per family so I simply leave priorities set to 1. By the way, the valid range is in 0.0 - 1.0 interval.
-
-. As I told before the application uses two queues - graphics (for rendering and copy operations) and present (for presenting). It is absolutely valid that a single queue can handle both types of operations and most likely your GPU have such a queue. But for the safety we need to deal with the situation when they are different. So if they are I just provide the index and priority.
-
-. Now I pass the parameters to a helper function:
-
-----
-MaybeDevice create_device(VkPhysicalDevice const physicalDevice, vector<uint32_t> const * const queueIndices, vector<vector<float>> const * const queuePriorities, VkPhysicalDeviceFeatures const * const features, vector<char const *> const * const extensions)
-{
-	assert(physicalDevice);
-	assert(queueIndices);
-	assert(!queueIndices->empty());
-	assert(queuePriorities);
-	assert(queueIndices->size() == queuePriorities->size());
-	
-	vector<VkDeviceQueueCreateInfo> queueCreateInfos{}; // #a
-	queueCreateInfos.reserve(queueIndices->size());
-	
-	for(size_t i{0}; i < queueIndices->size(); ++i)
-		queueCreateInfos.push_back(get_device_queue_create_info(queueIndices->at(i), &queuePriorities->at(i))); // #b
-	
-	VkDeviceCreateInfo const createInfo{get_device_create_info(&queueCreateInfos, features, extensions)}; // #c
-	
-	VkDevice device{VK_NULL_HANDLE};
-	if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) // #d
-		return make_unexpected("failed to create logical device");
-	
-	return device;
-}
-----
-
-.. First I reserve a place for `VkDeviceQueueCreateInfo`. I will repeat that in the application the maximum number of queues can be 2 (for graphics and present queue) but usually it will be 1 since most hardware provide a queue that supports both types of operations.
-
-.. Next I create an info for every queue that should be created:
-
-----
-VkDeviceQueueCreateInfo get_device_queue_create_info(uint32_t const queueFamilyIndex, vector<float> const * const queuePriorities)
-{
-	assert(queuePriorities);
-	assert(!queuePriorities->empty());
-	
-	VkDeviceQueueCreateInfo info{};
-	info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	info.pNext = nullptr;
-	info.flags = 0;
-	info.queueFamilyIndex = queueFamilyIndex;
-	info.queueCount = static_cast<uint32_t>(queuePriorities->size());
-	info.pQueuePriorities = queuePriorities->data();
-	
-	return info;
-}
-----
-
-[start=3]
-.. Next is a logical device info:
-
-----
-VkDeviceCreateInfo get_device_create_info(vector<VkDeviceQueueCreateInfo> const * const queueCreateInfos, VkPhysicalDeviceFeatures const * const deviceFeatures, vector<char const *> const * const deviceExtensions)
-{
-	assert(queueCreateInfos);
-	assert(!queueCreateInfos->empty());
-	
-	VkDeviceCreateInfo info{};
-	info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	info.pNext = nullptr;
-	info.flags = 0;
-	info.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos->size());
-	info.pQueueCreateInfos = queueCreateInfos->data();
-	info.enabledLayerCount = 0;
-	info.ppEnabledLayerNames = nullptr;
-	info.enabledExtensionCount = deviceExtensions ? static_cast<uint32_t>(deviceExtensions->size()) : 0;
-	info.ppEnabledExtensionNames = deviceExtensions ? deviceExtensions->data() : nullptr;
-	info.pEnabledFeatures = deviceFeatures;
-	
-	return info;
-}
-----
-
-At this point you should know every parameter meaning so I will not stop to describe them. Just mention that for now there's no any device extensions.
-
-[start=4]
-.. And finaly a Vulkan call. `vkCreateDevice` takes a physical device which logical representation we need and filled info structure and outputs created `VkDevice`.
+All this data I provide via the `VkDeviceCreateInfo` structure. I specify `deviceExtensions` as well but this array is empty since in first tutorials we don't need any. Finaly we call `vkCreateDevice`.
 
 Haleluja! Now we have everything for our shaders.
 
