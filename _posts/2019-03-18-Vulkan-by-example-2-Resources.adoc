@@ -1,0 +1,2 @@
+= Vulkan by example 2 - Resources
+:hp-tags: c++, vulkan
