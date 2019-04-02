@@ -3,4 +3,18 @@
 
 Last time I promiced we start to create Vulkan resources (and the name of the article suggests that) but before we need to do one important thing. In https://TODO[prevoius] tutorial we created a couple of objects but we never destroyed them. For every _create_ function the Vulkan have a corresponding _destroy_ function, for every _allocate_ - _free_. So we need to call some in the end of our application. The thing is we'll have a lot of objects and it's difficult to track what is active and what is not. Thankfully the Vulkan have a mechanism for tracking some stuff with the help of validation layers. These are the special software layer that is injected between a Vulkan function call and a driver call and which can do some checks. The layers are very important during the development, I'd say it's a must have for every application. So let's activate them. 
 
-===== Validation layers.
+===== Validation layers
+
+Enabling.
+Debug utils.
+Debug callback.
+Show the output example on exit.
+
+===== Vertex buffer
+
+Create the buffer.
+Upload data.
+
+===== Index buffer
+
+Create the buffer.
