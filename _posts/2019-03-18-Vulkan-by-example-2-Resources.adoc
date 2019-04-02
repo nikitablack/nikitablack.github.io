@@ -5,7 +5,8 @@ Last time I promiced we start to create Vulkan resources (and the name of the ar
 
 ===== Validation layers
 
-Enabling.
+Validation layers get enabled during the instance creation. The names of the layers have to be provided to a create function. There're multiple types of layers, but we'll use only one - `VK_LAYER_LUNARG_standard_validation`. Actually this is not a single layer, but a special meta-definition for a serie of layers which will be loaded during the application run. https://vulkan.lunarg.com/doc/view/1.0.13.0/windows/layers.html[Here] you can find more information about them as well as a setup for a different platforms.
+
 Debug utils.
 Debug callback.
 Show the output example on exit.
@@ -18,3 +19,4 @@ Upload data.
 ===== Index buffer
 
 Create the buffer.
+
