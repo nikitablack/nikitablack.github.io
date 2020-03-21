@@ -81,7 +81,7 @@
     <h1 class="title">std::function as delegate</h1>
     
     <div class="content">
-      <p>After my <a href="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" target="_blank">previous</a> post some people asked why did I invent what was invented already? Why did I try to write another <a href="http://en.cppreference.com/w/cpp/utility/functional/function" target="_blank"><code>std::function</code></a>? Well, from the begining I planed to compare custom and standard approach. So here we are.</p>
+      <p>After my <a href="http://nikitablack.github.io/post/generic_c++_delegates/" target="_blank">previous</a> post some people asked why did I invent what was invented already? Why did I try to write another <a href="http://en.cppreference.com/w/cpp/utility/functional/function" target="_blank"><code>std::function</code></a>? Well, from the begining I planed to compare custom and standard approach. So here we are.</p>
 
 <p>Thought <code>stl</code> provides a great way to store functions and call them later it simply not fulfils my requirement - function callbacks should be added and removed runtime. Also the same function shouldn&rsquo;t be added twice. <code>std::function</code> doesn&rsquo;t have a comparison operator. You can say that there&rsquo;s the <a href="http://en.cppreference.com/w/cpp/utility/functional/function/target" target="_blank"><code>std::function::target()</code></a> method that returns a pointer to a callable type. But can we use it with member functions? Recall that in order to create a wrapper around a member function we need to bind it with <a href="http://en.cppreference.com/w/cpp/utility/functional/bind" target="_blank"><code>std::bind()</code></a>:</p>
 
@@ -159,7 +159,7 @@ function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void<
 }
 </code></pre></div>
 
-<p>It&rsquo;s not elegant and it adds some complexity to a code but at least it&rsquo;s robust, haha. Now I can start to implement the <code>Dispatcher</code> class (remember <a href="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" target="_blank">previous post</a>) with <code>std::function</code>.</p>
+<p>It&rsquo;s not elegant and it adds some complexity to a code but at least it&rsquo;s robust, haha. Now I can start to implement the <code>Dispatcher</code> class (remember <a href="http://nikitablack.github.io/post/generic_c++_delegates/" target="_blank">previous post</a>) with <code>std::function</code>.</p>
 
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
 <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Dispatcher</span>;
@@ -276,7 +276,7 @@ function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</
 f(<span style="color:#ae81ff">5</span>, <span style="color:#ae81ff">10.0f</span>)
 </code></pre></div>
 
-<p>Much better. Now we need to remove placeholder&rsquo;s manual instantiation in <code>std::bind()</code> function. In one of my <a href="https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html" target="_blank">previous</a> posts I wrote about <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence" target="_blank">integer sequence</a> and it seems we can use it here too. Let&rsquo;s wrap <code>std::bind()</code> and replace our placeholders with a function-generator:</p>
+<p>Much better. Now we need to remove placeholder&rsquo;s manual instantiation in <code>std::bind()</code> function. In one of my <a href="http://nikitablack.github.io/post/call_a_function_from_the_string_name_and_arguments/" target="_blank">previous</a> posts I wrote about <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence" target="_blank">integer sequence</a> and it seems we can use it here too. Let&rsquo;s wrap <code>std::bind()</code> and replace our placeholders with a function-generator:</p>
 
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span>size_t N<span style="color:#f92672">&gt;</span>
 MyPlaceholder<span style="color:#f92672">&lt;</span>N <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;</span> getPlaceholder()
@@ -294,7 +294,7 @@ function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</
 f(<span style="color:#ae81ff">5</span>, <span style="color:#ae81ff">10.0f</span>)
 </code></pre></div>
 
-<p>The <code>getPlaceholder()</code> will receive an integer (starting from <code>0</code>) as template argument and will be called the number of times equal to the number of callback&rsquo;s arguments. Exactly as in my <a href="https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html" target="_blank">previous</a> post. Since placeholders should start from <code>1</code> we&rsquo;re adding <code>+1</code> in the argument - <code>MyPlaceholder&lt;N + 1&gt;</code>. In our case this code will be generated:</p>
+<p>The <code>getPlaceholder()</code> will receive an integer (starting from <code>0</code>) as template argument and will be called the number of times equal to the number of callback&rsquo;s arguments. Exactly as in my <a href="http://nikitablack.github.io/post/call_a_function_from_the_string_name_and_arguments/" target="_blank">previous</a> post. Since placeholders should start from <code>1</code> we&rsquo;re adding <code>+1</code> in the argument - <code>MyPlaceholder&lt;N + 1&gt;</code>. In our case this code will be generated:</p>
 
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">MyPlaceholder<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">0</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;</span> getPlaceholder()
 {
@@ -381,7 +381,7 @@ dispatcher.remove(<span style="color:#e6db74">&#34;lambda&#34;</span>);
 dispatcher.remove(<span style="color:#e6db74">&#34;member&#34;</span>);
 </code></pre></div>
 
-<p>See my <a href="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" target="_blank">previous</a> post for <code>make_shared_lambda()</code> implementation.</p>
+<p>See my <a href="http://nikitablack.github.io/post/generic_c++_delegates/" target="_blank">previous</a> post for <code>make_shared_lambda()</code> implementation.</p>
 
 <p>Now when we have two implemenations we can compare their performance. I binded a lambda, global function and a member function to both dispatchers and call them <code>10'000'000</code> times while measuring the time needed to make this amount of calls. Also I added &ldquo;raw&rdquo; function call (direct call without any wrappers). I ran this test <code>10</code> times and averaged the result. This is what I got with Visual Studio 2015 (release mode, optimizations):</p>
 

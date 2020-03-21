@@ -65,7 +65,7 @@
       <pubDate>Tue, 26 Apr 2016 00:00:00 +0000</pubDate>
       
       <guid>http://nikitablack.github.io/post/std_function_as_delegate/</guid>
-      <description>&lt;p&gt;After my &lt;a href=&#34;https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html&#34; target=&#34;_blank&#34;&gt;previous&lt;/a&gt; post some people asked why did I invent what was invented already? Why did I try to write another &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/function&#34; target=&#34;_blank&#34;&gt;&lt;code&gt;std::function&lt;/code&gt;&lt;/a&gt;? Well, from the begining I planed to compare custom and standard approach. So here we are.&lt;/p&gt;</description>
+      <description>&lt;p&gt;After my &lt;a href=&#34;http://nikitablack.github.io/post/generic_c++_delegates/&#34; target=&#34;_blank&#34;&gt;previous&lt;/a&gt; post some people asked why did I invent what was invented already? Why did I try to write another &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/function&#34; target=&#34;_blank&#34;&gt;&lt;code&gt;std::function&lt;/code&gt;&lt;/a&gt;? Well, from the begining I planed to compare custom and standard approach. So here we are.&lt;/p&gt;</description>
     </item>
     
     <item>
