@@ -27,7 +27,7 @@
       <pubDate>Thu, 23 Mar 2017 00:00:00 +0000</pubDate>
       
       <guid>http://nikitablack.github.io/post/functional_programming_in_c&#43;&#43;_by_example/</guid>
-      <description>&lt;p&gt;Functional programming (&lt;em&gt;FP&lt;/em&gt;) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I&amp;rsquo;ll take a code from my &lt;a href=&#34;https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html&#34; target=&#34;_blank&#34;&gt;previous article&lt;/a&gt; so the example will be a 2D physics simulation.&lt;/p&gt;</description>
+      <description>&lt;p&gt;Functional programming (&lt;em&gt;FP&lt;/em&gt;) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I&amp;rsquo;ll take a code from my &lt;a href=&#34;http://nikitablack.github.io/post/data_oriented_design_by_example/&#34; target=&#34;_blank&#34;&gt;previous article&lt;/a&gt; so the example will be a 2D physics simulation.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -56,7 +56,7 @@
       <pubDate>Tue, 24 May 2016 00:00:00 +0000</pubDate>
       
       <guid>http://nikitablack.github.io/post/std_function_to_bind_or_not_to_bind/</guid>
-      <description>&lt;p&gt;In my &lt;a href=&#34;https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html&#34; target=&#34;_blank&#34;&gt;previous post&lt;/a&gt; about delegates I wrote how to bind a member function to &lt;code&gt;std::function&lt;/code&gt;. There was a lot of template magic involved in order to pass the correct number of &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/placeholders&#34; target=&#34;_blank&#34;&gt;placeholders&lt;/a&gt;. Shortly after I published I received a lot of feedback and I&amp;rsquo;m very grateful for this. One advice was not to use &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/bind&#34; target=&#34;_blank&#34;&gt;&lt;code&gt;std::bind()&lt;/code&gt;&lt;/a&gt; at all.&lt;/p&gt;</description>
+      <description>&lt;p&gt;In my &lt;a href=&#34;http://nikitablack.github.io/post/std_function_as_delegate/&#34; target=&#34;_blank&#34;&gt;previous post&lt;/a&gt; about delegates I wrote how to bind a member function to &lt;code&gt;std::function&lt;/code&gt;. There was a lot of template magic involved in order to pass the correct number of &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/placeholders&#34; target=&#34;_blank&#34;&gt;placeholders&lt;/a&gt;. Shortly after I published I received a lot of feedback and I&amp;rsquo;m very grateful for this. One advice was not to use &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/bind&#34; target=&#34;_blank&#34;&gt;&lt;code&gt;std::bind()&lt;/code&gt;&lt;/a&gt; at all.&lt;/p&gt;</description>
     </item>
     
     <item>

@@ -81,7 +81,7 @@
     <h1 class="title">Functional programming in c&#43;&#43; by example</h1>
     
     <div class="content">
-      <p>Functional programming (<em>FP</em>) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I&rsquo;ll take a code from my <a href="https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html" target="_blank">previous article</a> so the example will be a 2D physics simulation.</p>
+      <p>Functional programming (<em>FP</em>) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I&rsquo;ll take a code from my <a href="http://nikitablack.github.io/post/data_oriented_design_by_example/" target="_blank">previous article</a> so the example will be a 2D physics simulation.</p>
 
 <h4 id="disclaimer">Disclaimer</h4>
 
@@ -244,7 +244,7 @@ vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&g
 
 <h4 id="solve-collisions">Solve Collisions</h4>
 
-<p>In my <a href="https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html" target="_blank">previous article</a> we used the following algorithm for collision resolution - if objects were overlapped we moved them apart:</p>
+<p>In my <a href="http://nikitablack.github.io/post/data_oriented_design_by_example/" target="_blank">previous article</a> we used the following algorithm for collision resolution - if objects were overlapped we moved them apart:</p>
 
 <a href="#images%2f2.png">
     <img src=images/2.png class="thumbnail">
@@ -289,7 +289,7 @@ vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&g
 <p><em>Cons</em>:</p>
 
 <ul>
-<li>Performance. Recall that in <a href="https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html" target="_blank">previous article</a> we could simulate <code>8000</code> shapes in one thread. Now we can do only <code>330</code>.</li>
+<li>Performance. Recall that in <a href="http://nikitablack.github.io/post/data_oriented_design_by_example/" target="_blank">previous article</a> we could simulate <code>8000</code> shapes in one thread. Now we can do only <code>330</code>.</li>
 </ul>
 
 <p>When I worked in a game dev, trying to get the maximum of speed from each line of code, the approach we used today is not usable as it is. However, c++ is not a game dev only and I see a lot of places where <em>FP</em> can be applied.</p>

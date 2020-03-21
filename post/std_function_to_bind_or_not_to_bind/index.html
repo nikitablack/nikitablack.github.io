@@ -81,7 +81,7 @@
     <h1 class="title">std::function - to bind or not to bind?</h1>
     
     <div class="content">
-      <p>In my <a href="https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html" target="_blank">previous post</a> about delegates I wrote how to bind a member function to <code>std::function</code>. There was a lot of template magic involved in order to pass the correct number of <a href="http://en.cppreference.com/w/cpp/utility/functional/placeholders" target="_blank">placeholders</a>. Shortly after I published I received a lot of feedback and I&rsquo;m very grateful for this. One advice was not to use <a href="http://en.cppreference.com/w/cpp/utility/functional/bind" target="_blank"><code>std::bind()</code></a> at all.</p>
+      <p>In my <a href="http://nikitablack.github.io/post/std_function_as_delegate/" target="_blank">previous post</a> about delegates I wrote how to bind a member function to <code>std::function</code>. There was a lot of template magic involved in order to pass the correct number of <a href="http://en.cppreference.com/w/cpp/utility/functional/placeholders" target="_blank">placeholders</a>. Shortly after I published I received a lot of feedback and I&rsquo;m very grateful for this. One advice was not to use <a href="http://en.cppreference.com/w/cpp/utility/functional/bind" target="_blank"><code>std::bind()</code></a> at all.</p>
 
 <p>I&rsquo;ll paste directly the code from one of the comments and will make some time measurements:</p>
 
