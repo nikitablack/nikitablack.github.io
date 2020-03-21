@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Here should be the blog Title</title>
+    <link>http://nikitablack.github.io/post/</link>
+    <description>Recent content in Posts on Here should be the blog Title</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <copyright>&amp;copy; &lt;a href=&#34;http://nikitablack.github.io/&#34;&gt;nikitablack&lt;/a&gt; 2019</copyright>
+    <lastBuildDate>Sun, 17 Nov 2019 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>How I organize data in a functional style</title>
+      <link>http://nikitablack.github.io/post/how_i_organize_data_in_functional_style/</link>
+      <pubDate>Sun, 17 Nov 2019 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/how_i_organize_data_in_functional_style/</guid>
+      <description>&lt;p&gt;This article serves as a basement for my future posts. Here I explain how I manage data flow in a functional application.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Functional programming in c&#43;&#43; by example</title>
+      <link>http://nikitablack.github.io/post/functional_programming_in_c&#43;&#43;_by_example/</link>
+      <pubDate>Thu, 23 Mar 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/functional_programming_in_c&#43;&#43;_by_example/</guid>
+      <description>&lt;p&gt;Functional programming (&lt;em&gt;FP&lt;/em&gt;) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I&amp;rsquo;ll take a code from my &lt;a href=&#34;https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html&#34; target=&#34;_blank&#34;&gt;previous article&lt;/a&gt; so the example will be a 2D physics simulation.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Data Oriented Design by example</title>
+      <link>http://nikitablack.github.io/post/data_oriented_design_by_example/</link>
+      <pubDate>Thu, 02 Feb 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/data_oriented_design_by_example/</guid>
+      <description>&lt;p&gt;The last couple of years interesting but not so popular paradigm appears more often. I’m talking about Data Oriented Design (DOD). If you’re searching for a job that involves high-performance calculations be ready to hear corresponding questions. And I was surprised knowing that some my colleagues have never heard about the approach and after the short discussion stayed skeptical. In this article I’ll try to compare traditional OOP approach with DOD on a real world example.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>DirectX 12 by example</title>
+      <link>http://nikitablack.github.io/post/directx_12_by_example/</link>
+      <pubDate>Thu, 23 Jun 2016 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/directx_12_by_example/</guid>
+      <description>&lt;h4 id=&#34;disclaimer&#34;&gt;Disclaimer!&lt;/h4&gt;
+
+&lt;p&gt;I&amp;rsquo;m not an expert, computer graphics is my hobby. When I started to learn directx 12 I already was quite comfortable with directx 11 but it was still difficult to switch. And even after several months of investigations I still have a feeling that I just scratched a surface. I&amp;rsquo;m constantly learning and this post is a syncronization of my thoughts. I found that attempts to explain complex things makes me understand these things better. Thought the artile was written by me for me I hope you&amp;rsquo;ll find it useful too.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>std::function - to bind or not to bind?</title>
+      <link>http://nikitablack.github.io/post/std_function_to_bind_or_not_to_bind/</link>
+      <pubDate>Tue, 24 May 2016 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/std_function_to_bind_or_not_to_bind/</guid>
+      <description>&lt;p&gt;In my &lt;a href=&#34;https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html&#34; target=&#34;_blank&#34;&gt;previous post&lt;/a&gt; about delegates I wrote how to bind a member function to &lt;code&gt;std::function&lt;/code&gt;. There was a lot of template magic involved in order to pass the correct number of &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/placeholders&#34; target=&#34;_blank&#34;&gt;placeholders&lt;/a&gt;. Shortly after I published I received a lot of feedback and I&amp;rsquo;m very grateful for this. One advice was not to use &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/bind&#34; target=&#34;_blank&#34;&gt;&lt;code&gt;std::bind()&lt;/code&gt;&lt;/a&gt; at all.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>std::function as delegate</title>
+      <link>http://nikitablack.github.io/post/std_function_as_delegate/</link>
+      <pubDate>Tue, 26 Apr 2016 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/std_function_as_delegate/</guid>
+      <description>&lt;p&gt;After my &lt;a href=&#34;https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html&#34; target=&#34;_blank&#34;&gt;previous&lt;/a&gt; post some people asked why did I invent what was invented already? Why did I try to write another &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/function&#34; target=&#34;_blank&#34;&gt;&lt;code&gt;std::function&lt;/code&gt;&lt;/a&gt;? Well, from the begining I planed to compare custom and standard approach. So here we are.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Generic C&#43;&#43; delegates</title>
+      <link>http://nikitablack.github.io/post/generic_c&#43;&#43;_delegates/</link>
+      <pubDate>Tue, 12 Apr 2016 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/generic_c&#43;&#43;_delegates/</guid>
+      <description>&lt;p&gt;I like modular programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Call a function from the string name and arguments</title>
+      <link>http://nikitablack.github.io/post/call_a_function_from_the_string_name_and_arguments/</link>
+      <pubDate>Sun, 21 Feb 2016 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/call_a_function_from_the_string_name_and_arguments/</guid>
+      <description>&lt;p&gt;Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments with different types.&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"  lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+<title>Data Oriented Design by example | Here should be the blog Title</title>
+
+
+
+<link href="http://nikitablack.github.io/index.xml" rel="alternate" type="application/rss+xml" title="Here should be the blog Title" />
+
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="stylesheet" href="/css/css_lightbox.css"><link rel='stylesheet' href='http://nikitablack.github.io/css/custom.css'><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="canonical" href="http://nikitablack.github.io/post/data_oriented_design_by_example/">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+<section class="section">
+  <div class="container">
+    <nav id="nav-main" class="nav">
+      <div id="nav-name" class="nav-left">
+        <a id="nav-anchor" class="nav-item" href="http://nikitablack.github.io/">
+          <h1 id="nav-heading" class="title is-4">Here should be the blog Title</h1>
+        </a>
+      </div>
+      <div class="nav-right">
+        <nav id="nav-items" class="nav-item level is-mobile"><a class="level-item" aria-label="twitter" href='https://twitter.com/nikita_cherniy'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="github" href='https://github.com/nikitablack'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="email" href='mailto:mynameisnikitablack@gmail.com'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+    
+  </svg></i>
+            </span>
+          </a></nav>
+      </div>
+    </nav>
+
+    <nav class="nav">
+      
+
+      
+    </nav>
+
+  </div>
+  <script src="/js/navicon-shift.js"></script>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="subtitle tags is-6 is-pulled-right">
+      
+    </div>
+    <h2 class="subtitle is-6">February 2, 2017</h2>
+    <h1 class="title">Data Oriented Design by example</h1>
+    
+    <div class="content">
+      <p>The last couple of years interesting but not so popular paradigm appears more often. I’m talking about Data Oriented Design (DOD). If you’re searching for a job that involves high-performance calculations be ready to hear corresponding questions. And I was surprised knowing that some my colleagues have never heard about the approach and after the short discussion stayed skeptical. In this article I’ll try to compare traditional OOP approach with DOD on a real world example.</p>
+
+<h4 id="what-is-dod">What is DOD?</h4>
+
+<p>This post is an attempt to compare different programming approach without trying to explain them. I assume you know what we&rsquo;ll talk about. There&rsquo;re a lot of articles on the web about the subject. <a href="https://fuzzyreflection.com/2016/07/14/maximizing-code-performance-by-thinking-data-first-part-1/" target="_blank">This one</a> is good. <a href="https://www.youtube.com/watch?v=rX0ItVEVjHc" target="_blank">This video</a> from <em>CppCon</em> also is a <em>must see</em>. But in layman&rsquo;s terms, <em>DOD</em> is a way to work with data in <em>cache friendly</em> manner. Better see an example:</p>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;chrono&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;iostream&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;vector&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">using</span> <span style="color:#66d9ef">namespace</span> std;
+<span style="color:#66d9ef">using</span> <span style="color:#66d9ef">namespace</span> std<span style="color:#f92672">::</span>chrono;
+
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">S</span>
+{
+	<span style="color:#66d9ef">uint64_t</span> u;
+	<span style="color:#66d9ef">double</span> d;
+	<span style="color:#66d9ef">int</span> i;
+	<span style="color:#66d9ef">float</span> f;
+};
+
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Data</span>
+{
+	vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">uint64_t</span><span style="color:#f92672">&gt;</span> vu;
+	vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">double</span><span style="color:#f92672">&gt;</span> vd;
+	vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> vi;
+	vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">float</span><span style="color:#f92672">&gt;</span> vf;
+};
+
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">test1</span>(S <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> s1, S <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> s2)
+{
+	<span style="color:#66d9ef">return</span> s1.i <span style="color:#f92672">+</span> s2.i;
+}
+
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">test2</span>(Data <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> data, size_t <span style="color:#66d9ef">const</span> ind1, size_t <span style="color:#66d9ef">const</span> ind2)
+{
+	<span style="color:#66d9ef">return</span> data.vi[ind1] <span style="color:#f92672">+</span> data.vi[ind2];
+}
+
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>()
+{
+	size_t <span style="color:#66d9ef">const</span> N{ <span style="color:#ae81ff">30000</span> };
+	size_t <span style="color:#66d9ef">const</span> R{ <span style="color:#ae81ff">10</span> };
+
+	vector<span style="color:#f92672">&lt;</span>S<span style="color:#f92672">&gt;</span> v(N);
+	Data data;
+	data.vu.resize(N);
+	data.vd.resize(N);
+	data.vi.resize(N);
+	data.vf.resize(N);
+
+	<span style="color:#66d9ef">int</span> result{ <span style="color:#ae81ff">0</span> };
+
+	cout <span style="color:#f92672">&lt;&lt;</span> <span style="color:#e6db74">&#34;test #1&#34;</span> <span style="color:#f92672">&lt;&lt;</span> endl;
+	<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">uint32_t</span> i{ <span style="color:#ae81ff">0</span> }; i <span style="color:#f92672">&lt;</span> R; <span style="color:#f92672">++</span>i)
+	{
+		<span style="color:#66d9ef">auto</span> <span style="color:#66d9ef">const</span> start{ high_resolution_clock<span style="color:#f92672">::</span>now() };
+		<span style="color:#66d9ef">for</span> (size_t a{ <span style="color:#ae81ff">0</span> }; a <span style="color:#f92672">&lt;</span> v.size() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>; <span style="color:#f92672">++</span>a)
+		{
+			<span style="color:#66d9ef">for</span> (size_t b{ a <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> }; b <span style="color:#f92672">&lt;</span> v.size(); <span style="color:#f92672">++</span>b)
+			{
+				result <span style="color:#f92672">+=</span> test1(v[a], v[b]);
+			}
+		}
+		cout <span style="color:#f92672">&lt;&lt;</span> duration<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">float</span><span style="color:#f92672">&gt;</span>{ high_resolution_clock<span style="color:#f92672">::</span>now() <span style="color:#f92672">-</span> start }.count() <span style="color:#f92672">&lt;&lt;</span> endl;
+	}
+
+	cout <span style="color:#f92672">&lt;&lt;</span> <span style="color:#e6db74">&#34;test #2&#34;</span> <span style="color:#f92672">&lt;&lt;</span> endl;
+	<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">uint32_t</span> i{ <span style="color:#ae81ff">0</span> }; i <span style="color:#f92672">&lt;</span> R; <span style="color:#f92672">++</span>i)
+	{
+		<span style="color:#66d9ef">auto</span> <span style="color:#66d9ef">const</span> start{ high_resolution_clock<span style="color:#f92672">::</span>now() };
+		<span style="color:#66d9ef">for</span> (size_t a{ <span style="color:#ae81ff">0</span> }; a <span style="color:#f92672">&lt;</span> v.size() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>; <span style="color:#f92672">++</span>a)
+		{
+			<span style="color:#66d9ef">for</span> (size_t b{ a <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> }; b <span style="color:#f92672">&lt;</span> v.size(); <span style="color:#f92672">++</span>b)
+			{
+				result <span style="color:#f92672">+=</span> test2(data, a, b);
+			}
+		}
+		cout <span style="color:#f92672">&lt;&lt;</span> duration<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">float</span><span style="color:#f92672">&gt;</span>{ high_resolution_clock<span style="color:#f92672">::</span>now() <span style="color:#f92672">-</span> start }.count() <span style="color:#f92672">&lt;&lt;</span> endl;
+	}
+    
+    <span style="color:#66d9ef">return</span> result;
+}
+</code></pre></div>
+
+<p>The second test runs faster by <code>30%</code> (in VS2017 and gcc7.0.1). But why?</p>
+
+<p>The size of the <code>S</code> struct is <code>24</code> bytes. My CPU (Intel Core i7) have <code>32KB</code> L1 cache for each core with <code>64B</code> cache line. That means that when we&rsquo;re requesting data from the main memory one cache line can hold only two full <code>S</code> structs at most. In the first test we&rsquo;re reading only one <code>int</code> field, i.e. in the best case scenario one cache line can hold only two <code>S::i</code> (ok, sometimes three). In the second test we&rsquo;re reading similar <code>int</code> but from the vector of integers. <code>std::vector</code> guarantees sequentiality of the data it holds. That means that one cache line can hold up to <code>16</code> (<code>64KB</code> / <code>sizeof(int)</code> = <code>16</code>) values we need. Obviously, we&rsquo;re communicating with the RAM less often. And it&rsquo;s known that memory operations are the bottleneck in modern CPUs.</p>
+
+<h4 id="what-about-real-life">What about real life?</h4>
+
+<p>The example above clearly shows the benefits of <em>SoA</em> (<strong>S</strong>truct <strong>o</strong>f <strong>A</strong>rrays) vs <em>AoS</em> (<strong>A</strong>rray <strong>o</strong>f <strong>S</strong>tructures). But this example was from the <em>Hello World</em> category, i.e. it&rsquo;s very far from real world applications. In reality, the code has lots of dependencies and specific data which probably will not give such performance increase. One more thing - if in our example we&rsquo;ll read all fields of the struct there will be no difference in speed.</p>
+
+<p>In order to understand possibility to apply <em>DOD</em> I decided to write more or less complex program with both (<em>OOP</em> and <em>DOD</em>) approaches. Let it be a <code>2d</code> rigid body simulation - we&rsquo;ll create <em>N</em> convex polygons with different parameters - mass, speed etc. - and we&rsquo;ll see how many such objects we can simulate staying at <code>30</code> fps.</p>
+
+<h4 id="array-of-structures">Array of Structures</h4>
+
+<p><em>Initial program</em></p>
+
+<p>Source code for this version can be found in <a href="https://github.com/nikitablack/cpp-tests/tree/b672ca106ef5c88a23d7f8e2a909e07d6e54ca4a/data_oriented/oop/oop" target="_blank">this</a> commit and we briefly run through the code.</p>
+
+<p>For simplicity reasons the program is written in Visual Studio for Windows and uses DirectX11 for rendering.</p>
+
+<blockquote>
+<p>I&rsquo;m using the latest VS2017 and some features of c++17, namely <a href="http://en.cppreference.com/w/cpp/utility/optional" target="_blank">std::optional</a>. Intersection detector takes two objects and returns by value a struct with intersection information - normal, penetration depth. Previously I used a boolean flag inside that structure that showed was there an intersection at all. With the new <code>std::optional</code> I got rid of that flag and the code became more clear.</p>
+</blockquote>
+
+<p>The purpose of this article is to show some numbers on CPU so we&rsquo;ll not discuss graphics.</p>
+
+<p>The <code>Shape</code> class which represents physical body looks like this (simplified):</p>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Shape</span>
+{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	math<span style="color:#f92672">::</span>Vec2 position{ <span style="color:#ae81ff">0.0f</span>, <span style="color:#ae81ff">0.0f</span> };
+	math<span style="color:#f92672">::</span>Vec2 velocity{ <span style="color:#ae81ff">0.0f</span>, <span style="color:#ae81ff">0.0f</span> };
+	math<span style="color:#f92672">::</span>Vec2 overlapResolveAccumulator{ <span style="color:#ae81ff">0.0f</span>, <span style="color:#ae81ff">0.0f</span> };
+	<span style="color:#66d9ef">float</span> massInverse;
+	math<span style="color:#f92672">::</span>Color color;
+	std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>math<span style="color:#f92672">::</span>Vec2<span style="color:#f92672">&gt;</span> vertices;
+	math<span style="color:#f92672">::</span>Bounds bounds;
+};
+</code></pre></div>
+
+<ul>
+<li>I believe <code>position</code> and <code>velocity</code> fields don&rsquo;t need a discussion</li>
+<li><code>vertices</code> — a random number of polygon vertices</li>
+<li><code>bounds</code> — shape&rsquo;s bounding box. Used for broad collision detection</li>
+<li><code>massInverse</code> — one over mass (<code>1 / m</code>). We&rsquo;ll use only this value so no need to keep mass itself</li>
+<li><code>color</code> — used for rendering but stored in shape</li>
+<li><code>overlapResolveAccumulator</code> - see below.</li>
+</ul>
+
+<blockquote>
+<p>From the structure, it&rsquo;s already seen that <code>color</code> not used for calculations at all. But steel takes place in the cache line.</p>
+</blockquote>
+
+<a href="#images%2f1.png">
+    <img src=images/1.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/1.png">
+  <img src=images/1.png>
+</a>
+
+<p>When the triangle intersects shape <code>a</code> we need to move it apart to avoid figures overlapping. Also, we have to recalculate <code>bounds</code>. But now the triangle intersects shape <code>b</code> and we need to repeat the procedure again - move the shape and recalculate bounds. Notice that after the second move the triangle again will be over shape <code>a</code>. To avoid this repetition we&rsquo;ll store the value necessary to separate objects in special accumulator - <code>overlapResolveAccumulator</code> - and later will move the shape by this value but only once. Not physically correct at all, but looks ok. Notice also that this field also adds to the total size of the class which is not good for the memory.</p>
+
+<p>The heart of our program is a <code>ShapesApp::update()</code> function. Here it&rsquo;s simplified form:</p>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> ShapesApp<span style="color:#f92672">::</span>update(<span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> dt)
+{
+	<span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> dtStep{ dt <span style="color:#f92672">/</span> NUM_PHYSICS_STEPS };
+	<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">uint32_t</span> s{ <span style="color:#ae81ff">0</span> }; s <span style="color:#f92672">&lt;</span> NUM_PHYSICS_STEPS; <span style="color:#f92672">++</span>s)
+	{
+		updatePositions(dtStep);
+
+		<span style="color:#66d9ef">for</span> (size_t i{ <span style="color:#ae81ff">0</span> }; i <span style="color:#f92672">&lt;</span> _shapes.size() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>; <span style="color:#f92672">++</span>i)
+		{
+			<span style="color:#66d9ef">for</span> (size_t j{ i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> }; j <span style="color:#f92672">&lt;</span> _shapes.size(); <span style="color:#f92672">++</span>j)
+			{
+				CollisionSolver<span style="color:#f92672">::</span>solveCollision(_shapes[i].get(), _shapes[j].get());
+			}
+		}
+	}
+}
+</code></pre></div>
+
+<p>Every frame we call a <code>ShapesApp::updatePositions()</code> function that updates every shape&rsquo;s <code>position</code> and <code>bounds</code>. Next we check every shape with every other for collision in <code>CollisionSolver::solveCollision()</code> function. I used <a href="https://en.wikipedia.org/wiki/Hyperplane_separation_theorem" target="_blank">Separating Axis Theorem</a> (<em>SAT</em>) for that. And we repeat these steps <code>NUM_PHYSICS_STEPS</code> times. This variable serves several purposes - first, the physics becomes more stable, and second, it limits the number of objects on the screen. <em>c++</em> is fast, amazingly fast, and without this limitation we&rsquo;ll have tens of thosands of objects which will lead to rendering performance issues. In my tests I used <code>NUM_PHYSICS_STEPS = 20</code>.</p>
+
+<p>On my humble laptop this version of the program simulates <code>500</code> shapes before fps starts to drop below <code>30</code>. Wat?? Only <code>500</code>?? Even JavaScript can do better. I agree, not a lot, but don&rsquo;t forget - we&rsquo;re repeating calculations <code>20</code> times per frame.</p>
+
+<p>I think I need to add some pictures to make the post not so boring, so here we go:</p>
+
+<a href="#images%2f2.png">
+    <img src=images/2.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/2.png">
+  <img src=images/2.png>
+</a>
+
+<p><em>Optimization #1. Spatial Grid</em></p>
+
+<p>I mentioned several times that I want to make tests on a program which is as close to real world as possible. Obviously, the code above is not usable - nobody checks each shape with each other - this is veeeery slow. For acceleration usually, some spetial spatial structure being used. We&rsquo;ll use simple <code>2d</code> grid - I called it <code>Grid</code> in the code - which consists of <code>NxM</code> cells - <code>struct Cell</code>. At the calculation start we&rsquo;ll put each object in the corresponding cell. This way all we have to do is to iterate over cells and check intersection between several pairs of objects. I used the similar code a lot of times in real projects and it behaved very well. Besides, it&rsquo;s very easy to implement, easy to debug and understand.</p>
+
+<p>The commit for this version can be found <a href="https://github.com/nikitablack/cpp-tests/tree/8364d7c55c8948ab2fc5630e828d44551c6db951/data_oriented/oop/oop" target="_blank">here</a>. We added a new entity - <code>Grid</code> and changed <code>ShapesApp::update()</code> function. Now it calls <code>Grid</code>&rsquo;s methods for updating and intersections.</p>
+
+<p>This version can simulate <code>8000</code> shapes now at <code>30</code> fps (don&rsquo;t forget about <code>20</code> repetitions in each frame)! I had to decrease shape&rsquo;s sizes in order to fit them in the window.</p>
+
+<a href="#images%2f3.png">
+    <img src=images/3.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/3.png">
+  <img src=images/3.png>
+</a>
+
+<p><em>Optimization #2. Multithreading.</em></p>
+
+<p>These days, when even cell phones have <code>4</code> cores inside, ignore multithreading is silly. In this, the last optimization we&rsquo;ll add a thread pool and will divide main work by equal tasks. For example, <code>ShapesApp::updatePositions()</code> which iterated over all shapes before now iterates only over a part of the shapes on each core. Thread pool class was taken from <a href="https://github.com/progschj/ThreadPool/blob/master/ThreadPool.h" target="_blank">here</a> and the final version of the program you can find <a href="https://github.com/nikitablack/cpp-tests/tree/8d83cb351008a3faf3629279ebaf49ff3fc71b17/data_oriented/oop/oop" target="_blank">in this</a> commit. In my tests, I used <code>4</code> threads (including main).</p>
+
+<p>Dividing the work by tasks added some head pain. For example, if a shape crosses cell boundaries it will end in several cells at the same time.</p>
+
+<a href="#images%2f4.png">
+    <img src=images/4.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/4.png">
+  <img src=images/4.png>
+</a>
+
+<p>Here the shape <code>a</code> fully contained in one cell, but <code>b</code> is in <code>4</code> cells at the same time. Because of this, we have to synchronize cell access. Also, we have to synchronize access to some fields inside the <code>Shape</code> class. We can achieve this adding <code>std::mutex</code> to the <code>Shape</code> and <code>Cell</code>.</p>
+
+<p>Now I can see <code>13000</code> shapes at <code>30</code> fps. For such amount of objects, I had to increase the window size. And I say it again - in every frame we&rsquo;re repeating simulation <code>20</code> times.</p>
+
+<p>To be honest this program has bad parallelization possibilities. That&rsquo;s why increasing the number of threads will not give us a significant performance boost. But that&rsquo;s another story.</p>
+
+<a href="#images%2f5.png">
+    <img src=images/5.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/5.png">
+  <img src=images/5.png>
+</a>
+
+<h4 id="structure-of-arrays">Structure of Arrays</h4>
+
+<p><em>Initial program</em></p>
+
+<p>The code we wrote above I call traditional <em>OOP</em> approach - I write such code many years and see similar code in general. But now we&rsquo;ll modify it a little - we&rsquo;ll remove class <code>Shape</code> and replace it with vectors and see can this tiny change affect the performance? To my happiness refactoring wasn&rsquo;t hard, even trivial. Instead of the <code>Shape</code> class, we&rsquo;ll use a struct with vectors of data.</p>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ShapesData</span>
+{
+	std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>math<span style="color:#f92672">::</span>Vec2<span style="color:#f92672">&gt;</span> positions;
+	std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>math<span style="color:#f92672">::</span>Vec2<span style="color:#f92672">&gt;</span> velocities;
+	std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>math<span style="color:#f92672">::</span>Vec2<span style="color:#f92672">&gt;</span> overlapAccumulators;
+	std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">float</span><span style="color:#f92672">&gt;</span> massesInverses;
+	std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>math<span style="color:#f92672">::</span>Color<span style="color:#f92672">&gt;</span> colors;
+	std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>math<span style="color:#f92672">::</span>Vec2<span style="color:#f92672">&gt;&gt;</span> vertices;
+	std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>math<span style="color:#f92672">::</span>Bounds<span style="color:#f92672">&gt;</span> bounds;
+};
+</code></pre></div>
+
+<p>We pass this struct like this - <code>solveCollision(struct ShapesData &amp; data, std::size_t const indA, std::size_t const indB)</code>. I.e. instead of shapes instances we pass indices and inside function necessary data is taking from the vectors.</p>
+
+<p><a href="https://github.com/nikitablack/cpp-tests/tree/8363e60c614377cccb777625805b6aea9e699117/data_oriented/dod/dod" target="_blank">This version</a> of the program can simulate <code>500</code> objects at <code>30</code> fps. As you can see there&rsquo;s no difference with the original version. This is because we have relatively small data set and the &ldquo;heaviest&rdquo; function uses almost all fields of the struct.</p>
+
+<p>Further without pictures since they are the same.</p>
+
+<p><em>Optimization #1. Spatial Grid</em></p>
+
+<p>Everything as before except only we switch to <em>SoA</em> instead of <em>AoS</em>. The source code is <a href="https://github.com/nikitablack/cpp-tests/tree/f726cec7591a2568ef41fbe53623e5447bfdde45/data_oriented/dod/dod" target="_blank">here</a>. The result is better - <code>9500</code> objects vs <code>8000</code> before, i.e. the performance difference is around <code>15%</code>.</p>
+
+<p><em>Optimization #2. Multithreading.</em></p>
+
+<p>Again take the old code, switch structs and get <code>15000</code> objects at <code>30</code> fps. Again performance increase is around <code>15%</code>. <a href="https://github.com/nikitablack/cpp-tests/tree/ba57d299a26545d6045bd84797bc69d98ceca7bd/data_oriented/dod/dod" target="_blank">Here&rsquo;s</a> the final version of the program.</p>
+
+<h4 id="conclusion">Conclusion</h4>
+
+<p>I satisfied with the results. As you can see the small change in the code can lead to the quite big performance boost. But not always. It&rsquo;s even possible to lose some speed. For example, if we need only one instance of a class then with a traditional approach we read the data from memory once and have an access to all fields. On the other side if we read each field individually via vectors we have cache miss on each reading. Moreover, the general readability and complexity become worse.</p>
+
+<p>As usual, it&rsquo;s hard to give an unambiguous answer - should everybody switch to the new paradigm? When I worked on a <code>3d</code> game engine <code>10%</code> performance increase was a huge number. But when I worked on game launcher, mostly UI, then usage of this approach would only cause bewilderment of my colleagues. As general advice - profile, measure and decide yourself.</p>
+      
+      <div class="related">
+</div>
+      
+    </div>
+    
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>&copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2019</p>
+    
+      <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
+    
+  </div>
+</section>
+
+
+
+</body>
+</html>
+

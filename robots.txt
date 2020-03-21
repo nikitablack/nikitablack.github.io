@@ -1,0 +1,3 @@
+User-agent: *
+
+Sitemap: http://nikitablack.github.io//sitemap.xml

@@ -1,8 +1,0 @@
-= Shiny new blog
-:hp-tags: other
-
-I like programming. Really like. I like how you can combine words in your favorite programming language and put a life into software. I programm a lot - on my work, in my free time. That's why I feel competent to start to write about it. But this blog is created for me. I found that when I'm trying to explain some topic with simple words I'm understanding it better. So basically things I'm gonna to write about here is for future me - nothing should be lost and nothing should be left without understanding. Though somebody can find it usefull too.
-
-I have http://volgogradetzzz.blogspot.com/[another blog] already but I moved away from flash (thought still love it and always read latest news about the platform) and it's time to write about something different, more advanced maybe. My current language is `c++` and I like it. A lot. I like computer graphics also and I'll try to cover this topics mostly.
-
-I don't like https://www.blogger.com/home[Blogger] platform that's why I decided to move to another blog engine. https://pages.github.com/[Github pages] and static pages are great. It's fast and simple. With http://hubpress.io/[Hubpress] you can create good looking blog in minutes. http://asciidoctor.org/[AsciiDoc] looks good so I think I made my choice. Welcome!
