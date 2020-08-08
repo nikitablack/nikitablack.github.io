@@ -113,7 +113,7 @@
 
 <p>To make data easy to work with I keep it in a single struct and pass that struct back and forth filling it with objects.</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">AppData</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">AppData</span>
 {
   VkInstance instance{VK_NULL_HANDLE};
   VkDevice device{VK_NULL_HANDLE};
@@ -128,17 +128,17 @@
 
 <p>This is the simplest and safest way to pass the data around. I have a guarantee that the application is thread-safe since each thread operates on its copy of data. And when I update the data I return a copy of it:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">AppData <span style="color:#a6e22e">create_instance</span>(AppData data)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">AppData <span style="color:#c0f">create_instance</span>(AppData data)
 {
-  data.instance <span style="color:#f92672">=</span> ...;
+  data.instance <span style="color:#555">=</span> ...;
 
-  <span style="color:#66d9ef">return</span> data;
+  <span style="color:#069;font-weight:bold">return</span> data;
 }
 
 AppData data{};
-data <span style="color:#f92672">=</span> create_instance(data);
-data <span style="color:#f92672">=</span> create_device(data);
-data <span style="color:#f92672">=</span> create_shaders(data);
+data <span style="color:#555">=</span> create_instance(data);
+data <span style="color:#555">=</span> create_device(data);
+data <span style="color:#555">=</span> create_shaders(data);
 </code></pre></div>
 
 <p>I see a problem here with too much copying. The data can be big and making a copy will destroy the performance. Another issue (not the case in my example) is that if the struct misses a copy constructor the code will not compile. Next, let&rsquo;s pass by reference.</p>
@@ -147,35 +147,35 @@ data <span style="color:#f92672">=</span> create_shaders(data);
 
 <p>Since I want to stay in a functional paradigm I&rsquo;d like to avoid non-constant references as they break some functional programming rules. So the obvious solution is a reference to const. Now passing doesn&rsquo;t make a full copy but I still need to do it in the function&rsquo;s body to return the modified data.</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">AppData <span style="color:#a6e22e">create_instance</span>(AppData <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> data)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">AppData <span style="color:#c0f">create_instance</span>(AppData <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span> data)
 {
   AppData dataCopy{data};
-  dataCopy.instance <span style="color:#f92672">=</span> ...;
+  dataCopy.instance <span style="color:#555">=</span> ...;
 
-  <span style="color:#66d9ef">return</span> dataCopy;
+  <span style="color:#069;font-weight:bold">return</span> dataCopy;
 }
 
 AppData data{};
-data <span style="color:#f92672">=</span> create_instance(data);
-data <span style="color:#f92672">=</span> create_device(data);
-data <span style="color:#f92672">=</span> create_shaders(data);
+data <span style="color:#555">=</span> create_instance(data);
+data <span style="color:#555">=</span> create_device(data);
+data <span style="color:#555">=</span> create_shaders(data);
 </code></pre></div>
 
 <p>Still the same issue with lots of copies. But what if I guarantee that each function is a unique owner of the data? That means that the data race is impossible since the data exists in a single instance. I can do it by <em>moving</em> the data to and out of a function.</p>
 
 <h2 id="pass-by-r-value-reference">Pass by r-value reference</h2>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">AppData <span style="color:#f92672">&amp;&amp;</span> create_instance(AppData <span style="color:#f92672">&amp;&amp;</span> data)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">AppData <span style="color:#555">&amp;&amp;</span> create_instance(AppData <span style="color:#555">&amp;&amp;</span> data)
 {
-  data.instance <span style="color:#f92672">=</span> ...;
+  data.instance <span style="color:#555">=</span> ...;
 
-  <span style="color:#66d9ef">return</span> std<span style="color:#f92672">::</span>move(data);
+  <span style="color:#069;font-weight:bold">return</span> std<span style="color:#555">::</span>move(data);
 }
 
 AppData data{};
-data <span style="color:#f92672">=</span> foo(std<span style="color:#f92672">::</span>move(data));
-data <span style="color:#f92672">=</span> foo(std<span style="color:#f92672">::</span>move(data));
-data <span style="color:#f92672">=</span> foo(std<span style="color:#f92672">::</span>move(data));
+data <span style="color:#555">=</span> foo(std<span style="color:#555">::</span>move(data));
+data <span style="color:#555">=</span> foo(std<span style="color:#555">::</span>move(data));
+data <span style="color:#555">=</span> foo(std<span style="color:#555">::</span>move(data));
 </code></pre></div>
 
 <p>Though it does the job it looks ugly. Moreover, if the move constructor is not present, the code will not compile. Or if the move assignment operator deleted the code will silently use the copy assignment. Finally, if fields are not movable (like in my case) they will be copied. Fortunately, it&rsquo;s still possible to improve.</p>
@@ -184,48 +184,48 @@ data <span style="color:#f92672">=</span> foo(std<span style="color:#f92672">::<
 
 <p>With it, the code will take its final look.</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span> create_instance(std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span> data)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std<span style="color:#555">::</span>unique_ptr<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span> create_instance(std<span style="color:#555">::</span>unique_ptr<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span> data)
 {
-  data<span style="color:#f92672">-&gt;</span>instance <span style="color:#f92672">=</span> ...;
+  data<span style="color:#555">-&gt;</span>instance <span style="color:#555">=</span> ...;
 
-  <span style="color:#66d9ef">return</span> data;
+  <span style="color:#069;font-weight:bold">return</span> data;
 }
 
-<span style="color:#66d9ef">auto</span> data{std<span style="color:#f92672">::</span>make_unique<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span>()};
-data <span style="color:#f92672">=</span> create_instance(std<span style="color:#f92672">::</span>move(data));
-data <span style="color:#f92672">=</span> create_device(std<span style="color:#f92672">::</span>move(data));
-data <span style="color:#f92672">=</span> create_shaders(std<span style="color:#f92672">::</span>move(data));
+<span style="color:#069;font-weight:bold">auto</span> data{std<span style="color:#555">::</span>make_unique<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span>()};
+data <span style="color:#555">=</span> create_instance(std<span style="color:#555">::</span>move(data));
+data <span style="color:#555">=</span> create_device(std<span style="color:#555">::</span>move(data));
+data <span style="color:#555">=</span> create_shaders(std<span style="color:#555">::</span>move(data));
 </code></pre></div>
 
 <p>Now it will compile with deleted copy and move constructor, with const field members, etc. It will be fast since only copying that happens is <code>std::unique_ptr</code> copying which is fast. But what I like more is the code brevity - it explicitly tells the reader the intentions - <em>hey, the data is moved so don&rsquo;t use it until you read it back from the function</em>.</p>
 
 <p>Now you may ask - you talked so much about multithreading but now multithreading is even impossible if you can&rsquo;t share the data. And yes you&rsquo;re right - what I did is forced the application to be sequential. Exactly what I needed for the sequential initialization. And now I can sleep safe knowing there are no data races. But if I go inside any function - I can do there whatever I want since I know I&rsquo;m the only owner of the data. This is how I&rsquo;d implement <code>create_shaders</code>:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">namespace</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">namespace</span>
 {
-    <span style="color:#66d9ef">enum</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ShaderType</span>
+    <span style="color:#069;font-weight:bold">enum</span> <span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">ShaderType</span>
     {
         fragment,
         vertex
     };
     
-    VkShaderModule <span style="color:#a6e22e">create_shader</span>(AppData <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> data, ShaderType <span style="color:#66d9ef">const</span> shaderType)
+    VkShaderModule <span style="color:#c0f">create_shader</span>(AppData <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span> data, ShaderType <span style="color:#069;font-weight:bold">const</span> shaderType)
     {
-        VkShaderModule shaderModule <span style="color:#f92672">=</span> ...;
+        VkShaderModule shaderModule <span style="color:#555">=</span> ...;
 
-        <span style="color:#66d9ef">return</span> shaderModule;
+        <span style="color:#069;font-weight:bold">return</span> shaderModule;
     }
 }
 
-std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span> create_shaders(std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span> data)
+std<span style="color:#555">::</span>unique_ptr<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span> create_shaders(std<span style="color:#555">::</span>unique_ptr<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span> data)
 {
-    <span style="color:#66d9ef">auto</span> vertexShader   <span style="color:#f92672">=</span> std<span style="color:#f92672">::</span>async(<span style="color:#f92672">&amp;</span>create_shader, std<span style="color:#f92672">::</span>ref(<span style="color:#f92672">*</span>data), ShaderType<span style="color:#f92672">::</span>vertex);
-    <span style="color:#66d9ef">auto</span> fragmentShader <span style="color:#f92672">=</span> std<span style="color:#f92672">::</span>async(<span style="color:#f92672">&amp;</span>create_shader, std<span style="color:#f92672">::</span>ref(<span style="color:#f92672">*</span>data), ShaderType<span style="color:#f92672">::</span>fragment);
+    <span style="color:#069;font-weight:bold">auto</span> vertexShader   <span style="color:#555">=</span> std<span style="color:#555">::</span>async(<span style="color:#555">&amp;</span>create_shader, std<span style="color:#555">::</span>ref(<span style="color:#555">*</span>data), ShaderType<span style="color:#555">::</span>vertex);
+    <span style="color:#069;font-weight:bold">auto</span> fragmentShader <span style="color:#555">=</span> std<span style="color:#555">::</span>async(<span style="color:#555">&amp;</span>create_shader, std<span style="color:#555">::</span>ref(<span style="color:#555">*</span>data), ShaderType<span style="color:#555">::</span>fragment);
 
-    data<span style="color:#f92672">-&gt;</span>vertexShader   <span style="color:#f92672">=</span> vertexShader.get();
-    data<span style="color:#f92672">-&gt;</span>fragmentShader <span style="color:#f92672">=</span> fragmentShader.get();
+    data<span style="color:#555">-&gt;</span>vertexShader   <span style="color:#555">=</span> vertexShader.get();
+    data<span style="color:#555">-&gt;</span>fragmentShader <span style="color:#555">=</span> fragmentShader.get();
 
-    <span style="color:#66d9ef">return</span> data;
+    <span style="color:#069;font-weight:bold">return</span> data;
 }
 </code></pre></div>
 
@@ -237,9 +237,9 @@ std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&l
 
 <p>In theory, all three functions can fail.</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">data <span style="color:#f92672">=</span> create_instance(std<span style="color:#f92672">::</span>move(data));
-data <span style="color:#f92672">=</span> create_device(std<span style="color:#f92672">::</span>move(data));
-data <span style="color:#f92672">=</span> create_shaders(std<span style="color:#f92672">::</span>move(data));
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">data <span style="color:#555">=</span> create_instance(std<span style="color:#555">::</span>move(data));
+data <span style="color:#555">=</span> create_device(std<span style="color:#555">::</span>move(data));
+data <span style="color:#555">=</span> create_shaders(std<span style="color:#555">::</span>move(data));
 </code></pre></div>
 
 <p>Of course, I don&rsquo;t want to execute <code>create_device()</code> in case <code>create_instance()</code> fails because of dependency between them. Of course, I need to know why the error happened. Also, I&rsquo;d like to react to the error - at least I need to clean the already created objects.</p>
@@ -250,184 +250,202 @@ data <span style="color:#f92672">=</span> create_shaders(std<span style="color:#
 
 <p>Since I&rsquo;m using an <code>std::unique_ptr</code> I can encode an error via <code>nullptr</code> value. Here&rsquo;s how the code would look with it:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">data <span style="color:#f92672">=</span> create_instance(std<span style="color:#f92672">::</span>move(data));
-<span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>data)
-  <span style="color:#66d9ef">do</span> something
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">data <span style="color:#555">=</span> create_instance(std<span style="color:#555">::</span>move(data));
+<span style="color:#069;font-weight:bold">if</span>(<span style="color:#555">!</span>data)
+  <span style="color:#069;font-weight:bold">do</span> something
 
-data <span style="color:#f92672">=</span> create_device(std<span style="color:#f92672">::</span>move(data));
-<span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>data)
-  <span style="color:#66d9ef">do</span> something
+data <span style="color:#555">=</span> create_device(std<span style="color:#555">::</span>move(data));
+<span style="color:#069;font-weight:bold">if</span>(<span style="color:#555">!</span>data)
+  <span style="color:#069;font-weight:bold">do</span> something
 
-data <span style="color:#f92672">=</span> create_shaders(std<span style="color:#f92672">::</span>move(data));
-<span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>data)
-  <span style="color:#66d9ef">do</span> something
+data <span style="color:#555">=</span> create_shaders(std<span style="color:#555">::</span>move(data));
+<span style="color:#069;font-weight:bold">if</span>(<span style="color:#555">!</span>data)
+  <span style="color:#069;font-weight:bold">do</span> something
 </code></pre></div>
 
-<p>Pros:
-* very easy to implement.</p>
+<p><strong>Pros</strong>:</p>
 
-<p>Cons:
-* a lot of spaghetti.
-* fail reason is unknown and I need another way to report it. For example, some global variable can be filled with a message - but this is very error-prone, there&rsquo;s no guarantee the function sets this value.
-* no clean way to destroy already created objects since everything we got after a broken call is a <code>nullptr</code>. Again, I need to store the half-filled data in some global variable and use it on program exit.
-* no easy way to tell if a function fails or not by just looking at its signature. In other words, the code is not <em>expressive</em>.</p>
+<ul>
+<li>very easy to implement.</li>
+</ul>
+
+<p><strong>Cons</strong>:</p>
+
+<ul>
+<li>a lot of spaghetti.</li>
+<li>fail reason is unknown and I need another way to report it. For example, some global variable can be filled with a message - but this is very error-prone, there&rsquo;s no guarantee the function sets this value.</li>
+<li>no clean way to destroy already created objects since everything we got after a broken call is a <code>nullptr</code>. Again, I need to store the half-filled data in some global variable and use it on program exit.</li>
+<li>no easy way to tell if a function fails or not by just looking at its signature. In other words, the code is not <em>expressive</em>.</li>
+</ul>
 
 <h2 id="return-std-optional">Return std::optional</h2>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std<span style="color:#f92672">::</span>optional<span style="color:#f92672">&lt;</span>std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;&gt;</span> create_instance(std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span> data)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std<span style="color:#555">::</span>optional<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>unique_ptr<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;&gt;</span> create_instance(std<span style="color:#555">::</span>unique_ptr<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span> data)
 {
-    <span style="color:#66d9ef">if</span>(something wrong)
-      <span style="color:#66d9ef">return</span> std<span style="color:#f92672">::</span>nullopt;
+    <span style="color:#069;font-weight:bold">if</span>(something wrong)
+      <span style="color:#069;font-weight:bold">return</span> std<span style="color:#555">::</span>nullopt;
 
-    <span style="color:#66d9ef">return</span> data;
+    <span style="color:#069;font-weight:bold">return</span> data;
 }
 </code></pre></div>
 
 <p>Very similar to the previous method. The only difference is that the latter is more expressive - it tells us directly that a function can fail and this is easy to see just looking at the function&rsquo;s signature.</p>
 
-<p>Pros:
-* expressivity. Now looking at the function&rsquo;s signature it&rsquo;s clear if a function can fail or not.</p>
+<p><strong>Pros</strong>:</p>
 
-<p>Cons:
-* same as before.</p>
+<ul>
+<li>expressivity. Now looking at the function&rsquo;s signature it&rsquo;s clear if a function can fail or not.</li>
+</ul>
+
+<p><strong>Cons</strong>:</p>
+
+<ul>
+<li>same as before.</li>
+</ul>
 
 <h2 id="return-some-sort-of-expected">Return some sort of expected</h2>
 
 <p>Why some sort? Because it&rsquo;s not a part of the standard (at the moment of writing) and one has to choose from available implementations or write by him/herself. I&rsquo;m using <a href="https://github.com/TartanLlama/expected" target="_blank"><code>tl::expected</code></a> from <a href="https://blog.tartanllama.xyz/" target="_blank">TartanLlama</a> a lot (read more about the implementation <a href="https://blog.tartanllama.xyz/optional-expected/" target="_blank">here</a>). It has the expressivity as <code>std::optional</code> but provides an unexpected value in case of error. So it&rsquo;s possible to return the half-filled data to clear it. In code it looks like this:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">AppDataError</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">AppDataError</span>
 {
-  std<span style="color:#f92672">::</span>string what{};
-  std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span> data{};
+  std<span style="color:#555">::</span>string what{};
+  std<span style="color:#555">::</span>unique_ptr<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span> data{};
 }
 
-<span style="color:#66d9ef">using</span> MaybeData <span style="color:#f92672">=</span> expected<span style="color:#f92672">&lt;</span>std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span>, std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&lt;</span>AppDataError<span style="color:#f92672">&gt;</span>;
+<span style="color:#069;font-weight:bold">using</span> MaybeData <span style="color:#555">=</span> expected<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>unique_ptr<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span>, std<span style="color:#555">::</span>unique_ptr<span style="color:#555">&lt;</span>AppDataError<span style="color:#555">&gt;</span>;
 
-MaybeData <span style="color:#a6e22e">create_instance</span>(std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span> data)
+MaybeData <span style="color:#c0f">create_instance</span>(std<span style="color:#555">::</span>unique_ptr<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span> data)
 {
-  <span style="color:#66d9ef">if</span>(something wrong)
-    <span style="color:#66d9ef">return</span> make_unexpected(std<span style="color:#f92672">::</span>make_unique<span style="color:#f92672">&lt;</span>AppDataError<span style="color:#f92672">&gt;</span>(<span style="color:#e6db74">&#34;failed to create instance&#34;</span>, std<span style="color:#f92672">::</span>move(data)));
+  <span style="color:#069;font-weight:bold">if</span>(something wrong)
+    <span style="color:#069;font-weight:bold">return</span> make_unexpected(std<span style="color:#555">::</span>make_unique<span style="color:#555">&lt;</span>AppDataError<span style="color:#555">&gt;</span>(<span style="color:#c30">&#34;failed to create instance&#34;</span>, std<span style="color:#555">::</span>move(data)));
 
-  <span style="color:#66d9ef">return</span> data;
+  <span style="color:#069;font-weight:bold">return</span> data;
 }
 
-<span style="color:#75715e">// other functions
-</span><span style="color:#75715e"></span>
-<span style="color:#66d9ef">auto</span> maybeData{create_instance(std<span style="color:#f92672">::</span>move(data))};
-<span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>maybeData)
+<span style="color:#09f;font-style:italic">// other functions
+</span><span style="color:#09f;font-style:italic"></span>
+<span style="color:#069;font-weight:bold">auto</span> maybeData{create_instance(std<span style="color:#555">::</span>move(data))};
+<span style="color:#069;font-weight:bold">if</span>(<span style="color:#555">!</span>maybeData)
 {
-  <span style="color:#66d9ef">auto</span> error{std<span style="color:#f92672">::</span>move(maybeData.error())};
+  <span style="color:#069;font-weight:bold">auto</span> error{std<span style="color:#555">::</span>move(maybeData.error())};
 
-  std<span style="color:#f92672">::</span>cout <span style="color:#f92672">&lt;&lt;</span> error.what <span style="color:#f92672">&lt;&lt;</span> std<span style="color:#f92672">::</span>endl;
+  std<span style="color:#555">::</span>cout <span style="color:#555">&lt;&lt;</span> error.what <span style="color:#555">&lt;&lt;</span> std<span style="color:#555">::</span>endl;
 
-  clear(std<span style="color:#f92672">::</span>move(error.data));
+  clear(std<span style="color:#555">::</span>move(error.data));
 
-  <span style="color:#66d9ef">return</span>;
+  <span style="color:#069;font-weight:bold">return</span>;
 }
 
-maybeData <span style="color:#f92672">=</span> create_device(std<span style="color:#f92672">::</span>move(<span style="color:#f92672">*</span>maybeData));
-<span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>maybeData)
+maybeData <span style="color:#555">=</span> create_device(std<span style="color:#555">::</span>move(<span style="color:#555">*</span>maybeData));
+<span style="color:#069;font-weight:bold">if</span>(<span style="color:#555">!</span>maybeData)
 {
-  <span style="color:#66d9ef">auto</span> error{std<span style="color:#f92672">::</span>move(maybeData.error())};
+  <span style="color:#069;font-weight:bold">auto</span> error{std<span style="color:#555">::</span>move(maybeData.error())};
 
-  std<span style="color:#f92672">::</span>cout <span style="color:#f92672">&lt;&lt;</span> error.what <span style="color:#f92672">&lt;&lt;</span> std<span style="color:#f92672">::</span>endl;
+  std<span style="color:#555">::</span>cout <span style="color:#555">&lt;&lt;</span> error.what <span style="color:#555">&lt;&lt;</span> std<span style="color:#555">::</span>endl;
 
-  clear(std<span style="color:#f92672">::</span>move(error.data));
+  clear(std<span style="color:#555">::</span>move(error.data));
 
-  <span style="color:#66d9ef">return</span>;
+  <span style="color:#069;font-weight:bold">return</span>;
 }
 
-maybeData <span style="color:#f92672">=</span> create_shaders(std<span style="color:#f92672">::</span>move(<span style="color:#f92672">*</span>maybeData));
-<span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>maybeData)
+maybeData <span style="color:#555">=</span> create_shaders(std<span style="color:#555">::</span>move(<span style="color:#555">*</span>maybeData));
+<span style="color:#069;font-weight:bold">if</span>(<span style="color:#555">!</span>maybeData)
 {
-  <span style="color:#66d9ef">auto</span> error{std<span style="color:#f92672">::</span>move(maybeData.error())};
+  <span style="color:#069;font-weight:bold">auto</span> error{std<span style="color:#555">::</span>move(maybeData.error())};
 
-  std<span style="color:#f92672">::</span>cout <span style="color:#f92672">&lt;&lt;</span> error.what <span style="color:#f92672">&lt;&lt;</span> std<span style="color:#f92672">::</span>endl;
+  std<span style="color:#555">::</span>cout <span style="color:#555">&lt;&lt;</span> error.what <span style="color:#555">&lt;&lt;</span> std<span style="color:#555">::</span>endl;
 
-  clear(std<span style="color:#f92672">::</span>move(error.data));
+  clear(std<span style="color:#555">::</span>move(error.data));
 
-  <span style="color:#66d9ef">return</span>;
+  <span style="color:#069;font-weight:bold">return</span>;
 }
 </code></pre></div>
 
 <p>So the error has a message which can indicate the fail reason and the <em>so far</em> filled data which can be cleared. The only annoying thing left is the repetitive condition block after each function call. For this, the <code>tl::expected</code> have a very handy method <a href="https://tl.tartanllama.xyz/en/latest/api/expected.html#_CPPv4I0ENR8expected8and_thenEDaRR1F_" target="_blank"><code>and_then</code></a> which can chain multiple function invocations. But if the very first fails, all others will not be executed. With this the code takes its final form:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// as before
-</span><span style="color:#75715e"></span>
-<span style="color:#66d9ef">auto</span> maybeData{create_instance(std<span style="color:#f92672">::</span>move(data))
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// as before
+</span><span style="color:#09f;font-style:italic"></span>
+<span style="color:#069;font-weight:bold">auto</span> maybeData{create_instance(std<span style="color:#555">::</span>move(data))
       .and_then(create_device)
       .and_then(create_shaders)};
 
-<span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>maybeData)
+<span style="color:#069;font-weight:bold">if</span>(<span style="color:#555">!</span>maybeData)
 {
-  <span style="color:#66d9ef">auto</span> error{std<span style="color:#f92672">::</span>move(maybeData.error())};
+  <span style="color:#069;font-weight:bold">auto</span> error{std<span style="color:#555">::</span>move(maybeData.error())};
 
-  std<span style="color:#f92672">::</span>cout <span style="color:#f92672">&lt;&lt;</span> error.what <span style="color:#f92672">&lt;&lt;</span> std<span style="color:#f92672">::</span>endl;
+  std<span style="color:#555">::</span>cout <span style="color:#555">&lt;&lt;</span> error.what <span style="color:#555">&lt;&lt;</span> std<span style="color:#555">::</span>endl;
 
-  clear(std<span style="color:#f92672">::</span>move(error.data));
+  clear(std<span style="color:#555">::</span>move(error.data));
 
-  <span style="color:#66d9ef">return</span>;
+  <span style="color:#069;font-weight:bold">return</span>;
 }
 </code></pre></div>
 
 <p>I find this beautiful. The only thing to take into account is that all the functions should have the same signature to make this chaining work.</p>
 
-<p>Pros:
-* fail reason is known and bound to the return type.
-* half created objects can be cleared.
-* expressivity - it&rsquo;s possible to tell if a function fails looking at its signature. If <em>expected</em> is returned - it can fail, if an <em>object</em> is returned - it never fails (but still can be chained with <a href="https://tl.tartanllama.xyz/en/latest/api/expected.html#_CPPv4I0ENR8expected3mapEDaRR1F" target="_blank"><code>map</code></a> function).</p>
+<p><strong>Pros</strong>:</p>
 
-<p>Cons:
-* not a standard (so-so point, but I had to write something).</p>
+<ul>
+<li>fail reason is known and bound to the return type.</li>
+<li>half created objects can be cleared.</li>
+<li>expressivity - it&rsquo;s possible to tell if a function fails looking at its signature. If <em>expected</em> is returned - it can fail, if an <em>object</em> is returned - it never fails (but still can be chained with <a href="https://tl.tartanllama.xyz/en/latest/api/expected.html#_CPPv4I0ENR8expected3mapEDaRR1F" target="_blank"><code>map</code></a> function).</li>
+</ul>
+
+<p><strong>Cons</strong>:</p>
+
+<ul>
+<li>not a standard (so-so point, but I had to write something).</li>
+</ul>
 
 <h2 id="throw-an-exception">Throw an exception.</h2>
 
 <p>Very very similar to the <code>expected</code> option. There&rsquo;s no chaining like in the previous case, but with exceptions, the control flow jumps into the <code>catch</code> block, so there&rsquo;s no need to wrap <em>every</em> function in the <code>try/catch</code> block. Instead of this:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">AppDataPtr appData{std<span style="color:#f92672">::</span>make_unique<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span>()};
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">AppDataPtr appData{std<span style="color:#555">::</span>make_unique<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span>()};
 
-<span style="color:#66d9ef">try</span>
+<span style="color:#069;font-weight:bold">try</span>
 {
-    appData <span style="color:#f92672">=</span> create_instance(std<span style="color:#f92672">::</span>move(appData));
+    appData <span style="color:#555">=</span> create_instance(std<span style="color:#555">::</span>move(appData));
 }
-<span style="color:#66d9ef">catch</span> (std<span style="color:#f92672">::</span>exception <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> error)
+<span style="color:#069;font-weight:bold">catch</span> (std<span style="color:#555">::</span>exception <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span> error)
 {
-    <span style="color:#75715e">// handle error
-</span><span style="color:#75715e"></span>}
+    <span style="color:#09f;font-style:italic">// handle error
+</span><span style="color:#09f;font-style:italic"></span>}
 
-<span style="color:#66d9ef">try</span>
+<span style="color:#069;font-weight:bold">try</span>
 {
-    appData <span style="color:#f92672">=</span> create_device(std<span style="color:#f92672">::</span>move(appData));
+    appData <span style="color:#555">=</span> create_device(std<span style="color:#555">::</span>move(appData));
 }
-<span style="color:#66d9ef">catch</span> (std<span style="color:#f92672">::</span>exception <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> error)
+<span style="color:#069;font-weight:bold">catch</span> (std<span style="color:#555">::</span>exception <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span> error)
 {
-    <span style="color:#75715e">// handle error
-</span><span style="color:#75715e"></span>}
+    <span style="color:#09f;font-style:italic">// handle error
+</span><span style="color:#09f;font-style:italic"></span>}
 
-<span style="color:#66d9ef">try</span>
+<span style="color:#069;font-weight:bold">try</span>
 {
-    appData <span style="color:#f92672">=</span> create_shaders(std<span style="color:#f92672">::</span>move(appData));
+    appData <span style="color:#555">=</span> create_shaders(std<span style="color:#555">::</span>move(appData));
 }
-<span style="color:#66d9ef">catch</span> (std<span style="color:#f92672">::</span>exception <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> error)
+<span style="color:#069;font-weight:bold">catch</span> (std<span style="color:#555">::</span>exception <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span> error)
 {
-    <span style="color:#75715e">// handle error
-</span><span style="color:#75715e"></span>}
+    <span style="color:#09f;font-style:italic">// handle error
+</span><span style="color:#09f;font-style:italic"></span>}
 </code></pre></div>
 
 <p>We can write this:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">AppDataPtr appData{std<span style="color:#f92672">::</span>make_unique<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span>()};
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">AppDataPtr appData{std<span style="color:#555">::</span>make_unique<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span>()};
 
-<span style="color:#66d9ef">try</span>
+<span style="color:#069;font-weight:bold">try</span>
 {
-    appData <span style="color:#f92672">=</span> create_instance(std<span style="color:#f92672">::</span>move(appData));
-    appData <span style="color:#f92672">=</span> create_device(std<span style="color:#f92672">::</span>move(appData));
-    appData <span style="color:#f92672">=</span> create_shaders(std<span style="color:#f92672">::</span>move(appData));
+    appData <span style="color:#555">=</span> create_instance(std<span style="color:#555">::</span>move(appData));
+    appData <span style="color:#555">=</span> create_device(std<span style="color:#555">::</span>move(appData));
+    appData <span style="color:#555">=</span> create_shaders(std<span style="color:#555">::</span>move(appData));
 }
-<span style="color:#66d9ef">catch</span> (std<span style="color:#f92672">::</span>exception <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> error)
+<span style="color:#069;font-weight:bold">catch</span> (std<span style="color:#555">::</span>exception <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span> error)
 {
-    <span style="color:#75715e">// handle error
-</span><span style="color:#75715e"></span>}
+    <span style="color:#09f;font-style:italic">// handle error
+</span><span style="color:#09f;font-style:italic"></span>}
 </code></pre></div>
 
 <p>Another cool thing with exceptions is that we can nest them one into another so it&rsquo;s possible to follow an exception call stack. <a href="https://en.cppreference.com/w/cpp/error/throw_with_nested" target="_blank"><code>std::throw_with_nested</code></a> have a nice example of how to use it.</p>
@@ -436,8 +454,8 @@ maybeData <span style="color:#f92672">=</span> create_shaders(std<span style="co
 
 <p>With everything applied the pseudo-code architecture finally becomes:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// AppData.hpp
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">AppData</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// AppData.hpp
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">AppData</span>
 {
   VkInstance instance{VK_NULL_HANDLE};
   VkDevice device{VK_NULL_HANDLE};
@@ -445,128 +463,128 @@ maybeData <span style="color:#f92672">=</span> create_shaders(std<span style="co
   VkShaderModule fragmentShader{VK_NULL_HANDLE};
 };
 
-<span style="color:#66d9ef">using</span> AppDataPtr <span style="color:#f92672">=</span> std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span>;
+<span style="color:#069;font-weight:bold">using</span> AppDataPtr <span style="color:#555">=</span> std<span style="color:#555">::</span>unique_ptr<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span>;
 
-<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">AppDataError</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> std<span style="color:#f92672">::</span>exception
+<span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">AppDataError</span> <span style="color:#555">:</span> <span style="color:#069;font-weight:bold">public</span> std<span style="color:#555">::</span>exception
 {
-    AppDataError(std<span style="color:#f92672">::</span>string msg, AppData <span style="color:#f92672">&amp;&amp;</span> ptr) <span style="color:#f92672">:</span> message{std<span style="color:#f92672">::</span>move(msg)}, appData{std<span style="color:#f92672">::</span>move(ptr)}
+    AppDataError(std<span style="color:#555">::</span>string msg, AppData <span style="color:#555">&amp;&amp;</span> ptr) <span style="color:#555">:</span> message{std<span style="color:#555">::</span>move(msg)}, appData{std<span style="color:#555">::</span>move(ptr)}
     {}
     
-    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">what</span>() <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">noexcept</span> <span style="color:#66d9ef">override</span>
+    <span style="color:#069;font-weight:bold">const</span> <span style="color:#078;font-weight:bold">char</span> <span style="color:#555">*</span><span style="color:#c0f">what</span>() <span style="color:#069;font-weight:bold">const</span> <span style="color:#069;font-weight:bold">noexcept</span> <span style="color:#069;font-weight:bold">override</span>
     {
-        <span style="color:#66d9ef">return</span> message.c_str();
+        <span style="color:#069;font-weight:bold">return</span> message.c_str();
     }
     
-    std<span style="color:#f92672">::</span>string message{};
+    std<span style="color:#555">::</span>string message{};
     AppData appData{};
 };
 </code></pre></div>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// create_instance.cpp
-</span><span style="color:#75715e"></span>AppDataPtr <span style="color:#a6e22e">create_instance</span>(AppDataPtr data)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// create_instance.cpp
+</span><span style="color:#09f;font-style:italic"></span>AppDataPtr <span style="color:#c0f">create_instance</span>(AppDataPtr data)
 {
-  <span style="color:#66d9ef">if</span>(something wrong)
-    <span style="color:#66d9ef">throw</span> AppDataError{ERROR_MESSAGE(<span style="color:#e6db74">&#34;failed to create instance&#34;</span>), std<span style="color:#f92672">::</span>move(<span style="color:#f92672">*</span>appData.release())};
+  <span style="color:#069;font-weight:bold">if</span>(something wrong)
+    <span style="color:#069;font-weight:bold">throw</span> AppDataError{ERROR_MESSAGE(<span style="color:#c30">&#34;failed to create instance&#34;</span>), std<span style="color:#555">::</span>move(<span style="color:#555">*</span>appData.release())};
 
-  <span style="color:#66d9ef">return</span> data;
+  <span style="color:#069;font-weight:bold">return</span> data;
 }
 </code></pre></div>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// create_device.cpp
-</span><span style="color:#75715e"></span>AppDataPtr <span style="color:#a6e22e">create_device</span>(AppDataPtr data)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// create_device.cpp
+</span><span style="color:#09f;font-style:italic"></span>AppDataPtr <span style="color:#c0f">create_device</span>(AppDataPtr data)
 {
-  <span style="color:#66d9ef">if</span>(something wrong)
-    <span style="color:#66d9ef">throw</span> AppDataError{ERROR_MESSAGE(<span style="color:#e6db74">&#34;failed to create device&#34;</span>), std<span style="color:#f92672">::</span>move(<span style="color:#f92672">*</span>appData.release())};
+  <span style="color:#069;font-weight:bold">if</span>(something wrong)
+    <span style="color:#069;font-weight:bold">throw</span> AppDataError{ERROR_MESSAGE(<span style="color:#c30">&#34;failed to create device&#34;</span>), std<span style="color:#555">::</span>move(<span style="color:#555">*</span>appData.release())};
 
-  <span style="color:#66d9ef">return</span> data;
+  <span style="color:#069;font-weight:bold">return</span> data;
 }
 </code></pre></div>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// create_shaders.cpp
-</span><span style="color:#75715e"></span>VkShaderModule <span style="color:#a6e22e">create_shader</span>(std<span style="color:#f92672">::</span>string <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span>fileName)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// create_shaders.cpp
+</span><span style="color:#09f;font-style:italic"></span>VkShaderModule <span style="color:#c0f">create_shader</span>(std<span style="color:#555">::</span>string <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span>fileName)
 {
-    <span style="color:#66d9ef">if</span>(something wrong)
-        <span style="color:#66d9ef">throw</span> std<span style="color:#f92672">::</span>runtime_error{ERROR_MESSAGE(<span style="color:#e6db74">&#34;failed to open shader file &#34;</span> <span style="color:#f92672">+</span> fileName)};
+    <span style="color:#069;font-weight:bold">if</span>(something wrong)
+        <span style="color:#069;font-weight:bold">throw</span> std<span style="color:#555">::</span>runtime_error{ERROR_MESSAGE(<span style="color:#c30">&#34;failed to open shader file &#34;</span> <span style="color:#555">+</span> fileName)};
 
-    <span style="color:#66d9ef">return</span> shaderModule;
+    <span style="color:#069;font-weight:bold">return</span> shaderModule;
 }
 
-AppDataPtr <span style="color:#a6e22e">create_shaders</span>(AppDataPtr data)
+AppDataPtr <span style="color:#c0f">create_shaders</span>(AppDataPtr data)
 {
-  <span style="color:#75715e">// can run in parallel
-</span><span style="color:#75715e"></span>  <span style="color:#75715e">// vertex shader
-</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">try</span>
+  <span style="color:#09f;font-style:italic">// can run in parallel
+</span><span style="color:#09f;font-style:italic"></span>  <span style="color:#09f;font-style:italic">// vertex shader
+</span><span style="color:#09f;font-style:italic"></span>  <span style="color:#069;font-weight:bold">try</span>
   {
-      data<span style="color:#f92672">-&gt;</span>vertexShader <span style="color:#f92672">=</span> load_shader(<span style="color:#e6db74">&#34;VertexShader.spv&#34;</span>);
+      data<span style="color:#555">-&gt;</span>vertexShader <span style="color:#555">=</span> load_shader(<span style="color:#c30">&#34;VertexShader.spv&#34;</span>);
   }
-  <span style="color:#66d9ef">catch</span> (std<span style="color:#f92672">::</span>runtime_error <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> <span style="color:#75715e">/*error*/</span>)
+  <span style="color:#069;font-weight:bold">catch</span> (std<span style="color:#555">::</span>runtime_error <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span> <span style="color:#09f;font-style:italic">/*error*/</span>)
   {
-      std<span style="color:#f92672">::</span>throw_with_nested(AppDataError{ERROR_MESSAGE(<span style="color:#e6db74">&#34;failed to get vertex shader data&#34;</span>), std<span style="color:#f92672">::</span>move(<span style="color:#f92672">*</span>appData.release())});
-  }
-
-  <span style="color:#75715e">// fragment shader
-</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">try</span>
-  {
-      data<span style="color:#f92672">-&gt;</span>vertexShader <span style="color:#f92672">=</span> load_shader(<span style="color:#e6db74">&#34;FragmentShader.spv&#34;</span>);
-  }
-  <span style="color:#66d9ef">catch</span> (std<span style="color:#f92672">::</span>runtime_error <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> <span style="color:#75715e">/*error*/</span>)
-  {
-      std<span style="color:#f92672">::</span>throw_with_nested(AppDataError{ERROR_MESSAGE(<span style="color:#e6db74">&#34;failed to get fragment shader data&#34;</span>), std<span style="color:#f92672">::</span>move(<span style="color:#f92672">*</span>appData.release())});
+      std<span style="color:#555">::</span>throw_with_nested(AppDataError{ERROR_MESSAGE(<span style="color:#c30">&#34;failed to get vertex shader data&#34;</span>), std<span style="color:#555">::</span>move(<span style="color:#555">*</span>appData.release())});
   }
 
-  <span style="color:#66d9ef">return</span> data;
+  <span style="color:#09f;font-style:italic">// fragment shader
+</span><span style="color:#09f;font-style:italic"></span>  <span style="color:#069;font-weight:bold">try</span>
+  {
+      data<span style="color:#555">-&gt;</span>vertexShader <span style="color:#555">=</span> load_shader(<span style="color:#c30">&#34;FragmentShader.spv&#34;</span>);
+  }
+  <span style="color:#069;font-weight:bold">catch</span> (std<span style="color:#555">::</span>runtime_error <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span> <span style="color:#09f;font-style:italic">/*error*/</span>)
+  {
+      std<span style="color:#555">::</span>throw_with_nested(AppDataError{ERROR_MESSAGE(<span style="color:#c30">&#34;failed to get fragment shader data&#34;</span>), std<span style="color:#555">::</span>move(<span style="color:#555">*</span>appData.release())});
+  }
+
+  <span style="color:#069;font-weight:bold">return</span> data;
 }
 </code></pre></div>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// clean.cpp
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">clean</span>(AppData <span style="color:#f92672">&amp;&amp;</span> appData) <span style="color:#66d9ef">noexcept</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// clean.cpp
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">clean</span>(AppData <span style="color:#555">&amp;&amp;</span> appData) <span style="color:#069;font-weight:bold">noexcept</span>
 {
-  <span style="color:#75715e">// doesn&#39;t throw
-</span><span style="color:#75715e"></span>}
+  <span style="color:#09f;font-style:italic">// doesn&#39;t throw
+</span><span style="color:#09f;font-style:italic"></span>}
 </code></pre></div>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// main.cpp
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">handle_error</span>(std<span style="color:#f92672">::</span>exception <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> error, <span style="color:#66d9ef">uint32_t</span> <span style="color:#66d9ef">const</span> level <span style="color:#f92672">=</span>  <span style="color:#ae81ff">0</span>)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// main.cpp
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">handle_error</span>(std<span style="color:#555">::</span>exception <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span> error, <span style="color:#078;font-weight:bold">uint32_t</span> <span style="color:#069;font-weight:bold">const</span> level <span style="color:#555">=</span>  <span style="color:#f60">0</span>)
 {
-    std<span style="color:#f92672">::</span>cout <span style="color:#f92672">&lt;&lt;</span> std<span style="color:#f92672">::</span>string(level, <span style="color:#e6db74">&#39; &#39;</span>) <span style="color:#f92672">&lt;&lt;</span> error.what() <span style="color:#f92672">&lt;&lt;</span> <span style="color:#e6db74">&#39;\n&#39;</span>;
+    std<span style="color:#555">::</span>cout <span style="color:#555">&lt;&lt;</span> std<span style="color:#555">::</span>string(level, <span style="color:#c30">&#39; &#39;</span>) <span style="color:#555">&lt;&lt;</span> error.what() <span style="color:#555">&lt;&lt;</span> <span style="color:#c30">&#39;\n&#39;</span>;
     
-    <span style="color:#66d9ef">try</span>
+    <span style="color:#069;font-weight:bold">try</span>
     {
-        std<span style="color:#f92672">::</span>rethrow_if_nested(error);
+        std<span style="color:#555">::</span>rethrow_if_nested(error);
     }
-    <span style="color:#66d9ef">catch</span>(std<span style="color:#f92672">::</span>exception <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> nestedError)
+    <span style="color:#069;font-weight:bold">catch</span>(std<span style="color:#555">::</span>exception <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span> nestedError)
     {
-        handle_error(nestedError, level <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>);
+        handle_error(nestedError, level <span style="color:#555">+</span> <span style="color:#f60">1</span>);
     }
-    <span style="color:#66d9ef">catch</span>(...)
+    <span style="color:#069;font-weight:bold">catch</span>(...)
     {
-        std<span style="color:#f92672">::</span>cout <span style="color:#f92672">&lt;&lt;</span> <span style="color:#e6db74">&#34;unknown error&#34;</span> <span style="color:#f92672">&lt;&lt;</span> <span style="color:#e6db74">&#39;\n&#39;</span>;
+        std<span style="color:#555">::</span>cout <span style="color:#555">&lt;&lt;</span> <span style="color:#c30">&#34;unknown error&#34;</span> <span style="color:#555">&lt;&lt;</span> <span style="color:#c30">&#39;\n&#39;</span>;
     }
 }
 
-<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>()
+<span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">main</span>()
 {
-  AppDataPtr appData{std<span style="color:#f92672">::</span>make_unique<span style="color:#f92672">&lt;</span>AppData<span style="color:#f92672">&gt;</span>()};
+  AppDataPtr appData{std<span style="color:#555">::</span>make_unique<span style="color:#555">&lt;</span>AppData<span style="color:#555">&gt;</span>()};
 
-  <span style="color:#66d9ef">try</span>
+  <span style="color:#069;font-weight:bold">try</span>
   {
-      appData <span style="color:#f92672">=</span> create_instance(std<span style="color:#f92672">::</span>move(appData));
-      appData <span style="color:#f92672">=</span> create_device(std<span style="color:#f92672">::</span>move(appData));
-      appData <span style="color:#f92672">=</span> create_shaders(std<span style="color:#f92672">::</span>move(appData));
+      appData <span style="color:#555">=</span> create_instance(std<span style="color:#555">::</span>move(appData));
+      appData <span style="color:#555">=</span> create_device(std<span style="color:#555">::</span>move(appData));
+      appData <span style="color:#555">=</span> create_shaders(std<span style="color:#555">::</span>move(appData));
   }
-  <span style="color:#66d9ef">catch</span> (std<span style="color:#f92672">::</span>exception <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> error)
+  <span style="color:#069;font-weight:bold">catch</span> (std<span style="color:#555">::</span>exception <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span> error)
   {
       handle_error(error);
 
-      <span style="color:#75715e">// clean whatewer we have in appData
-</span><span style="color:#75715e"></span>      clean(std<span style="color:#f92672">::</span>move(error.appData));
+      <span style="color:#09f;font-style:italic">// clean whatewer we have in appData
+</span><span style="color:#09f;font-style:italic"></span>      clean(std<span style="color:#555">::</span>move(error.appData));
 
-      <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+      <span style="color:#069;font-weight:bold">return</span> <span style="color:#f60">1</span>;
   }
 
-  clean(std<span style="color:#f92672">::</span>move(<span style="color:#f92672">*</span>appData.release()));
+  clean(std<span style="color:#555">::</span>move(<span style="color:#555">*</span>appData.release()));
 
-  <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+  <span style="color:#069;font-weight:bold">return</span> <span style="color:#f60">0</span>;
 }
 </code></pre></div>
 

@@ -81,15 +81,15 @@
     <h1 class="title">Functional programming in c&#43;&#43; by example</h1>
     
     <div class="content">
-      <p>Functional programming (<em>FP</em>) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I&rsquo;ll take a code from my <a href="https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html" target="_blank">previous article</a> so the example will be a 2D physics simulation.</p>
+      <p>Functional programming (<strong>FP</strong>) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I&rsquo;ll take a code from my <a href="https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html" target="_blank">previous article</a> so the example will be a 2D physics simulation.</p>
 
 <h4 id="disclaimer">Disclaimer</h4>
 
-<p>I&rsquo;m not an expert, so take all my words with a grain of salt. From all of the functional languages, I had an experience only with Erlang. This article is my attempt to better understand <em>FP</em> and a field of its appliance. Here I&rsquo;ll write step by step how I transformed <em>OOP</em> code to some sort of functional. In other words, here I&rsquo;m presenting my learning process. And of course, I welcome any criticism.</p>
+<p>I&rsquo;m not an expert, so take all my words with a grain of salt. From all of the functional languages, I had an experience only with Erlang. This article is my attempt to better understand <strong>FP</strong> and a field of its appliance. Here I&rsquo;ll write step by step how I transformed <strong>OOP</strong> code to some sort of functional. In other words, here I&rsquo;m presenting my learning process. And of course, I welcome any criticism.</p>
 
 <h4 id="introduction">Introduction</h4>
 
-<p>I&rsquo;ll not touch <em>FP</em> theory at all - you can find a way better sources around. Thought I tried to write the program in the pure functional style I couldn&rsquo;t achieve it by 100%. Sometimes because there&rsquo;s no sense, sometimes because the language doesn&rsquo;t support a feature (pattern matching, for example), sometimes because of lack of experience. For example, rendering is done in usual <em>OOP</em> style. Why? One of the <em>FP</em> principles is data immutability and absence of a state. But for DirectX (API I&rsquo;m using), it&rsquo;s necessary to keep buffers, textures, devices. Though it&rsquo;s possible to recreate everything every frame it&rsquo;ll be too long to do so (more about performance later). Also, you&rsquo;ll not find here lazy evaluations - because I couldn&rsquo;t find a place where I could use it.</p>
+<p>I&rsquo;ll not touch <strong>FP</strong> theory at all - you can find a way better sources around. Thought I tried to write the program in the pure functional style I couldn&rsquo;t achieve it by 100%. Sometimes because there&rsquo;s no sense, sometimes because the language doesn&rsquo;t support a feature (pattern matching, for example), sometimes because of lack of experience. For example, rendering is done in usual <strong>OOP</strong> style. Why? One of the <strong>FP</strong> principles is data immutability and absence of a state. But for DirectX (API I&rsquo;m using), it&rsquo;s necessary to keep buffers, textures, devices. Though it&rsquo;s possible to recreate everything every frame it&rsquo;ll be too long to do so (more about performance later). Also, you&rsquo;ll not find here lazy evaluations - because I couldn&rsquo;t find a place where I could use it.</p>
 
 <p>The source code can be found <a href="https://github.com/nikitablack/cpp-tests/tree/master/functional/almost_pure_functional" target="_blank">here</a>.</p>
 
@@ -103,41 +103,41 @@
 
 <p>This function is the heart of our program. This is the signature:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> updateSimulation(<span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> dt, vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">const</span> shapes, <span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> width, <span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> height);
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> updateSimulation(<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> dt, vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> <span style="color:#069;font-weight:bold">const</span> shapes, <span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> width, <span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> height);
 </code></pre></div>
 
-<p>We&rsquo;re taking the data by value and return a copy of modified data. But why a copy and not a const reference? Earlier I wrote that one of the principles of <em>FP</em> is data immutability and <code>const &amp;</code> guarantees that. That&rsquo;s right, but there&rsquo;s another important principle - the function should be pure, i.e. it shouldn&rsquo;t introduce side effects - with the same input data the output should always be the same. But taking a reference a function can&rsquo;t have that guarantee. Let&rsquo;s look at the example:</p>
+<p>We&rsquo;re taking the data by value and return a copy of modified data. But why a copy and not a const reference? Earlier I wrote that one of the principles of <strong>FP</strong> is data immutability and <code>const &amp;</code> guarantees that. That&rsquo;s right, but there&rsquo;s another important principle - the function should be pure, i.e. it shouldn&rsquo;t introduce side effects - with the same input data the output should always be the same. But taking a reference a function can&rsquo;t have that guarantee. Let&rsquo;s look at the example:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">foo</span>(vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">const</span> <span style="color:#f92672">&amp;</span> data)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">foo</span>(vector<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span> <span style="color:#069;font-weight:bold">const</span> <span style="color:#555">&amp;</span> data)
 {
-    <span style="color:#66d9ef">return</span> accumulate(data.begin(), data.end(), <span style="color:#ae81ff">0</span>);
+    <span style="color:#069;font-weight:bold">return</span> accumulate(data.begin(), data.end(), <span style="color:#f60">0</span>);
 }
 
-vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> data{<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>};
-<span style="color:#66d9ef">int</span> result{foo(data)};
+vector<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span> data{<span style="color:#f60">1</span>, <span style="color:#f60">1</span>, <span style="color:#f60">1</span>};
+<span style="color:#078;font-weight:bold">int</span> result{foo(data)};
 </code></pre></div>
 
 <p>Though <code>foo()</code> takes input by const reference the data itself is not constant. That means it can be changed before or during the call to <code>accumulate()</code> for example by another thread. On the other side if we&rsquo;ll obey the rule of passing data by copy the modification of data excluded.</p>
 
 <p>Moreover, in order to maintain data immutability principle, all fields of all user types should be const. This is, for example, <code>Vec2</code> type:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Vec2</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">Vec2</span>
 {
-	<span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> x;
-	<span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> y;
+	<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> x;
+	<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> y;
 
-	Vec2(<span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> x <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0f</span>, <span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> y <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0f</span>) <span style="color:#f92672">:</span> x{ x }, y{ y }
+	Vec2(<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> x <span style="color:#555">=</span> <span style="color:#f60">0.0f</span>, <span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> y <span style="color:#555">=</span> <span style="color:#f60">0.0f</span>) <span style="color:#555">:</span> x{ x }, y{ y }
 	{}
 
-	<span style="color:#75715e">// member functions - all const
-</span><span style="color:#75715e"></span>}
+	<span style="color:#09f;font-style:italic">// member functions - all const
+</span><span style="color:#09f;font-style:italic"></span>}
 </code></pre></div>
 
 <p>As you can see, the state is set during object creation and never changes. It&rsquo;s even hard to call it a state - it&rsquo;s just the data.</p>
 
 <p>Let&rsquo;s go back to the function <code>updateSimulation()</code>. It&rsquo;s called the following way:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">shapes <span style="color:#f92672">=</span> updateSimulation(dtStep, move(shapes), wSize.x, wSize.y);
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">shapes <span style="color:#555">=</span> updateSimulation(dtStep, move(shapes), wSize.x, wSize.y);
 </code></pre></div>
 
 <p>Since <code>shapes</code> is not constant here we can move the data (<code>std::move()</code>) and save on copies.</p>
@@ -146,81 +146,81 @@ vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</sp
 
 <p>This is function&rsquo;s body:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> updateSimulation(<span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> dt, vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">const</span> shapes, <span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> width, <span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> height)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> updateSimulation(<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> dt, vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> <span style="color:#069;font-weight:bold">const</span> shapes, <span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> width, <span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> height)
 {
-	<span style="color:#75715e">// step 1 - update calculate current positions
-</span><span style="color:#75715e"></span>	vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">const</span> updatedShapes1{ calculatePositionsAndBounds(dt, shapes) };
+	<span style="color:#09f;font-style:italic">// step 1 - update calculate current positions
+</span><span style="color:#09f;font-style:italic"></span>	vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> <span style="color:#069;font-weight:bold">const</span> updatedShapes1{ calculatePositionsAndBounds(dt, shapes) };
 
-	<span style="color:#75715e">// step 2 - for each shape calculate cells it fits in
-</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">uint32_t</span> rows;
-	<span style="color:#66d9ef">uint32_t</span> columns;
-	tie(rows, columns) <span style="color:#f92672">=</span> getNumberOfCells(width, height); <span style="color:#75715e">// auto [rows, columns] = getNumberOfCells(width, height); - c++17 structured bindings - not supported in vs2017 at the moment of writing
-</span><span style="color:#75715e"></span>
-	vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">const</span> updatedShapes2{ calculateCellsRanges(width, height, rows, columns, updatedShapes1) };
+	<span style="color:#09f;font-style:italic">// step 2 - for each shape calculate cells it fits in
+</span><span style="color:#09f;font-style:italic"></span>	<span style="color:#078;font-weight:bold">uint32_t</span> rows;
+	<span style="color:#078;font-weight:bold">uint32_t</span> columns;
+	tie(rows, columns) <span style="color:#555">=</span> getNumberOfCells(width, height); <span style="color:#09f;font-style:italic">// auto [rows, columns] = getNumberOfCells(width, height); - c++17 structured bindings - not supported in vs2017 at the moment of writing
+</span><span style="color:#09f;font-style:italic"></span>
+	vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> <span style="color:#069;font-weight:bold">const</span> updatedShapes2{ calculateCellsRanges(width, height, rows, columns, updatedShapes1) };
 
-	<span style="color:#75715e">// step 3 - put shapes in corresponding cells
-</span><span style="color:#75715e"></span>	vector<span style="color:#f92672">&lt;</span>vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;&gt;</span> <span style="color:#66d9ef">const</span> cellsWithShapes{ fillGrid(width, height, rows, columns, updatedShapes2) };
+	<span style="color:#09f;font-style:italic">// step 3 - put shapes in corresponding cells
+</span><span style="color:#09f;font-style:italic"></span>	vector<span style="color:#555">&lt;</span>vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;&gt;</span> <span style="color:#069;font-weight:bold">const</span> cellsWithShapes{ fillGrid(width, height, rows, columns, updatedShapes2) };
 
-	<span style="color:#75715e">// step 4 - calculate collisions
-</span><span style="color:#75715e"></span>	vector<span style="color:#f92672">&lt;</span>VelocityAfterImpact<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">const</span> velocityAfterImpact{ solveCollisions(cellsWithShapes, columns) };
+	<span style="color:#09f;font-style:italic">// step 4 - calculate collisions
+</span><span style="color:#09f;font-style:italic"></span>	vector<span style="color:#555">&lt;</span>VelocityAfterImpact<span style="color:#555">&gt;</span> <span style="color:#069;font-weight:bold">const</span> velocityAfterImpact{ solveCollisions(cellsWithShapes, columns) };
 
-	<span style="color:#75715e">// step 5 - apply velocities
-</span><span style="color:#75715e"></span>	vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">const</span> updatedShapes3{ applyVelocities(updatedShapes2, velocityAfterImpact) };
+	<span style="color:#09f;font-style:italic">// step 5 - apply velocities
+</span><span style="color:#09f;font-style:italic"></span>	vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> <span style="color:#069;font-weight:bold">const</span> updatedShapes3{ applyVelocities(updatedShapes2, velocityAfterImpact) };
 
-	<span style="color:#66d9ef">return</span> updatedShapes3;
+	<span style="color:#069;font-weight:bold">return</span> updatedShapes3;
 }
 </code></pre></div>
 
 <p>As always we take the data by copy and return the copy. This code is easy to understand - we call a function after function passing data from one stage to another - just like a pipeline.</p>
 
-<p>Next, we&rsquo;ll run through the algorithm and will see what we have to do to make it work with <em>FP</em>.</p>
+<p>Next, we&rsquo;ll run through the algorithm and will see what we have to do to make it work with <strong>FP</strong>.</p>
 
 <h4 id="сalculate-positions-and-bounds">Сalculate Positions And Bounds</h4>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> calculatePositionsAndBounds(<span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> dt, vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">const</span> shapes)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> calculatePositionsAndBounds(<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> dt, vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> <span style="color:#069;font-weight:bold">const</span> shapes)
 {
-	vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> updatedShapes;
+	vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> updatedShapes;
 	updatedShapes.reserve(shapes.size());
 
-	transform(shapes.begin(), shapes.end(), back_inserter(updatedShapes), [dt](Shape <span style="color:#66d9ef">const</span> shape)
+	transform(shapes.begin(), shapes.end(), back_inserter(updatedShapes), [dt](Shape <span style="color:#069;font-weight:bold">const</span> shape)
 	{
-		Shape <span style="color:#66d9ef">const</span> newShape{ shape.id, shape.vertices, calculatePosition(shape, dt), shape.velocity, shape.bounds, shape.cellsRange, shape.color, shape.massInverse };
-		<span style="color:#66d9ef">return</span> Shape{ newShape.id, newShape.vertices, newShape.position, newShape.velocity, calculateBounds(newShape), newShape.cellsRange, newShape.color, newShape.massInverse };
+		Shape <span style="color:#069;font-weight:bold">const</span> newShape{ shape.id, shape.vertices, calculatePosition(shape, dt), shape.velocity, shape.bounds, shape.cellsRange, shape.color, shape.massInverse };
+		<span style="color:#069;font-weight:bold">return</span> Shape{ newShape.id, newShape.vertices, newShape.position, newShape.velocity, calculateBounds(newShape), newShape.cellsRange, newShape.color, newShape.massInverse };
 	});
 
-	<span style="color:#66d9ef">return</span> updatedShapes;
+	<span style="color:#069;font-weight:bold">return</span> updatedShapes;
 }
 </code></pre></div>
 
-<p>The standard library supports <em>FP</em> for many years. Algorithm <code>transform()</code> is a high-order function, i.e. the function that accepts other functions as parameters. <em>STL</em> have tons of interesting algorithms and it&rsquo;s very important to know them if you&rsquo;re writing in functional style.</p>
+<p>The standard library supports <strong>FP</strong> for many years. Algorithm <code>transform()</code> is a high-order function, i.e. the function that accepts other functions as parameters. <strong>STL</strong> have tons of interesting algorithms and it&rsquo;s very important to know them if you&rsquo;re writing in functional style.</p>
 
-<p>There&rsquo;s interesting thing in this example. In pure <em>FP</em> there&rsquo;re no loops, since loop counter is a state. Instead of loop in <em>FP</em> we use recursion. Let&rsquo;s try to rewrite our function with it:</p>
+<p>There&rsquo;s interesting thing in this example. In pure <strong>FP</strong> there&rsquo;re no loops, since loop counter is a state. Instead of loop in <strong>FP</strong> we use recursion. Let&rsquo;s try to rewrite our function with it:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> updateOne(<span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> dt, vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> shapes, vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> updatedShapes)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> updateOne(<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> dt, vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> shapes, vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> updatedShapes)
 {
-	<span style="color:#66d9ef">if</span> (shapes.size() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>)
+	<span style="color:#069;font-weight:bold">if</span> (shapes.size() <span style="color:#555">&gt;</span> <span style="color:#f60">0</span>)
 	{
 		Shape shape{ shapes.back() };
 		shapes.pop_back();
 
-		Shape <span style="color:#66d9ef">const</span> newShape{ shape.id, shape.vertices, calculatePosition(shape, dt), shape.velocity, shape.bounds, shape.cellsRange, shape.color, shape.massInverse };
+		Shape <span style="color:#069;font-weight:bold">const</span> newShape{ shape.id, shape.vertices, calculatePosition(shape, dt), shape.velocity, shape.bounds, shape.cellsRange, shape.color, shape.massInverse };
 		updatedShapes.emplace_back(newShape.id, newShape.vertices, newShape.position, newShape.velocity, calculateBounds(newShape), newShape.cellsRange, newShape.color, newShape.massInverse);
 	}
-	<span style="color:#66d9ef">else</span>
+	<span style="color:#069;font-weight:bold">else</span>
 	{
-		<span style="color:#66d9ef">return</span> updatedShapes;
+		<span style="color:#069;font-weight:bold">return</span> updatedShapes;
 	}
 
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">updateOne</span>(dt, move(shapes), move(updatedShapes));
+	<span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">updateOne</span>(dt, move(shapes), move(updatedShapes));
 }
 
-vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> calculatePositionsAndBounds(<span style="color:#66d9ef">float</span> <span style="color:#66d9ef">const</span> dt, vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">const</span> shapes)
+vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> calculatePositionsAndBounds(<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> dt, vector<span style="color:#555">&lt;</span>Shape<span style="color:#555">&gt;</span> <span style="color:#069;font-weight:bold">const</span> shapes)
 {
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">updateOne</span>(dt, move(shapes), {});
+	<span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">updateOne</span>(dt, move(shapes), {});
 }
 </code></pre></div>
 
-<p>Instead of one function, we have two. And what is more important the readability became worse (at least for me - the guy who grown up on traditional <em>OOP</em>). In this approach, we used so-called tail recursion. In theory, in this case, the stack should be cleared on every recursion entrance. However, I couldn&rsquo;t find in c++ standard true behavior. Because of this, I can&rsquo;t guarantee that there will be no stack overflow. Taking all this into account I decided not to use recursion in my code.</p>
+<p>Instead of one function, we have two. And what is more important the readability became worse (at least for me - the guy who grown up on traditional <strong>OOP</strong>). In this approach, we used so-called tail recursion. In theory, in this case, the stack should be cleared on every recursion entrance. However, I couldn&rsquo;t find in c++ standard true behavior. Because of this, I can&rsquo;t guarantee that there will be no stack overflow. Taking all this into account I decided not to use recursion in my code.</p>
 
 <h4 id="calculate-cells-ranges">Calculate Cells Ranges</h4>
 
@@ -256,7 +256,7 @@ vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&g
   <img src=images/2.png>
 </a>
 
-<p>This added a lot of complexity - we had to recalculate bounding box every time we moved a shape. In order to reduce the number of recalculations, we added a special accumulator which accumulated all necessary position changes and later applied it to the shape only once. Anyway, we had to add mutexes for synchronization, the code was difficult to understand and wasn&rsquo;t ready for use with <em>FP</em>.</p>
+<p>This added a lot of complexity - we had to recalculate bounding box every time we moved a shape. In order to reduce the number of recalculations, we added a special accumulator which accumulated all necessary position changes and later applied it to the shape only once. Anyway, we had to add mutexes for synchronization, the code was difficult to understand and wasn&rsquo;t ready for use with <strong>FP</strong>.</p>
 
 <p>In the new attempt, we&rsquo;ll not move objects to solve overlap at all. Moreover, we&rsquo;ll make calculations only if it really necessary. On the picture, for example, there&rsquo;s no need to solve collision - the shape <em>b</em> moves faster than the shape <em>a</em> and they moving apart from each other. Sooner or later they will stop to overlap by themselves - without our intervention. Of course, this is physically inaccurate, but if velocities and the simulation step are small then it looks ok. When the calculations are necessary we calculate velocity changes and store them together with the shape id.</p>
 
@@ -276,9 +276,9 @@ vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&g
 
 <h4 id="conclusion">Conclusion</h4>
 
-<p><em>FP</em> requires changing of thinking direction. But is it worth to do? Here&rsquo;re my pros and cons:</p>
+<p><strong>FP</strong> requires changing of thinking direction. But is it worth to do? Here&rsquo;re my pros and cons:</p>
 
-<p><em>Pros</em>:</p>
+<p><strong>Pros</strong>:</p>
 
 <ul>
 <li>Code readability. Together with <a href="https://en.wikipedia.org/wiki/Single_responsibility_principle" target="_blank">SRP</a> the code is easy to understand.</li>
@@ -286,13 +286,13 @@ vector<span style="color:#f92672">&lt;</span>Shape<span style="color:#f92672">&g
 <li>The most important point - the amazing ability for parallelization. Each function in our example can be called safely from any thread. Without synchronization primitives!</li>
 </ul>
 
-<p><em>Cons</em>:</p>
+<p><strong>Cons</strong>:</p>
 
 <ul>
 <li>Performance. Recall that in <a href="https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html" target="_blank">previous article</a> we could simulate <code>8000</code> shapes in one thread. Now we can do only <code>330</code>.</li>
 </ul>
 
-<p>When I worked in a game dev, trying to get the maximum of speed from each line of code, the approach we used today is not usable as it is. However, c++ is not a game dev only and I see a lot of places where <em>FP</em> can be applied.</p>
+<p>When I worked in a game dev, trying to get the maximum of speed from each line of code, the approach we used today is not usable as it is. However, c++ is not a game dev only and I see a lot of places where <strong>FP</strong> can be applied.</p>
       
       <div class="related">
 </div>

@@ -85,34 +85,34 @@
 
 <p>Thought <code>stl</code> provides a great way to store functions and call them later it simply not fulfils my requirement - function callbacks should be added and removed runtime. Also the same function shouldn&rsquo;t be added twice. <code>std::function</code> doesn&rsquo;t have a comparison operator. You can say that there&rsquo;s the <a href="http://en.cppreference.com/w/cpp/utility/functional/function/target" target="_blank"><code>std::function::target()</code></a> method that returns a pointer to a callable type. But can we use it with member functions? Recall that in order to create a wrapper around a member function we need to bind it with <a href="http://en.cppreference.com/w/cpp/utility/functional/bind" target="_blank"><code>std::bind()</code></a>:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void</span>()<span style="color:#f92672">&gt;</span> f{ bind(<span style="color:#f92672">&amp;</span>SomeStruct<span style="color:#f92672">::</span>someMemberFunc) };
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">function<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span>()<span style="color:#555">&gt;</span> f{ bind(<span style="color:#555">&amp;</span>SomeStruct<span style="color:#555">::</span>someMemberFunc) };
 </code></pre></div>
 
 <p>And <code>std::bind()</code> returns an <em>unspecified type</em>. That means that each compiler will have different implementation for this type. Also the standard doesn&rsquo;t say that instances of this type should be comparable.  Take a look at the following code:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">SomeStruct obj;
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">SomeStruct obj;
 
-<span style="color:#75715e">// same function binded twice
-</span><span style="color:#75715e"></span>function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void</span>()<span style="color:#f92672">&gt;</span> f{ bind(<span style="color:#f92672">&amp;</span>SomeStruct<span style="color:#f92672">::</span>someMemberFunc, obj) };
-function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void</span>()<span style="color:#f92672">&gt;</span> f2{ bind(<span style="color:#f92672">&amp;</span>SomeStruct<span style="color:#f92672">::</span>someMemberFunc, obj) };
+<span style="color:#09f;font-style:italic">// same function binded twice
+</span><span style="color:#09f;font-style:italic"></span>function<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span>()<span style="color:#555">&gt;</span> f{ bind(<span style="color:#555">&amp;</span>SomeStruct<span style="color:#555">::</span>someMemberFunc, obj) };
+function<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span>()<span style="color:#555">&gt;</span> f2{ bind(<span style="color:#555">&amp;</span>SomeStruct<span style="color:#555">::</span>someMemberFunc, obj) };
 
-<span style="color:#75715e">// get the type of underlying callable object
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">using</span> RetType <span style="color:#f92672">=</span> <span style="color:#66d9ef">decltype</span>(bind(<span style="color:#f92672">&amp;</span>SomeStruct<span style="color:#f92672">::</span>someMemberFunc));
+<span style="color:#09f;font-style:italic">// get the type of underlying callable object
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#069;font-weight:bold">using</span> RetType <span style="color:#555">=</span> <span style="color:#069;font-weight:bold">decltype</span>(bind(<span style="color:#555">&amp;</span>SomeStruct<span style="color:#555">::</span>someMemberFunc));
 
-<span style="color:#66d9ef">auto</span> a <span style="color:#f92672">=</span> f.target<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>();
-<span style="color:#66d9ef">auto</span> b <span style="color:#f92672">=</span> f2.target<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>();
+<span style="color:#069;font-weight:bold">auto</span> a <span style="color:#555">=</span> f.target<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span>();
+<span style="color:#069;font-weight:bold">auto</span> b <span style="color:#555">=</span> f2.target<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span>();
 
-<span style="color:#66d9ef">bool</span> b{ a <span style="color:#f92672">==</span> b }; <span style="color:#75715e">// false
+<span style="color:#078;font-weight:bold">bool</span> b{ a <span style="color:#555">==</span> b }; <span style="color:#09f;font-style:italic">// false
 </span></code></pre></div>
 
 <p>Here I binded the same function of the same object to different wrappers. Though can&rsquo;t compare <code>std::function</code> objects directly, but I can get the underlying callable objects. With Visual Studio I can compare this objects but anyway they are not equal!</p>
 
 <p>Since I can&rsquo;t compare <code>std::function</code> objects directly I decided to use some sort of hashing. Let&rsquo;s look at the example:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void</span>(<span style="color:#f92672">*</span>funcPtr)()<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">void</span> add()
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span>(<span style="color:#555">*</span>funcPtr)()<span style="color:#555">&gt;</span>
+<span style="color:#078;font-weight:bold">void</span> add()
 {
-	uintptr_t ptr{ <span style="color:#66d9ef">reinterpret_cast</span><span style="color:#f92672">&lt;</span>uintptr_t<span style="color:#f92672">&gt;</span>(funcPtr) };
+	uintptr_t ptr{ <span style="color:#069;font-weight:bold">reinterpret_cast</span><span style="color:#555">&lt;</span>uintptr_t<span style="color:#555">&gt;</span>(funcPtr) };
 	string hash{ to_string(ptr) };
 }
 </code></pre></div>
@@ -125,277 +125,277 @@ function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void<
 
 <p>Sounds easy, right? But cplusplus wouldn&rsquo;t be cplusplus if it was so easy. The pointer to member is not an usual pointer and <code>reinterpret_cast</code> doesn&rsquo;t work with it, i.e. the following code is incorrect:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T, <span style="color:#66d9ef">void</span>(T<span style="color:#f92672">::*</span>funcPtr)()<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">void</span> add()
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, <span style="color:#078;font-weight:bold">void</span>(T<span style="color:#555">::*</span>funcPtr)()<span style="color:#555">&gt;</span>
+<span style="color:#078;font-weight:bold">void</span> add()
 {
-	uintptr_t ptr{ <span style="color:#66d9ef">reinterpret_cast</span><span style="color:#f92672">&lt;</span>uintptr_t<span style="color:#f92672">&gt;</span>(funcPtr) }; <span style="color:#75715e">// cannot convert to &#39;uintptr_t&#39;
-</span><span style="color:#75715e"></span>	string hash{ to_string(ptr) };
+	uintptr_t ptr{ <span style="color:#069;font-weight:bold">reinterpret_cast</span><span style="color:#555">&lt;</span>uintptr_t<span style="color:#555">&gt;</span>(funcPtr) }; <span style="color:#09f;font-style:italic">// cannot convert to &#39;uintptr_t&#39;
+</span><span style="color:#09f;font-style:italic"></span>	string hash{ to_string(ptr) };
 }
 </code></pre></div>
 
 <p>In other words - there&rsquo;s no simple way to get a pointer to member as <code>uintptr_t</code> and even <code>void*</code>. But we can do some hack:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T, <span style="color:#66d9ef">void</span>(T<span style="color:#f92672">::*</span>funcPtr)()<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">void</span> add()
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, <span style="color:#078;font-weight:bold">void</span>(T<span style="color:#555">::*</span>funcPtr)()<span style="color:#555">&gt;</span>
+<span style="color:#078;font-weight:bold">void</span> add()
 {
-	<span style="color:#66d9ef">auto</span> ptr <span style="color:#f92672">=</span> funcPtr;
-	<span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> ptr2 <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>ptr; <span style="color:#75715e">// get address of the pointer
-</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">char</span> arr[<span style="color:#66d9ef">sizeof</span>(uintptr_t)];
-	memcpy(arr, ptr2, <span style="color:#66d9ef">sizeof</span>(uintptr_t)); <span style="color:#75715e">// copy the contents of pointer (which is the address to the function)
-</span><span style="color:#75715e"></span>	uintptr_t ptr3 <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>(<span style="color:#66d9ef">reinterpret_cast</span><span style="color:#f92672">&lt;</span>uintptr_t<span style="color:#f92672">*&gt;</span>(arr)); <span style="color:#75715e">// cast to necessary type
-</span><span style="color:#75715e"></span>}
+	<span style="color:#069;font-weight:bold">auto</span> ptr <span style="color:#555">=</span> funcPtr;
+	<span style="color:#078;font-weight:bold">void</span><span style="color:#555">*</span> ptr2 <span style="color:#555">=</span> <span style="color:#555">&amp;</span>ptr; <span style="color:#09f;font-style:italic">// get address of the pointer
+</span><span style="color:#09f;font-style:italic"></span>	<span style="color:#078;font-weight:bold">char</span> arr[<span style="color:#069;font-weight:bold">sizeof</span>(uintptr_t)];
+	memcpy(arr, ptr2, <span style="color:#069;font-weight:bold">sizeof</span>(uintptr_t)); <span style="color:#09f;font-style:italic">// copy the contents of pointer (which is the address to the function)
+</span><span style="color:#09f;font-style:italic"></span>	uintptr_t ptr3 <span style="color:#555">=</span> <span style="color:#555">*</span>(<span style="color:#069;font-weight:bold">reinterpret_cast</span><span style="color:#555">&lt;</span>uintptr_t<span style="color:#555">*&gt;</span>(arr)); <span style="color:#09f;font-style:italic">// cast to necessary type
+</span><span style="color:#09f;font-style:italic"></span>}
 </code></pre></div>
 
 <p>It <em>can</em> work. But it&rsquo;s not <a href="http://stackoverflow.com/a/36837375/1341942" target="_blank">guaranteed</a>. All this looks like I should forget about hash string. At least at that moment I don&rsquo;t know how to get string representation of member function robustly. While I&rsquo;m searching for the way to do it I decided to take the dumbest approach - pass a string tag together with data:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void</span>(<span style="color:#f92672">*</span>funcPtr)()<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">void</span> add(<span style="color:#66d9ef">const</span> string<span style="color:#f92672">&amp;</span> tag)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span>(<span style="color:#555">*</span>funcPtr)()<span style="color:#555">&gt;</span>
+<span style="color:#078;font-weight:bold">void</span> add(<span style="color:#069;font-weight:bold">const</span> string<span style="color:#555">&amp;</span> tag)
 {
 }
 
-<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T, <span style="color:#66d9ef">void</span>(T<span style="color:#f92672">::*</span>funcPtr)()<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">void</span> add(<span style="color:#66d9ef">const</span> string<span style="color:#f92672">&amp;</span> tag)
+<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, <span style="color:#078;font-weight:bold">void</span>(T<span style="color:#555">::*</span>funcPtr)()<span style="color:#555">&gt;</span>
+<span style="color:#078;font-weight:bold">void</span> add(<span style="color:#069;font-weight:bold">const</span> string<span style="color:#555">&amp;</span> tag)
 {
 }
 </code></pre></div>
 
 <p>It&rsquo;s not elegant and it adds some complexity to a code but at least it&rsquo;s robust, haha. Now I can start to implement the <code>Dispatcher</code> class (remember <a href="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" target="_blank">previous post</a>) with <code>std::function</code>.</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Dispatcher</span>;
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
+<span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Dispatcher</span>;
 
-<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> Ret, <span style="color:#66d9ef">typename</span> ...Args<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Dispatcher</span><span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;</span>
+<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> Ret, <span style="color:#069;font-weight:bold">typename</span> ...Args<span style="color:#555">&gt;</span>
+<span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Dispatcher</span><span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;</span>
 {
-<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span>Ret(<span style="color:#f92672">*</span>funcPtr)(Args...)<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">bool</span> add(<span style="color:#66d9ef">const</span> string<span style="color:#f92672">&amp;</span> tag)
+<span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span>Ret(<span style="color:#555">*</span>funcPtr)(Args...)<span style="color:#555">&gt;</span>
+	<span style="color:#078;font-weight:bold">bool</span> add(<span style="color:#069;font-weight:bold">const</span> string<span style="color:#555">&amp;</span> tag)
 	{
 		addImpl(tag, funcPtr);
-		<span style="color:#66d9ef">return</span> true;
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#366">true</span>;
 	}
 
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">bool</span> add(<span style="color:#66d9ef">const</span> string<span style="color:#f92672">&amp;</span> tag, shared_ptr<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> t)
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
+	<span style="color:#078;font-weight:bold">bool</span> add(<span style="color:#069;font-weight:bold">const</span> string<span style="color:#555">&amp;</span> tag, shared_ptr<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span> t)
 	{
-		addImpl(tag, <span style="color:#f92672">*</span>t.get());
-		<span style="color:#66d9ef">return</span> true;
+		addImpl(tag, <span style="color:#555">*</span>t.get());
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#366">true</span>;
 	}
 
-	<span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">remove</span>(<span style="color:#66d9ef">const</span> string<span style="color:#f92672">&amp;</span> tag)
+	<span style="color:#078;font-weight:bold">bool</span> <span style="color:#c0f">remove</span>(<span style="color:#069;font-weight:bold">const</span> string<span style="color:#555">&amp;</span> tag)
 	{
-		<span style="color:#66d9ef">auto</span> it <span style="color:#f92672">=</span> find(tags.begin(), tags.end(), tag);
-		<span style="color:#66d9ef">if</span> (it <span style="color:#f92672">==</span> tags.end())
+		<span style="color:#069;font-weight:bold">auto</span> it <span style="color:#555">=</span> find(tags.begin(), tags.end(), tag);
+		<span style="color:#069;font-weight:bold">if</span> (it <span style="color:#555">==</span> tags.end())
 		{
-			<span style="color:#66d9ef">return</span> false;
+			<span style="color:#069;font-weight:bold">return</span> <span style="color:#366">false</span>;
 		}
         
-		<span style="color:#66d9ef">auto</span> index{ distance(tags.begin(), it) };
+		<span style="color:#069;font-weight:bold">auto</span> index{ distance(tags.begin(), it) };
 		tags.erase(it);
         
-		delegates.erase(delegates.begin() <span style="color:#f92672">+</span> index);
+		delegates.erase(delegates.begin() <span style="color:#555">+</span> index);
         
-		<span style="color:#66d9ef">return</span> true;
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#366">true</span>;
 	}
 
-	<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">operator</span>()(Args... args)
+	<span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">operator</span>()(Args... args)
 	{
-		<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">auto</span><span style="color:#f92672">&amp;</span> delegate : delegates)
+		<span style="color:#069;font-weight:bold">for</span> (<span style="color:#069;font-weight:bold">auto</span><span style="color:#555">&amp;</span> <span style="color:#99f">delegate</span> : delegates)
 		{
 			delegate(args...);
 		};
 	}
 
-<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
-	<span style="color:#66d9ef">bool</span> addImpl(<span style="color:#66d9ef">const</span> string<span style="color:#f92672">&amp;</span> tag, function<span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;</span> delegate)
+<span style="color:#069;font-weight:bold">private</span><span style="color:#555">:</span>
+	<span style="color:#078;font-weight:bold">bool</span> addImpl(<span style="color:#069;font-weight:bold">const</span> string<span style="color:#555">&amp;</span> tag, function<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;</span> delegate)
 	{
-		<span style="color:#66d9ef">if</span> (find(tags.begin(), tags.end(), tag) <span style="color:#f92672">!=</span> tags.end())
+		<span style="color:#069;font-weight:bold">if</span> (find(tags.begin(), tags.end(), tag) <span style="color:#555">!=</span> tags.end())
 		{
-			<span style="color:#66d9ef">return</span> false;
+			<span style="color:#069;font-weight:bold">return</span> <span style="color:#366">false</span>;
 		}
 
 		delegates.push_back(delegate);
 		tags.push_back(tag);
 
-		<span style="color:#66d9ef">return</span> true;
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#366">true</span>;
 	}
     
-<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
-	vector<span style="color:#f92672">&lt;</span>function<span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;&gt;</span> delegates;
-	vector<span style="color:#f92672">&lt;</span>string<span style="color:#f92672">&gt;</span> tags;
+<span style="color:#069;font-weight:bold">private</span><span style="color:#555">:</span>
+	vector<span style="color:#555">&lt;</span>function<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;&gt;</span> delegates;
+	vector<span style="color:#555">&lt;</span>string<span style="color:#555">&gt;</span> tags;
 };
 </code></pre></div>
 
 <p>The <code>addImpl()</code> function accepts a <code>std::function</code> as a second parameter. In different <code>add()</code> functions we&rsquo;re passing a callable object to it which will be converted to <code>std::function</code> implicitly. Curious reader already noticed that I didn&rsquo;t provide an implementation for a member function. Why? Because it&rsquo;s not trivial. Let&rsquo;s find out why:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">UserStruct</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">UserStruct</span>
 {
-	<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">member</span>(<span style="color:#66d9ef">int</span> a, <span style="color:#66d9ef">float</span> b)
+	<span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">member</span>(<span style="color:#078;font-weight:bold">int</span> a, <span style="color:#078;font-weight:bold">float</span> b)
 	{
-		<span style="color:#66d9ef">return</span> a <span style="color:#f92672">+</span> <span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span>(b);
+		<span style="color:#069;font-weight:bold">return</span> a <span style="color:#555">+</span> <span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(b);
 	}
 };
 
 UserStruct us;
-function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>)<span style="color:#f92672">&gt;</span> f{ bind(<span style="color:#f92672">&amp;</span>UserStruct<span style="color:#f92672">::</span>member, us, placeholders<span style="color:#f92672">::</span>_1, placeholders<span style="color:#f92672">::</span>_2) };
-f(<span style="color:#ae81ff">5</span>, <span style="color:#ae81ff">10.0f</span>);
+function<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> f{ bind(<span style="color:#555">&amp;</span>UserStruct<span style="color:#555">::</span>member, us, placeholders<span style="color:#555">::</span>_1, placeholders<span style="color:#555">::</span>_2) };
+f(<span style="color:#f60">5</span>, <span style="color:#f60">10.0f</span>);
 </code></pre></div>
 
 <p>That&rsquo;s how we bind and call a member function. Have you noticed <code>std::placeholders</code>? If we don&rsquo;t know what parameters we&rsquo;re going to pass to a wrapper - we have to use this stubs. Remember that we&rsquo;re trying to build &ldquo;generic&rdquo; system and we chose to use variadic parameter pack for arguments. Because of this we don&rsquo;t know the number of placeholders beforehand. And as you have guessed we need to generate them!</p>
 
 <p>After some search we can end up in this <a href="http://en.cppreference.com/w/cpp/utility/functional/is_placeholder" target="_blank">documentation</a> and it looks like what we need. And even with an example! It states that we can use our own custom placeholder if we&rsquo;ll follow certain rules. Let&rsquo;s try:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span>size_t<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">MyPlaceholder</span>{};
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span>size_t<span style="color:#555">&gt;</span>
+<span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">MyPlaceholder</span>{};
 
-<span style="color:#66d9ef">namespace</span> std
+<span style="color:#069;font-weight:bold">namespace</span> std
 {
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;&gt;</span>
-	<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">is_placeholder</span><span style="color:#f92672">&lt;</span>MyPlaceholder<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;&gt;</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> integral_constant<span style="color:#f92672">&lt;</span>size_t, <span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;</span>{};
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;&gt;</span>
+	<span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">is_placeholder</span><span style="color:#555">&lt;</span>MyPlaceholder<span style="color:#555">&lt;</span><span style="color:#f60">1</span><span style="color:#555">&gt;&gt;</span> <span style="color:#555">:</span> <span style="color:#069;font-weight:bold">public</span> integral_constant<span style="color:#555">&lt;</span>size_t, <span style="color:#f60">1</span><span style="color:#555">&gt;</span>{};
     
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;&gt;</span>
-	<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">is_placeholder</span><span style="color:#f92672">&lt;</span>MyPlaceholder<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">2</span><span style="color:#f92672">&gt;&gt;</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> integral_constant<span style="color:#f92672">&lt;</span>size_t, <span style="color:#ae81ff">2</span><span style="color:#f92672">&gt;</span>{};
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;&gt;</span>
+	<span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">is_placeholder</span><span style="color:#555">&lt;</span>MyPlaceholder<span style="color:#555">&lt;</span><span style="color:#f60">2</span><span style="color:#555">&gt;&gt;</span> <span style="color:#555">:</span> <span style="color:#069;font-weight:bold">public</span> integral_constant<span style="color:#555">&lt;</span>size_t, <span style="color:#f60">2</span><span style="color:#555">&gt;</span>{};
 }
 
-function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>)<span style="color:#f92672">&gt;</span> f{ bind(<span style="color:#f92672">&amp;</span>UserStruct<span style="color:#f92672">::</span>member, us, MyPlaceholder<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;</span>{}, MyPlaceholder<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">2</span><span style="color:#f92672">&gt;</span>{}) };
-f(<span style="color:#ae81ff">5</span>, <span style="color:#ae81ff">10.0f</span>)
+function<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> f{ bind(<span style="color:#555">&amp;</span>UserStruct<span style="color:#555">::</span>member, us, MyPlaceholder<span style="color:#555">&lt;</span><span style="color:#f60">1</span><span style="color:#555">&gt;</span>{}, MyPlaceholder<span style="color:#555">&lt;</span><span style="color:#f60">2</span><span style="color:#555">&gt;</span>{}) };
+f(<span style="color:#f60">5</span>, <span style="color:#f60">10.0f</span>)
 </code></pre></div>
 
 <p>Wow, it works! But we don&rsquo;t like this enumeration in <code>std</code> namespace, do we?</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span>size_t<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">MyPlaceholder</span>{};
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span>size_t<span style="color:#555">&gt;</span>
+<span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">MyPlaceholder</span>{};
 
-<span style="color:#66d9ef">namespace</span> std
+<span style="color:#069;font-weight:bold">namespace</span> std
 {
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span>size_t N<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">is_placeholder</span><span style="color:#f92672">&lt;</span>MyPlaceholder<span style="color:#f92672">&lt;</span>N<span style="color:#f92672">&gt;&gt;</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> integral_constant<span style="color:#f92672">&lt;</span>size_t, N<span style="color:#f92672">&gt;</span>{};
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span>size_t N<span style="color:#555">&gt;</span>
+	<span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">is_placeholder</span><span style="color:#555">&lt;</span>MyPlaceholder<span style="color:#555">&lt;</span>N<span style="color:#555">&gt;&gt;</span> <span style="color:#555">:</span> <span style="color:#069;font-weight:bold">public</span> integral_constant<span style="color:#555">&lt;</span>size_t, N<span style="color:#555">&gt;</span>{};
 }
 
-function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>)<span style="color:#f92672">&gt;</span> f{ bind(<span style="color:#f92672">&amp;</span>UserStruct<span style="color:#f92672">::</span>member, us, MyPlaceholder<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;</span>{}, MyPlaceholder<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">2</span><span style="color:#f92672">&gt;</span>{}) };
-f(<span style="color:#ae81ff">5</span>, <span style="color:#ae81ff">10.0f</span>)
+function<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> f{ bind(<span style="color:#555">&amp;</span>UserStruct<span style="color:#555">::</span>member, us, MyPlaceholder<span style="color:#555">&lt;</span><span style="color:#f60">1</span><span style="color:#555">&gt;</span>{}, MyPlaceholder<span style="color:#555">&lt;</span><span style="color:#f60">2</span><span style="color:#555">&gt;</span>{}) };
+f(<span style="color:#f60">5</span>, <span style="color:#f60">10.0f</span>)
 </code></pre></div>
 
 <p>Much better. Now we need to remove placeholder&rsquo;s manual instantiation in <code>std::bind()</code> function. In one of my <a href="https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html" target="_blank">previous</a> posts I wrote about <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence" target="_blank">integer sequence</a> and it seems we can use it here too. Let&rsquo;s wrap <code>std::bind()</code> and replace our placeholders with a function-generator:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span>size_t N<span style="color:#f92672">&gt;</span>
-MyPlaceholder<span style="color:#f92672">&lt;</span>N <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;</span> getPlaceholder()
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span>size_t N<span style="color:#555">&gt;</span>
+MyPlaceholder<span style="color:#555">&lt;</span>N <span style="color:#555">+</span> <span style="color:#f60">1</span><span style="color:#555">&gt;</span> getPlaceholder()
 {
-	<span style="color:#66d9ef">return</span> {};
+	<span style="color:#069;font-weight:bold">return</span> {};
 }
 
-<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T, <span style="color:#66d9ef">typename</span> Ret, size_t... Idx, <span style="color:#66d9ef">typename</span>... Args<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">auto</span> bindImpl(T<span style="color:#f92672">*</span> obj, Ret(T<span style="color:#f92672">::*</span>funcPtr)(Args...), index_sequence<span style="color:#f92672">&lt;</span>Idx...<span style="color:#f92672">&gt;</span>)
+<span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, <span style="color:#069;font-weight:bold">typename</span> Ret, size_t... Idx, <span style="color:#069;font-weight:bold">typename</span>... Args<span style="color:#555">&gt;</span>
+<span style="color:#069;font-weight:bold">auto</span> bindImpl(T<span style="color:#555">*</span> obj, Ret(T<span style="color:#555">::*</span>funcPtr)(Args...), index_sequence<span style="color:#555">&lt;</span>Idx...<span style="color:#555">&gt;</span>)
 {
-    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">bind</span>(funcPtr, obj, getPlaceholder<span style="color:#f92672">&lt;</span>Idx<span style="color:#f92672">&gt;</span>()...); <span style="color:#75715e">// getPlaceholder() will be expanded
-</span><span style="color:#75715e"></span>}
+    <span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">bind</span>(funcPtr, obj, getPlaceholder<span style="color:#555">&lt;</span>Idx<span style="color:#555">&gt;</span>()...); <span style="color:#09f;font-style:italic">// getPlaceholder() will be expanded
+</span><span style="color:#09f;font-style:italic"></span>}
 
-function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>)<span style="color:#f92672">&gt;</span> f{ bindImpl(<span style="color:#f92672">&amp;</span>us, <span style="color:#f92672">&amp;</span>UserStruct<span style="color:#f92672">::</span>member, index_sequence_for<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span><span style="color:#f92672">&gt;</span>{}) };
-f(<span style="color:#ae81ff">5</span>, <span style="color:#ae81ff">10.0f</span>)
+function<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> f{ bindImpl(<span style="color:#555">&amp;</span>us, <span style="color:#555">&amp;</span>UserStruct<span style="color:#555">::</span>member, index_sequence_for<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span><span style="color:#555">&gt;</span>{}) };
+f(<span style="color:#f60">5</span>, <span style="color:#f60">10.0f</span>)
 </code></pre></div>
 
 <p>The <code>getPlaceholder()</code> will receive an integer (starting from <code>0</code>) as template argument and will be called the number of times equal to the number of callback&rsquo;s arguments. Exactly as in my <a href="https://nikitablack.github.io/2016/02/21/Call-a-function-from-the-string-name-and-arguments.html" target="_blank">previous</a> post. Since placeholders should start from <code>1</code> we&rsquo;re adding <code>+1</code> in the argument - <code>MyPlaceholder&lt;N + 1&gt;</code>. In our case this code will be generated:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">MyPlaceholder<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">0</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;</span> getPlaceholder()
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">MyPlaceholder<span style="color:#555">&lt;</span><span style="color:#f60">0</span> <span style="color:#555">+</span> <span style="color:#f60">1</span><span style="color:#555">&gt;</span> getPlaceholder()
 {
-	<span style="color:#66d9ef">return</span> {};
+	<span style="color:#069;font-weight:bold">return</span> {};
 }
 
-MyPlaceholder<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;</span> getPlaceholder()
+MyPlaceholder<span style="color:#555">&lt;</span><span style="color:#f60">1</span> <span style="color:#555">+</span> <span style="color:#f60">1</span><span style="color:#555">&gt;</span> getPlaceholder()
 {
-	<span style="color:#66d9ef">return</span> {};
+	<span style="color:#069;font-weight:bold">return</span> {};
 }
 
-<span style="color:#66d9ef">auto</span> <span style="color:#a6e22e">bindImpl</span>(UserStruct<span style="color:#f92672">*</span> obj, <span style="color:#66d9ef">int</span>(UserStruct<span style="color:#f92672">::*</span>funcPtr)(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>), index_sequence<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;</span>)
+<span style="color:#069;font-weight:bold">auto</span> <span style="color:#c0f">bindImpl</span>(UserStruct<span style="color:#555">*</span> obj, <span style="color:#078;font-weight:bold">int</span>(UserStruct<span style="color:#555">::*</span>funcPtr)(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>), index_sequence<span style="color:#555">&lt;</span><span style="color:#f60">0</span>, <span style="color:#f60">1</span><span style="color:#555">&gt;</span>)
 {
-    <span style="color:#66d9ef">return</span> bind(funcPtr, obj, getPlaceholder<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">0</span><span style="color:#f92672">&gt;</span>(), getPlaceholder<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;</span>());
+    <span style="color:#069;font-weight:bold">return</span> bind(funcPtr, obj, getPlaceholder<span style="color:#555">&lt;</span><span style="color:#f60">0</span><span style="color:#555">&gt;</span>(), getPlaceholder<span style="color:#555">&lt;</span><span style="color:#f60">1</span><span style="color:#555">&gt;</span>());
 }
 </code></pre></div>
 
 <p>Done! Now let&rsquo;s put it in our <code>Dispatcher</code>:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span>size_t<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">MyPlaceholder</span>{};
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span>size_t<span style="color:#555">&gt;</span>
+<span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">MyPlaceholder</span>{};
 
-<span style="color:#66d9ef">namespace</span> std
+<span style="color:#069;font-weight:bold">namespace</span> std
 {
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span>size_t N<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">is_placeholder</span><span style="color:#f92672">&lt;</span>MyPlaceholder<span style="color:#f92672">&lt;</span>N<span style="color:#f92672">&gt;&gt;</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> integral_constant<span style="color:#f92672">&lt;</span>size_t, N<span style="color:#f92672">&gt;</span>{};
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span>size_t N<span style="color:#555">&gt;</span>
+	<span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">is_placeholder</span><span style="color:#555">&lt;</span>MyPlaceholder<span style="color:#555">&lt;</span>N<span style="color:#555">&gt;&gt;</span> <span style="color:#555">:</span> <span style="color:#069;font-weight:bold">public</span> integral_constant<span style="color:#555">&lt;</span>size_t, N<span style="color:#555">&gt;</span>{};
 }
 
-<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Dispatcher</span>;
+<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
+<span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Dispatcher</span>;
 
-<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> Ret, <span style="color:#66d9ef">typename</span> ...Args<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Dispatcher</span><span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;</span>
+<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> Ret, <span style="color:#069;font-weight:bold">typename</span> ...Args<span style="color:#555">&gt;</span>
+<span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Dispatcher</span><span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;</span>
 {
-<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
-	<span style="color:#75715e">// ... other code ...
-</span><span style="color:#75715e"></span>    
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T, Ret(T<span style="color:#f92672">::*</span>funcPtr)(Args...)<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">bool</span> add(<span style="color:#66d9ef">const</span> string<span style="color:#f92672">&amp;</span> tag, shared_ptr<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> obj)
+<span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
+	<span style="color:#09f;font-style:italic">// ... other code ...
+</span><span style="color:#09f;font-style:italic"></span>    
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, Ret(T<span style="color:#555">::*</span>funcPtr)(Args...)<span style="color:#555">&gt;</span>
+	<span style="color:#078;font-weight:bold">bool</span> add(<span style="color:#069;font-weight:bold">const</span> string<span style="color:#555">&amp;</span> tag, shared_ptr<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span> obj)
 	{
-		addImpl(tag, bindImpl(obj.get(), funcPtr, index_sequence_for<span style="color:#f92672">&lt;</span>Args...<span style="color:#f92672">&gt;</span>{}));
-		<span style="color:#66d9ef">return</span> true;
+		addImpl(tag, bindImpl(obj.get(), funcPtr, index_sequence_for<span style="color:#555">&lt;</span>Args...<span style="color:#555">&gt;</span>{}));
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#366">true</span>;
 	}
     
-	<span style="color:#75715e">// ... other code ...
-</span><span style="color:#75715e"></span>    
-<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
-	<span style="color:#75715e">// ... other code ...
-</span><span style="color:#75715e"></span>    
-	<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T, size_t... Idx<span style="color:#f92672">&gt;</span>
-	function<span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;</span> bindImpl(T<span style="color:#f92672">*</span> obj, Ret(T<span style="color:#f92672">::*</span>funcPtr)(Args...), index_sequence<span style="color:#f92672">&lt;</span>Idx...<span style="color:#f92672">&gt;</span>)
+	<span style="color:#09f;font-style:italic">// ... other code ...
+</span><span style="color:#09f;font-style:italic"></span>    
+<span style="color:#069;font-weight:bold">private</span><span style="color:#555">:</span>
+	<span style="color:#09f;font-style:italic">// ... other code ...
+</span><span style="color:#09f;font-style:italic"></span>    
+	<span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, size_t... Idx<span style="color:#555">&gt;</span>
+	function<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;</span> bindImpl(T<span style="color:#555">*</span> obj, Ret(T<span style="color:#555">::*</span>funcPtr)(Args...), index_sequence<span style="color:#555">&lt;</span>Idx...<span style="color:#555">&gt;</span>)
 	{
-		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">bind</span>(funcPtr, obj, getPlaceholder<span style="color:#f92672">&lt;</span>Idx<span style="color:#f92672">&gt;</span>()...);
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">bind</span>(funcPtr, obj, getPlaceholder<span style="color:#555">&lt;</span>Idx<span style="color:#555">&gt;</span>()...);
 	}
 
-	<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span>size_t N<span style="color:#f92672">&gt;</span>
-	MyPlaceholder<span style="color:#f92672">&lt;</span>N <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;</span> getPlaceholder()
+	<span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span>size_t N<span style="color:#555">&gt;</span>
+	MyPlaceholder<span style="color:#555">&lt;</span>N <span style="color:#555">+</span> <span style="color:#f60">1</span><span style="color:#555">&gt;</span> getPlaceholder()
 	{
-		<span style="color:#66d9ef">return</span> {};
+		<span style="color:#069;font-weight:bold">return</span> {};
 	}
     
-	<span style="color:#75715e">// ... other code ...
-</span><span style="color:#75715e"></span>}
+	<span style="color:#09f;font-style:italic">// ... other code ...
+</span><span style="color:#09f;font-style:italic"></span>}
 </code></pre></div>
 
 <p>Noe we can use our dispatcher this way:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Dispatcher<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>)<span style="color:#f92672">&gt;</span> dispatcher;
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Dispatcher<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> dispatcher;
 
-<span style="color:#66d9ef">auto</span> ptr <span style="color:#f92672">=</span> make_shared_lambda([](<span style="color:#66d9ef">int</span> a, <span style="color:#66d9ef">float</span> b)<span style="color:#f92672">-&gt;</span><span style="color:#66d9ef">int</span>
+<span style="color:#069;font-weight:bold">auto</span> ptr <span style="color:#555">=</span> make_shared_lambda([](<span style="color:#078;font-weight:bold">int</span> a, <span style="color:#078;font-weight:bold">float</span> b)<span style="color:#555">-&gt;</span><span style="color:#078;font-weight:bold">int</span>
 {
-	<span style="color:#66d9ef">return</span> a <span style="color:#f92672">+</span> <span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span>(b);
+	<span style="color:#069;font-weight:bold">return</span> a <span style="color:#555">+</span> <span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(b);
 });
 
-dispatcher.add(<span style="color:#e6db74">&#34;lambda&#34;</span>, ptr);
-dispatcher.add(<span style="color:#e6db74">&#34;lambda&#34;</span>, ptr); <span style="color:#75715e">// will not add because wrapper with this name already binded
-</span><span style="color:#75715e"></span>
-<span style="color:#66d9ef">auto</span> ptr2 <span style="color:#f92672">=</span> make_shared<span style="color:#f92672">&lt;</span>UserStruct<span style="color:#f92672">&gt;</span>();
-dispatcher.add<span style="color:#f92672">&lt;</span>UserStruct, <span style="color:#f92672">&amp;</span>UserStruct<span style="color:#f92672">::</span>member<span style="color:#f92672">&gt;</span>(<span style="color:#e6db74">&#34;member&#34;</span>, ptr2);
+dispatcher.add(<span style="color:#c30">&#34;lambda&#34;</span>, ptr);
+dispatcher.add(<span style="color:#c30">&#34;lambda&#34;</span>, ptr); <span style="color:#09f;font-style:italic">// will not add because wrapper with this name already binded
+</span><span style="color:#09f;font-style:italic"></span>
+<span style="color:#069;font-weight:bold">auto</span> ptr2 <span style="color:#555">=</span> make_shared<span style="color:#555">&lt;</span>UserStruct<span style="color:#555">&gt;</span>();
+dispatcher.add<span style="color:#555">&lt;</span>UserStruct, <span style="color:#555">&amp;</span>UserStruct<span style="color:#555">::</span>member<span style="color:#555">&gt;</span>(<span style="color:#c30">&#34;member&#34;</span>, ptr2);
 
-dispatcher(<span style="color:#ae81ff">5</span>, <span style="color:#ae81ff">10.0f</span>);
+dispatcher(<span style="color:#f60">5</span>, <span style="color:#f60">10.0f</span>);
 
-dispatcher.remove(<span style="color:#e6db74">&#34;lambda&#34;</span>);
-dispatcher.remove(<span style="color:#e6db74">&#34;member&#34;</span>);
+dispatcher.remove(<span style="color:#c30">&#34;lambda&#34;</span>);
+dispatcher.remove(<span style="color:#c30">&#34;member&#34;</span>);
 </code></pre></div>
 
 <p>See my <a href="https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html" target="_blank">previous</a> post for <code>make_shared_lambda()</code> implementation.</p>
 
 <p>Now when we have two implemenations we can compare their performance. I binded a lambda, global function and a member function to both dispatchers and call them <code>10'000'000</code> times while measuring the time needed to make this amount of calls. Also I added &ldquo;raw&rdquo; function call (direct call without any wrappers). I ran this test <code>10</code> times and averaged the result. This is what I got with Visual Studio 2015 (release mode, optimizations):</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">lambda raw: <span style="color:#ae81ff">21</span>
-lambda dispatcher: <span style="color:#ae81ff">235</span>
-lambda function dispatcher: <span style="color:#ae81ff">31</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">lambda <span style="color:#99f">raw</span>: <span style="color:#f60">21</span>
+lambda <span style="color:#99f">dispatcher</span>: <span style="color:#f60">235</span>
+lambda function <span style="color:#99f">dispatcher</span>: <span style="color:#f60">31</span>
 
-global raw: <span style="color:#ae81ff">21</span>
-global dispatcher: <span style="color:#ae81ff">85</span>
-global function dispatcher: <span style="color:#ae81ff">38</span>
+global <span style="color:#99f">raw</span>: <span style="color:#f60">21</span>
+global <span style="color:#99f">dispatcher</span>: <span style="color:#f60">85</span>
+global function <span style="color:#99f">dispatcher</span>: <span style="color:#f60">38</span>
 
-member raw: <span style="color:#ae81ff">22</span>
-member dispatcher: <span style="color:#ae81ff">233</span>
-member function dispatcher: <span style="color:#ae81ff">38</span>
+member <span style="color:#99f">raw</span>: <span style="color:#f60">22</span>
+member <span style="color:#99f">dispatcher</span>: <span style="color:#f60">233</span>
+member function <span style="color:#99f">dispatcher</span>: <span style="color:#f60">38</span>
 </code></pre></div>
 
 <p>Sorry, no fancy charts today. The results are interesting and unexpected for me. Delegate version I wrote is incredibly slow but <code>std::function</code> is pretty fast though 50% slower than the raw function call. For me the choice is obvious - I can live with managing unique identifiers for <code>std::function</code>, the speed for me (as a game developer) is much more important.</p>

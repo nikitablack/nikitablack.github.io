@@ -85,7 +85,7 @@
 
 <p>We can pass callbacks to each other but in that case we can create dependencies - for example, a pointer to member function in C++ looks like this:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span>(SomeClass<span style="color:#f92672">::*</span>ptr)(<span style="color:#66d9ef">float</span>);
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span>(SomeClass<span style="color:#555">::*</span>ptr)(<span style="color:#078;font-weight:bold">float</span>);
 </code></pre></div>
 
 <p>Here <code>ptr</code> is an actual pointer and <code>SomeClass</code> is the name of the class - owner of this function. As you can imagine, if some class needs to accept a function pointer to another class, then using raw function pointers creates a coupling between them. We can use global or static functions - in that case we don&rsquo;t need to specify a class name (because there&rsquo;s no one). But using this types of functions will complicate the code.</p>
@@ -94,92 +94,92 @@
 
 <p>First, let&rsquo;s found how can we pass a function and call it later. One way is to pass a function pointer as a function argument, store this pointer and call it later. In following example I&rsquo;m not storing it but call immediately:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">foo</span>(<span style="color:#66d9ef">int</span>(<span style="color:#f92672">*</span>funcPtr)(<span style="color:#66d9ef">int</span>))
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">foo</span>(<span style="color:#078;font-weight:bold">int</span>(<span style="color:#555">*</span>funcPtr)(<span style="color:#078;font-weight:bold">int</span>))
 {
-  <span style="color:#66d9ef">return</span> funcPtr(<span style="color:#ae81ff">10</span>);
+  <span style="color:#069;font-weight:bold">return</span> funcPtr(<span style="color:#f60">10</span>);
 }
 
-<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">test</span>(<span style="color:#66d9ef">int</span> a)
+<span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">test</span>(<span style="color:#078;font-weight:bold">int</span> a)
 {
-  <span style="color:#66d9ef">return</span> a;
+  <span style="color:#069;font-weight:bold">return</span> a;
 }
 
-foo(<span style="color:#f92672">&amp;</span>test);
+foo(<span style="color:#555">&amp;</span>test);
 </code></pre></div>
 
 <p>Another option is to pass function pointer as <a href="http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter" target="_blank">non-type template parameter</a>. In this case we don&rsquo;t need to keep a pointer - the whole function was created around specified pointer:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#f92672">*</span>FuncPtr)(<span style="color:#66d9ef">int</span>)<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">int</span> foo()
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#555">*</span>FuncPtr)(<span style="color:#078;font-weight:bold">int</span>)<span style="color:#555">&gt;</span>
+<span style="color:#078;font-weight:bold">int</span> foo()
 {
-  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">FuncPtr</span>(<span style="color:#ae81ff">10</span>);
+  <span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">FuncPtr</span>(<span style="color:#f60">10</span>);
 }
 
-<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">test</span>(<span style="color:#66d9ef">int</span> a)
+<span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">test</span>(<span style="color:#078;font-weight:bold">int</span> a)
 {
-  <span style="color:#66d9ef">return</span> a;
+  <span style="color:#069;font-weight:bold">return</span> a;
 }
 
-foo<span style="color:#f92672">&lt;&amp;</span>test<span style="color:#f92672">&gt;</span>();
+foo<span style="color:#555">&lt;&amp;</span>test<span style="color:#555">&gt;</span>();
 </code></pre></div>
 
 <p>But which us better? What to use? Of cource there&rsquo;s no answer. It depends. If you don&rsquo;t know before which function you need to use as a callback, then passing a function pointer is the only option. But if you know, then passing it as template argument can be a good choice. Check this example:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">call1</span>(<span style="color:#66d9ef">int</span>(<span style="color:#f92672">*</span>funcPtr)(<span style="color:#66d9ef">int</span>))
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">call1</span>(<span style="color:#078;font-weight:bold">int</span>(<span style="color:#555">*</span>funcPtr)(<span style="color:#078;font-weight:bold">int</span>))
 {
-  <span style="color:#66d9ef">return</span> funcPtr(<span style="color:#ae81ff">10</span>);
+  <span style="color:#069;font-weight:bold">return</span> funcPtr(<span style="color:#f60">10</span>);
 }
 
-<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#f92672">*</span>F)(<span style="color:#66d9ef">int</span>)<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">int</span> call2()
+<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#555">*</span>F)(<span style="color:#078;font-weight:bold">int</span>)<span style="color:#555">&gt;</span>
+<span style="color:#078;font-weight:bold">int</span> call2()
 {
-  <span style="color:#66d9ef">return</span> (F)(<span style="color:#ae81ff">10</span>);
+  <span style="color:#069;font-weight:bold">return</span> (F)(<span style="color:#f60">10</span>);
 }
 
-<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">test</span>(<span style="color:#66d9ef">int</span> a)
+<span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">test</span>(<span style="color:#078;font-weight:bold">int</span> a)
 {
-  <span style="color:#66d9ef">return</span> a;
+  <span style="color:#069;font-weight:bold">return</span> a;
 }
 
-<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>()
+<span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">main</span>()
 {
-  <span style="color:#66d9ef">int</span> i{<span style="color:#ae81ff">0</span>};
+  <span style="color:#078;font-weight:bold">int</span> i{<span style="color:#f60">0</span>};
   
-  i <span style="color:#f92672">+=</span> test(<span style="color:#ae81ff">5</span>);
-  i <span style="color:#f92672">+=</span> call1(<span style="color:#f92672">&amp;</span>test);
-  i <span style="color:#f92672">+=</span> call2<span style="color:#f92672">&lt;&amp;</span>test<span style="color:#f92672">&gt;</span>();
+  i <span style="color:#555">+=</span> test(<span style="color:#f60">5</span>);
+  i <span style="color:#555">+=</span> call1(<span style="color:#555">&amp;</span>test);
+  i <span style="color:#555">+=</span> call2<span style="color:#555">&lt;&amp;</span>test<span style="color:#555">&gt;</span>();
   
-  <span style="color:#66d9ef">return</span> i;
+  <span style="color:#069;font-weight:bold">return</span> i;
 }
 </code></pre></div>
 
 <p>I used <a href="https://gcc.godbolt.org/" target="_blank">https://gcc.godbolt.org/</a> to compile it. Thought it&rsquo;s hard to get useful output - compilers are damn smart and produce optimized code - with <em>gcc</em> compiler and <em>O1</em> optimization I got the following assembly output.</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">test(<span style="color:#66d9ef">int</span>)<span style="color:#f92672">:</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">test(<span style="color:#078;font-weight:bold">int</span>)<span style="color:#555">:</span>
         mov     eax, edi
         ret
-call1(<span style="color:#66d9ef">int</span> (<span style="color:#f92672">*</span>)(<span style="color:#66d9ef">int</span>))<span style="color:#f92672">:</span>
-        sub     rsp, <span style="color:#ae81ff">8</span>
+call1(<span style="color:#078;font-weight:bold">int</span> (<span style="color:#555">*</span>)(<span style="color:#078;font-weight:bold">int</span>))<span style="color:#555">:</span>
+        sub     rsp, <span style="color:#f60">8</span>
         mov     rax, rdi
-        mov     edi, <span style="color:#ae81ff">10</span>
+        mov     edi, <span style="color:#f60">10</span>
         call    rax
-        add     rsp, <span style="color:#ae81ff">8</span>
+        add     rsp, <span style="color:#f60">8</span>
         ret
-main:
-        sub     rsp, <span style="color:#ae81ff">8</span>
-        mov     edi, OFFSET FLAT:test(<span style="color:#66d9ef">int</span>)
-        call    call1(<span style="color:#66d9ef">int</span> (<span style="color:#f92672">*</span>)(<span style="color:#66d9ef">int</span>))
-        add     eax, <span style="color:#ae81ff">15</span>
-        add     rsp, <span style="color:#ae81ff">8</span>
+<span style="color:#99f">main</span>:
+        sub     rsp, <span style="color:#f60">8</span>
+        mov     edi, OFFSET <span style="color:#99f">FLAT</span>:test(<span style="color:#078;font-weight:bold">int</span>)
+        call    call1(<span style="color:#078;font-weight:bold">int</span> (<span style="color:#555">*</span>)(<span style="color:#078;font-weight:bold">int</span>))
+        add     eax, <span style="color:#f60">15</span>
+        add     rsp, <span style="color:#f60">8</span>
         ret
-        sub     rsp, <span style="color:#ae81ff">8</span>
-        mov     edi, OFFSET FLAT:std<span style="color:#f92672">::</span>__ioinit
-        call    std<span style="color:#f92672">::</span>ios_base<span style="color:#f92672">::</span>Init<span style="color:#f92672">::</span>Init()
-        mov     edx, OFFSET FLAT:__dso_handle
-        mov     esi, OFFSET FLAT:std<span style="color:#f92672">::</span>__ioinit
-        mov     edi, OFFSET FLAT:std<span style="color:#f92672">::</span>ios_base<span style="color:#f92672">::</span>Init<span style="color:#f92672">::~</span>Init()
+        sub     rsp, <span style="color:#f60">8</span>
+        mov     edi, OFFSET <span style="color:#99f">FLAT</span>:std<span style="color:#555">::</span>__ioinit
+        call    std<span style="color:#555">::</span>ios_base<span style="color:#555">::</span>Init<span style="color:#555">::</span>Init()
+        mov     edx, OFFSET <span style="color:#99f">FLAT</span>:__dso_handle
+        mov     esi, OFFSET <span style="color:#99f">FLAT</span>:std<span style="color:#555">::</span>__ioinit
+        mov     edi, OFFSET <span style="color:#99f">FLAT</span>:std<span style="color:#555">::</span>ios_base<span style="color:#555">::</span>Init<span style="color:#555">::~</span>Init()
         call    __cxa_atexit
-        add     rsp, <span style="color:#ae81ff">8</span>
+        add     rsp, <span style="color:#f60">8</span>
         ret
 </code></pre></div>
 
@@ -197,31 +197,31 @@ main:
 
 <p>All that means that we should manage 3 cases in our delegate implementation. So let&rsquo;s do it.</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Delegate</span>;
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
+<span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Delegate</span>;
 
-<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> Ret, <span style="color:#66d9ef">typename</span> ...Args<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Delegate</span><span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;</span>
+<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> Ret, <span style="color:#069;font-weight:bold">typename</span> ...Args<span style="color:#555">&gt;</span>
+<span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Delegate</span><span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;</span>
 {
-	<span style="color:#66d9ef">using</span> CallbackType <span style="color:#f92672">=</span> Ret(<span style="color:#f92672">*</span>)(shared_ptr<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void</span><span style="color:#f92672">&gt;</span>, Args...);
+	<span style="color:#069;font-weight:bold">using</span> CallbackType <span style="color:#555">=</span> Ret(<span style="color:#555">*</span>)(shared_ptr<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span><span style="color:#555">&gt;</span>, Args...);
     
-<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
-	Ret <span style="color:#66d9ef">operator</span>()(Args... args)
+<span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
+	Ret <span style="color:#069;font-weight:bold">operator</span>()(Args... args)
 	{
-		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">callback</span>(callee, args...);
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">callback</span>(callee, args...);
 	}
     
-    <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span>(<span style="color:#66d9ef">const</span> Delegate<span style="color:#f92672">&amp;</span> other)
+    <span style="color:#078;font-weight:bold">bool</span> <span style="color:#069;font-weight:bold">operator</span><span style="color:#555">==</span>(<span style="color:#069;font-weight:bold">const</span> Delegate<span style="color:#555">&amp;</span> other)
 	{
-		<span style="color:#66d9ef">return</span> callee <span style="color:#f92672">==</span> other.callee <span style="color:#f92672">&amp;&amp;</span> callback <span style="color:#f92672">==</span> other.callback;
+		<span style="color:#069;font-weight:bold">return</span> callee <span style="color:#555">==</span> other.callee <span style="color:#555">&amp;&amp;</span> callback <span style="color:#555">==</span> other.callback;
 	}
     
-<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
-	shared_ptr<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void</span><span style="color:#f92672">&gt;</span> callee{ <span style="color:#66d9ef">nullptr</span> };
-	CallbackType callback{ <span style="color:#66d9ef">nullptr</span> };
+<span style="color:#069;font-weight:bold">private</span><span style="color:#555">:</span>
+	shared_ptr<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span><span style="color:#555">&gt;</span> callee{ <span style="color:#069;font-weight:bold">nullptr</span> };
+	CallbackType callback{ <span style="color:#069;font-weight:bold">nullptr</span> };
     
-<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
-	Delegate(shared_ptr<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void</span><span style="color:#f92672">&gt;</span> obj, CallbackType funcPtr) <span style="color:#f92672">:</span> callee{ obj }, callback{ funcPtr }
+<span style="color:#069;font-weight:bold">private</span><span style="color:#555">:</span>
+	Delegate(shared_ptr<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span><span style="color:#555">&gt;</span> obj, CallbackType funcPtr) <span style="color:#555">:</span> callee{ obj }, callback{ funcPtr }
 	{
 	}
 }
@@ -231,18 +231,18 @@ main:
 
 <p>Now let&rsquo;s add some meat to our skeleton. The simplest case is a static/global function case:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span>Ret(<span style="color:#f92672">*</span>funcPtr)(Args...)<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">static</span> Delegate create()
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span>Ret(<span style="color:#555">*</span>funcPtr)(Args...)<span style="color:#555">&gt;</span>
+	<span style="color:#069;font-weight:bold">static</span> Delegate create()
 	{
-		<span style="color:#66d9ef">return</span> Delegate{ <span style="color:#66d9ef">nullptr</span>, <span style="color:#f92672">&amp;</span>globalCaller<span style="color:#f92672">&lt;</span>funcPtr<span style="color:#f92672">&gt;</span> }; <span style="color:#75715e">// nullptr as first parameter because static/global functions can be called directly
-</span><span style="color:#75715e"></span>	}
+		<span style="color:#069;font-weight:bold">return</span> Delegate{ <span style="color:#069;font-weight:bold">nullptr</span>, <span style="color:#555">&amp;</span>globalCaller<span style="color:#555">&lt;</span>funcPtr<span style="color:#555">&gt;</span> }; <span style="color:#09f;font-style:italic">// nullptr as first parameter because static/global functions can be called directly
+</span><span style="color:#09f;font-style:italic"></span>	}
     
-<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span>Ret(<span style="color:#f92672">*</span>funcPtr)(Args...)<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">static</span> Ret globalCaller(shared_ptr<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void</span><span style="color:#f92672">&gt;</span>, Args... args)
+<span style="color:#069;font-weight:bold">private</span><span style="color:#555">:</span>
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span>Ret(<span style="color:#555">*</span>funcPtr)(Args...)<span style="color:#555">&gt;</span>
+	<span style="color:#069;font-weight:bold">static</span> Ret globalCaller(shared_ptr<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span><span style="color:#555">&gt;</span>, Args... args)
 	{
-		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">funcPtr</span>(args...);
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">funcPtr</span>(args...);
 	}
 </code></pre></div>
 
@@ -254,29 +254,29 @@ main:
 
 <p>Now we can create and call our first delegate:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">global</span>(<span style="color:#66d9ef">int</span> a, <span style="color:#66d9ef">float</span> b)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">global</span>(<span style="color:#078;font-weight:bold">int</span> a, <span style="color:#078;font-weight:bold">float</span> b)
 {
-	<span style="color:#66d9ef">return</span> a <span style="color:#f92672">+</span> <span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span>(b);
+	<span style="color:#069;font-weight:bold">return</span> a <span style="color:#555">+</span> <span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(b);
 }
 
-Delegate<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>)<span style="color:#f92672">&gt;</span> d{ Delegate<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>)<span style="color:#f92672">&gt;::</span>create<span style="color:#f92672">&lt;&amp;</span>global<span style="color:#f92672">&gt;</span>() };
-d(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">5.0f</span>);
+Delegate<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> d{ Delegate<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;::</span>create<span style="color:#555">&lt;&amp;</span>global<span style="color:#555">&gt;</span>() };
+d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);
 </code></pre></div>
 
 <p>Member function case is slightly more difficult:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T, Ret(T<span style="color:#f92672">::*</span>funcPtr)(Args...)<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">static</span> Delegate create(shared_ptr<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> obj)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, Ret(T<span style="color:#555">::*</span>funcPtr)(Args...)<span style="color:#555">&gt;</span>
+	<span style="color:#069;font-weight:bold">static</span> Delegate create(shared_ptr<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span> obj)
 	{
-		<span style="color:#66d9ef">return</span> Delegate{ obj, <span style="color:#f92672">&amp;</span>memberCaller<span style="color:#f92672">&lt;</span>T, funcPtr<span style="color:#f92672">&gt;</span> };
+		<span style="color:#069;font-weight:bold">return</span> Delegate{ obj, <span style="color:#555">&amp;</span>memberCaller<span style="color:#555">&lt;</span>T, funcPtr<span style="color:#555">&gt;</span> };
 	}
     
-<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T, Ret(T<span style="color:#f92672">::*</span>funcPtr)(Args...)<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">static</span> Ret memberCaller(shared_ptr<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void</span><span style="color:#f92672">&gt;</span> callee, Args... args)
+<span style="color:#069;font-weight:bold">private</span><span style="color:#555">:</span>
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, Ret(T<span style="color:#555">::*</span>funcPtr)(Args...)<span style="color:#555">&gt;</span>
+	<span style="color:#069;font-weight:bold">static</span> Ret memberCaller(shared_ptr<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span><span style="color:#555">&gt;</span> callee, Args... args)
 	{
-		<span style="color:#66d9ef">return</span> (<span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span>T<span style="color:#f92672">*&gt;</span>(callee.get())<span style="color:#f92672">-&gt;*</span>funcPtr)(args...);
+		<span style="color:#069;font-weight:bold">return</span> (<span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span>T<span style="color:#555">*&gt;</span>(callee.get())<span style="color:#555">-&gt;*</span>funcPtr)(args...);
 	}
 </code></pre></div>
 
@@ -284,32 +284,32 @@ d(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">5.0f</span>
 
 <p>And that&rsquo;s how it can be created and called:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">UserStruct</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">UserStruct</span>
 {
-	<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">member</span>(<span style="color:#66d9ef">int</span> a, <span style="color:#66d9ef">float</span> b)
+	<span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">member</span>(<span style="color:#078;font-weight:bold">int</span> a, <span style="color:#078;font-weight:bold">float</span> b)
 	{
-		<span style="color:#66d9ef">return</span> a <span style="color:#f92672">+</span> <span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span>(b);
+		<span style="color:#069;font-weight:bold">return</span> a <span style="color:#555">+</span> <span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(b);
 	}
 };
 
-Delegate<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>)<span style="color:#f92672">&gt;</span> d{ Delegate<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>)<span style="color:#f92672">&gt;::</span>create<span style="color:#f92672">&lt;</span>UserStruct, <span style="color:#f92672">&amp;</span>UserStruct<span style="color:#f92672">::</span>member<span style="color:#f92672">&gt;</span>(make_shared<span style="color:#f92672">&lt;</span>UserStruct<span style="color:#f92672">&gt;</span>()) };
-d(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">5.0f</span>);
+Delegate<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> d{ Delegate<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;::</span>create<span style="color:#555">&lt;</span>UserStruct, <span style="color:#555">&amp;</span>UserStruct<span style="color:#555">::</span>member<span style="color:#555">&gt;</span>(make_shared<span style="color:#555">&lt;</span>UserStruct<span style="color:#555">&gt;</span>()) };
+d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);
 </code></pre></div>
 
 <p>The final case is a functor case. Here we don&rsquo;t have a function pointer but only the callable object.</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">static</span> Delegate create(shared_ptr<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> t)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
+	<span style="color:#069;font-weight:bold">static</span> Delegate create(shared_ptr<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span> t)
 	{
-		<span style="color:#66d9ef">return</span> Delegate{ t, <span style="color:#f92672">&amp;</span>functorCaller<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> };
+		<span style="color:#069;font-weight:bold">return</span> Delegate{ t, <span style="color:#555">&amp;</span>functorCaller<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span> };
 	}
     
-<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">static</span> Ret functorCaller(shared_ptr<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void</span><span style="color:#f92672">&gt;</span> functor, Args... args)
+<span style="color:#069;font-weight:bold">private</span><span style="color:#555">:</span>
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
+	<span style="color:#069;font-weight:bold">static</span> Ret functorCaller(shared_ptr<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span><span style="color:#555">&gt;</span> functor, Args... args)
 	{
-		<span style="color:#66d9ef">return</span> (<span style="color:#f92672">*</span><span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span>T<span style="color:#f92672">*&gt;</span>(functor.get()))(args...);
+		<span style="color:#069;font-weight:bold">return</span> (<span style="color:#555">*</span><span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span>T<span style="color:#555">*&gt;</span>(functor.get()))(args...);
 	}
 </code></pre></div>
 
@@ -317,22 +317,22 @@ d(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">5.0f</span>
 
 <p>The tricky part is to create a lambda shared pointer. As you may know there&rsquo;s no strict type for lambda. Instead, on every lambda creation new type will be introduced. And this code <code>typeid([](){}).name() == typeid([](){}).name()</code> will return <code>false</code>. In order to create a necessary <code>shared_ptr</code> I created this function:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T, <span style="color:#66d9ef">typename</span> L <span style="color:#f92672">=</span> <span style="color:#66d9ef">typename</span> std<span style="color:#f92672">::</span>decay<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span>type<span style="color:#f92672">&gt;</span>
-shared_ptr<span style="color:#f92672">&lt;</span>L<span style="color:#f92672">&gt;</span> make_shared_lambda(T<span style="color:#f92672">&amp;&amp;</span> t)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, <span style="color:#069;font-weight:bold">typename</span> L <span style="color:#555">=</span> <span style="color:#069;font-weight:bold">typename</span> std<span style="color:#555">::</span>decay<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;::</span>type<span style="color:#555">&gt;</span>
+shared_ptr<span style="color:#555">&lt;</span>L<span style="color:#555">&gt;</span> make_shared_lambda(T<span style="color:#555">&amp;&amp;</span> t)
 {
-	<span style="color:#66d9ef">return</span> make_shared<span style="color:#f92672">&lt;</span>L<span style="color:#f92672">&gt;</span>(forward<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>(t));
+	<span style="color:#069;font-weight:bold">return</span> make_shared<span style="color:#555">&lt;</span>L<span style="color:#555">&gt;</span>(forward<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span>(t));
 }
 </code></pre></div>
 
 <p>It&rsquo;s not ideal - the underlying lambda will be copied/moved. Anyway, now we can use functors with a delegate:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">auto</span> ptr <span style="color:#f92672">=</span> make_shared_lambda([](<span style="color:#66d9ef">int</span> a, <span style="color:#66d9ef">float</span> b)<span style="color:#f92672">-&gt;</span><span style="color:#66d9ef">int</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">auto</span> ptr <span style="color:#555">=</span> make_shared_lambda([](<span style="color:#078;font-weight:bold">int</span> a, <span style="color:#078;font-weight:bold">float</span> b)<span style="color:#555">-&gt;</span><span style="color:#078;font-weight:bold">int</span>
 {
-	<span style="color:#66d9ef">return</span> a <span style="color:#f92672">+</span> <span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span>(b);
+	<span style="color:#069;font-weight:bold">return</span> a <span style="color:#555">+</span> <span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(b);
 });
 
-Delegate<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>)<span style="color:#f92672">&gt;</span> d{ Delegate<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>)<span style="color:#f92672">&gt;::</span>create(ptr) };
-d(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">5.0f</span>);
+Delegate<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> d{ Delegate<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;::</span>create(ptr) };
+d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);
 </code></pre></div>
 
 <blockquote>
@@ -341,86 +341,86 @@ d(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">5.0f</span>
 
 <p>As you probably noticed - the declaration of the delegate is pretty verbose. Can it be simplified? I beleive it can with macros and template magic, but I prefer to have a helper class. This class will handle adding and removing of delegates. I call it - <code>Dispatcher</code>. Imagine some abstract <code>Button</code> class. It can have a <code>Dispatcher</code> for some event - a <code>click</code>, for example. Now every entity that want to listen for this <code>click</code> event can add a delegate to this <code>Dispatcher</code>. And when the real event triggers this <code>Dispatcher</code> will invoke all callbacks that was added to it. Here&rsquo;s a simple implementation.</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Dispatcher</span>;
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
+<span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Dispatcher</span>;
 
-<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> Ret, <span style="color:#66d9ef">typename</span> ...Args<span style="color:#f92672">&gt;</span>
-<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Dispatcher</span><span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;</span>
+<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> Ret, <span style="color:#069;font-weight:bold">typename</span> ...Args<span style="color:#555">&gt;</span>
+<span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Dispatcher</span><span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;</span>
 {
-<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span>Ret(<span style="color:#f92672">*</span>funcPtr)(Args...)<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">bool</span> add()
+<span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span>Ret(<span style="color:#555">*</span>funcPtr)(Args...)<span style="color:#555">&gt;</span>
+	<span style="color:#078;font-weight:bold">bool</span> add()
 	{
-		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">add</span>(Delegate<span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;::</span>create<span style="color:#f92672">&lt;</span>funcPtr<span style="color:#f92672">&gt;</span>());
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">add</span>(Delegate<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;::</span>create<span style="color:#555">&lt;</span>funcPtr<span style="color:#555">&gt;</span>());
 	}
 
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span>Ret(<span style="color:#f92672">*</span>funcPtr)(Args...)<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">bool</span> remove()
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span>Ret(<span style="color:#555">*</span>funcPtr)(Args...)<span style="color:#555">&gt;</span>
+	<span style="color:#078;font-weight:bold">bool</span> remove()
 	{
-		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">remove</span>(Delegate<span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;::</span>create<span style="color:#f92672">&lt;</span>funcPtr<span style="color:#f92672">&gt;</span>());
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">remove</span>(Delegate<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;::</span>create<span style="color:#555">&lt;</span>funcPtr<span style="color:#555">&gt;</span>());
 	}
 
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T, Ret(T<span style="color:#f92672">::*</span>funcPtr)(Args...)<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">bool</span> add(shared_ptr<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> obj)
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, Ret(T<span style="color:#555">::*</span>funcPtr)(Args...)<span style="color:#555">&gt;</span>
+	<span style="color:#078;font-weight:bold">bool</span> add(shared_ptr<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span> obj)
 	{
-		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">add</span>(Delegate<span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;::</span>create<span style="color:#f92672">&lt;</span>T, funcPtr<span style="color:#f92672">&gt;</span>(obj));
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">add</span>(Delegate<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;::</span>create<span style="color:#555">&lt;</span>T, funcPtr<span style="color:#555">&gt;</span>(obj));
 	}
 
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T, Ret(T<span style="color:#f92672">::*</span>funcPtr)(Args...)<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">bool</span> remove(shared_ptr<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> obj)
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, Ret(T<span style="color:#555">::*</span>funcPtr)(Args...)<span style="color:#555">&gt;</span>
+	<span style="color:#078;font-weight:bold">bool</span> remove(shared_ptr<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span> obj)
 	{
-		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">remove</span>(Delegate<span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;::</span>create<span style="color:#f92672">&lt;</span>T, funcPtr<span style="color:#f92672">&gt;</span>(obj));
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">remove</span>(Delegate<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;::</span>create<span style="color:#555">&lt;</span>T, funcPtr<span style="color:#555">&gt;</span>(obj));
 	}
 
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">bool</span> add(shared_ptr<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> t)
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
+	<span style="color:#078;font-weight:bold">bool</span> add(shared_ptr<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span> t)
 	{
-		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">add</span>(Delegate<span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;::</span>create(t));
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">add</span>(Delegate<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;::</span>create(t));
 	}
 
-	<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-	<span style="color:#66d9ef">bool</span> remove(shared_ptr<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> t)
+	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
+	<span style="color:#078;font-weight:bold">bool</span> remove(shared_ptr<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span> t)
 	{
-		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">remove</span>(Delegate<span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;::</span>create(t));
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">remove</span>(Delegate<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;::</span>create(t));
 	}
 
-	<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">operator</span>()(Args... args)
+	<span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">operator</span>()(Args... args)
 	{
-		<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">auto</span><span style="color:#f92672">&amp;</span> delegate : delegates)
+		<span style="color:#069;font-weight:bold">for</span> (<span style="color:#069;font-weight:bold">auto</span><span style="color:#555">&amp;</span> <span style="color:#99f">delegate</span> : delegates)
 		{
 			delegate(args...);
 		};
 	}
 
-	<span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">add</span>(Delegate<span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;</span> delegate)
+	<span style="color:#078;font-weight:bold">bool</span> <span style="color:#c0f">add</span>(Delegate<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;</span> delegate)
 	{
-    		<span style="color:#75715e">// if we already added same delegate - don&#39;t add it again
-</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> (find(delegates.begin(), delegates.end(), delegate) <span style="color:#f92672">!=</span> delegates.end())
+    		<span style="color:#09f;font-style:italic">// if we already added same delegate - don&#39;t add it again
+</span><span style="color:#09f;font-style:italic"></span>		<span style="color:#069;font-weight:bold">if</span> (find(delegates.begin(), delegates.end(), delegate) <span style="color:#555">!=</span> delegates.end())
 		{
-			<span style="color:#66d9ef">return</span> false;
+			<span style="color:#069;font-weight:bold">return</span> <span style="color:#366">false</span>;
 		}
 
 		delegates.push_back(delegate);
 
-		<span style="color:#66d9ef">return</span> true;
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#366">true</span>;
 	}
 
-	<span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">remove</span>(Delegate<span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;</span> delegate)
+	<span style="color:#078;font-weight:bold">bool</span> <span style="color:#c0f">remove</span>(Delegate<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;</span> delegate)
 	{
-    		<span style="color:#75715e">// remove delegate only if it exist
-</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">auto</span> it <span style="color:#f92672">=</span> find(delegates.begin(), delegates.end(), delegate);
+    		<span style="color:#09f;font-style:italic">// remove delegate only if it exist
+</span><span style="color:#09f;font-style:italic"></span>		<span style="color:#069;font-weight:bold">auto</span> it <span style="color:#555">=</span> find(delegates.begin(), delegates.end(), delegate);
 
-		<span style="color:#66d9ef">if</span> (it <span style="color:#f92672">==</span> delegates.end())
+		<span style="color:#069;font-weight:bold">if</span> (it <span style="color:#555">==</span> delegates.end())
 		{
-			<span style="color:#66d9ef">return</span> false;
+			<span style="color:#069;font-weight:bold">return</span> <span style="color:#366">false</span>;
 		}
 
 		delegates.erase(it);
 
-		<span style="color:#66d9ef">return</span> true;
+		<span style="color:#069;font-weight:bold">return</span> <span style="color:#366">true</span>;
 	}
-<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
-	vector<span style="color:#f92672">&lt;</span>Delegate<span style="color:#f92672">&lt;</span>Ret(Args...)<span style="color:#f92672">&gt;&gt;</span> delegates;
+<span style="color:#069;font-weight:bold">private</span><span style="color:#555">:</span>
+	vector<span style="color:#555">&lt;</span>Delegate<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;&gt;</span> delegates;
 };
 </code></pre></div>
 
@@ -433,17 +433,17 @@ d(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">5.0f</span>
 
 <p>We can use new <code>Dispatcher</code> class like this:</p>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Dispatcher<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">float</span>)<span style="color:#f92672">&gt;</span> dispatcher;
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Dispatcher<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> dispatcher;
 
-dispatcher.add<span style="color:#f92672">&lt;&amp;</span>global<span style="color:#f92672">&gt;</span>();
+dispatcher.add<span style="color:#555">&lt;&amp;</span>global<span style="color:#555">&gt;</span>();
 
-<span style="color:#66d9ef">auto</span> ptr <span style="color:#f92672">=</span> make_shared<span style="color:#f92672">&lt;</span>UserStruct<span style="color:#f92672">&gt;</span>();
-dispatcher.add<span style="color:#f92672">&lt;</span>UserStruct, <span style="color:#f92672">&amp;</span>UserStruct<span style="color:#f92672">::</span>member<span style="color:#f92672">&gt;</span>(ptr);
+<span style="color:#069;font-weight:bold">auto</span> ptr <span style="color:#555">=</span> make_shared<span style="color:#555">&lt;</span>UserStruct<span style="color:#555">&gt;</span>();
+dispatcher.add<span style="color:#555">&lt;</span>UserStruct, <span style="color:#555">&amp;</span>UserStruct<span style="color:#555">::</span>member<span style="color:#555">&gt;</span>(ptr);
 
-dispatcher(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">5.0f</span>);
+dispatcher(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);
 
-dispatcher.remove<span style="color:#f92672">&lt;&amp;</span>global<span style="color:#f92672">&gt;</span>();
-dispatcher.remove<span style="color:#f92672">&lt;</span>UserStruct, <span style="color:#f92672">&amp;</span>UserStruct<span style="color:#f92672">::</span>member<span style="color:#f92672">&gt;</span>(ptr);
+dispatcher.remove<span style="color:#555">&lt;&amp;</span>global<span style="color:#555">&gt;</span>();
+dispatcher.remove<span style="color:#555">&lt;</span>UserStruct, <span style="color:#555">&amp;</span>UserStruct<span style="color:#555">::</span>member<span style="color:#555">&gt;</span>(ptr);
 </code></pre></div>
 
 <p>Things that can be improved:</p>

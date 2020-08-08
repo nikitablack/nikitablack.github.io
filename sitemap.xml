@@ -4,16 +4,21 @@
   
   <url>
     <loc>http://nikitablack.github.io/</loc>
-    <lastmod>2020-03-21T00:00:00+00:00</lastmod>
+    <lastmod>2020-08-08T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://nikitablack.github.io/post/how_i_organize_data_in_functional_style/</loc>
-    <lastmod>2020-03-21T00:00:00+00:00</lastmod>
+    <loc>http://nikitablack.github.io/post/how_to_use_vulkan_timestamp_queries/</loc>
+    <lastmod>2020-08-08T00:00:00+00:00</lastmod>
   </url>
   
   <url>
     <loc>http://nikitablack.github.io/post/</loc>
+    <lastmod>2020-08-08T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://nikitablack.github.io/post/how_i_organize_data_in_functional_style/</loc>
     <lastmod>2020-03-21T00:00:00+00:00</lastmod>
   </url>
   

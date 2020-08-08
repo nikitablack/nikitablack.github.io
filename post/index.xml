@@ -7,10 +7,19 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <copyright>&amp;copy; &lt;a href=&#34;http://nikitablack.github.io/&#34;&gt;nikitablack&lt;/a&gt; 2019</copyright>
-    <lastBuildDate>Sat, 21 Mar 2020 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 08 Aug 2020 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>How to use Vulkan Timestamp Queries.</title>
+      <link>http://nikitablack.github.io/post/how_to_use_vulkan_timestamp_queries/</link>
+      <pubDate>Sat, 08 Aug 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/how_to_use_vulkan_timestamp_queries/</guid>
+      <description>&lt;p&gt;At some point in my development life, I decided that I want to know how fast my GPU can crack the tasks I throw at it. And if you read this then you probably want to know it too. I expect that you know that measure a GPU time on the CPU makes no sense since CPU and GPU are two different processors and if you place &lt;code&gt;std::chrono::some_clock::now()&lt;/code&gt; before and after a draw call it will always give you a time near to zero. Luckily Vulkan provides a tool to make time snapshots - the so-called &lt;strong&gt;Queries&lt;/strong&gt;. There’re multiple different query types but today we’ll talk about &lt;strong&gt;Timestamp Queries&lt;/strong&gt;.&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>How I organize data in a functional style</title>
@@ -27,7 +36,7 @@
       <pubDate>Thu, 23 Mar 2017 00:00:00 +0000</pubDate>
       
       <guid>http://nikitablack.github.io/post/functional_programming_in_c&#43;&#43;_by_example/</guid>
-      <description>&lt;p&gt;Functional programming (&lt;em&gt;FP&lt;/em&gt;) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I&amp;rsquo;ll take a code from my &lt;a href=&#34;https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html&#34; target=&#34;_blank&#34;&gt;previous article&lt;/a&gt; so the example will be a 2D physics simulation.&lt;/p&gt;</description>
+      <description>&lt;p&gt;Functional programming (&lt;strong&gt;FP&lt;/strong&gt;) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I&amp;rsquo;ll take a code from my &lt;a href=&#34;https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html&#34; target=&#34;_blank&#34;&gt;previous article&lt;/a&gt; so the example will be a 2D physics simulation.&lt;/p&gt;</description>
     </item>
     
     <item>
