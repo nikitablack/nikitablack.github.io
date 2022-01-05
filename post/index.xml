@@ -9,15 +9,17 @@
     <copyright>&amp;copy; &lt;a href=&#34;http://nikitablack.github.io/&#34;&gt;nikitablack&lt;/a&gt; 2021</copyright>
     <lastBuildDate>Wed, 05 Jan 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Vulkan by example 0. Introduction.</title>
-      <link>http://nikitablack.github.io/post/vulkan_by_example_0_introduction/</link>
+      <title>Vulkan with Rust by example 0. Introduction.</title>
+      <link>http://nikitablack.github.io/post/vulkan_with_rust_by_example_0_introduction/</link>
       <pubDate>Wed, 05 Jan 2022 00:00:00 +0000</pubDate>
       
-      <guid>http://nikitablack.github.io/post/vulkan_by_example_0_introduction/</guid>
-      <description>&lt;p&gt;Hi everybody. Today I&amp;rsquo;d like to talk about &lt;code&gt;Vulkan&lt;/code&gt; - the modern API for communication with a GPU device. Though there&amp;rsquo;re already lots of information and tutorials on the web as well as books I want to try to write about the API for several reasons:&lt;/p&gt;
+      <guid>http://nikitablack.github.io/post/vulkan_with_rust_by_example_0_introduction/</guid>
+      <description>&lt;p&gt;Hi everybody. Today I&amp;rsquo;d like to talk about &lt;code&gt;Vulkan&lt;/code&gt; - the modern API for communication with a GPU device. Though there&amp;rsquo;re already tons of information and tutorials on the web I&amp;rsquo;m writing this tutorial for several reasons:&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;I don&amp;rsquo;t want this series to be about general usage of the API. Instead, I want to focus on a single purpose application, more or less &lt;em&gt;advanced&lt;/em&gt;, &lt;em&gt;not&lt;/em&gt; a triangle, and explain how all works by looking at a concrete example.&lt;/li&gt;
-&lt;li&gt;I want to understand &lt;code&gt;Vulkan&lt;/code&gt; better. And, as you know, trying to explain things helps to understand them better.&lt;/li&gt;
+&lt;li&gt;I don&amp;rsquo;t want this series to be about general usage of the API. Instead, I want to focus on a single purpose application, more or less &lt;em&gt;complex&lt;/em&gt;, &lt;em&gt;not&lt;/em&gt; just a triangle, and explain how everything works by looking at a concrete example.&lt;/li&gt;
+&lt;li&gt;Instead of &lt;code&gt;C&lt;/code&gt;/&lt;code&gt;C++&lt;/code&gt;, I want to try &lt;code&gt;Rust&lt;/code&gt; programming language because at the moment of writing there&amp;rsquo;s simply no information about the subject.&lt;/li&gt;
+&lt;li&gt;The popular tutorials are a bit outdated. No, they are great and work fine, but &lt;code&gt;Vulkan&lt;/code&gt; evolves, and new features and paradigms appear with time.&lt;/li&gt;
+&lt;li&gt;I want to understand &lt;code&gt;Vulkan&lt;/code&gt; better. And, as you know, trying to explain something helps to understand it better.&lt;/li&gt;
 &lt;/ul&gt;</description>
     </item>
     

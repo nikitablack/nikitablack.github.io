@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"  lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+<title>Vulkan with Rust by example 0. Introduction. | Here should be the blog Title</title>
+
+
+
+<link href="http://nikitablack.github.io/index.xml" rel="alternate" type="application/rss+xml" title="Here should be the blog Title" />
+
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="stylesheet" href="/css/css_lightbox.css"><link rel='stylesheet' href='http://nikitablack.github.io/css/custom.css'><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="canonical" href="http://nikitablack.github.io/post/vulkan_with_rust_by_example_0_introduction/">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+<section class="section">
+  <div class="container">
+    <nav id="nav-main" class="nav">
+      <div id="nav-name" class="nav-left">
+        <a id="nav-anchor" class="nav-item" href="http://nikitablack.github.io/">
+          <h1 id="nav-heading" class="title is-4">Here should be the blog Title</h1>
+        </a>
+      </div>
+      <div class="nav-right">
+        <nav id="nav-items" class="nav-item level is-mobile"><a class="level-item" aria-label="twitter" href='https://twitter.com/nikita_cherniy'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="github" href='https://github.com/nikitablack'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="email" href='mailto:mynameisnikitablack@gmail.com'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+    
+  </svg></i>
+            </span>
+          </a></nav>
+      </div>
+    </nav>
+
+    <nav class="nav">
+      
+
+      
+    </nav>
+
+  </div>
+  <script src="/js/navicon-shift.js"></script>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="subtitle tags is-6 is-pulled-right">
+      
+    </div>
+    <h2 class="subtitle is-6">January 5, 2022</h2>
+    <h1 class="title">Vulkan with Rust by example 0. Introduction.</h1>
+    
+    <div class="content">
+      <p>Hi everybody. Today I&rsquo;d like to talk about <code>Vulkan</code> - the modern API for communication with a GPU device. Though there&rsquo;re already tons of information and tutorials on the web I&rsquo;m writing this tutorial for several reasons:</p>
+<ul>
+<li>I don&rsquo;t want this series to be about general usage of the API. Instead, I want to focus on a single purpose application, more or less <em>complex</em>, <em>not</em> just a triangle, and explain how everything works by looking at a concrete example.</li>
+<li>Instead of <code>C</code>/<code>C++</code>, I want to try <code>Rust</code> programming language because at the moment of writing there&rsquo;s simply no information about the subject.</li>
+<li>The popular tutorials are a bit outdated. No, they are great and work fine, but <code>Vulkan</code> evolves, and new features and paradigms appear with time.</li>
+<li>I want to understand <code>Vulkan</code> better. And, as you know, trying to explain something helps to understand it better.</li>
+</ul>
+<p>I&rsquo;d recommend starting this series after you finish <a href="https://vulkan-tutorial.com/">vulkan tutorial</a> and/or <a href="https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-preface">API without Secrets</a>. These resources explain in great detail the API usage and after reading them you should have a solid understanding of what <code>Vulkan</code> is. So if you didn&rsquo;t read them, take a pause and follow the links. See you next year!</p>
+<p>For those who already have an understanding of what <code>Vulkan</code> is, I&rsquo;ll try to continue to build a mental picture around the API, explain why do we need every bit of code, every structure we use. I’ll build every next lesson on top of the previous by <em>adding</em> new stuff, but without modifying the old - I found that it&rsquo;s easier to follow. Though this rule is not strict and sometimes I’ll have to return and change the existing code, but I’ll try to minimize it.</p>
+<p>This is not the first attempt to write the tutorials. At first, I wanted to describe every single detail of the API, every field of every struct I used. You can imagine the amount of information I had to cover. Since I wanted to finish before I&rsquo;m 90 and since the Holy Specification explains it better I decided to drop the idea.</p>
+<p>In my second attempt, I tried to duplicate the code in the article so a reader doesn&rsquo;t need to jump from one link to another, but I had to drop that idea too - since even a simple triangle takes more than 1000 LOC you can imagine the amount of text I had to put in every article. Instead, I&rsquo;ll use links to the code on <code>Github</code> - this saves a lot of space and does not require updating an article in case the code changes. If you find this uncomfortable <del>buy a second monitor</del> you can split a browser window and follow text and code at the same time. Also, I&rsquo;ll not post links to the specification because <code>a</code> - spec changes and <code>b</code> - it&rsquo;s very easy to search. Simply navigate to a spec version you&rsquo;re interested in, for example <a href="https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/">here&rsquo;s the link</a> for the <code>Vulkan</code> 1.2 specification with extensions, type the term you&rsquo;re searching for and enjoy.</p>
+<p>Also, I used <code>C++</code> before (this is still my main language at work) but I fell in love with <code>Rust</code>. Seriously, no more ugly <code>CMake</code>, no more problems finding and compiling a third-party library. Just imagine - the same code, written on Ubuntu <strong>works</strong> on Windows without <strong>any</strong> modification! And as a 10+ years C++ developer I am amazed how it&rsquo;s easy to get third-party dependencies - you just add a name and a version to a special file and it &ldquo;<em>just works</em>&rdquo;. Anyway, I still have the repo in <code>C++</code>, so if you like the pain you&rsquo;re welcome! The <a href="https://github.com/nikitablack/vulkan_by_example_2">repository</a> has multiple branches - each next branch is built on top of the previous. I organized the code in a functional style and dedicated an entire <a href="http://nikitablack.github.io/post/how_i_organize_data_in_functional_style/">article</a> to explain how this works and why the code looks so strange.</p>
+<blockquote>
+<p><strong>Disclaimer:</strong> I&rsquo;m not an expert guru ninja, I&rsquo;m learning. And definitely, there will be mistakes in my lessons. I&rsquo;m kindly asking you to point to them so I can fix them soon. You can find me on <a href="https://twitter.com/nikita_cherniy">Twitter</a>, or even better - create an issue on <a href="https://github.com/nikitablack/rust_vulkan_teapot">github</a>.</p>
+</blockquote>
+<h2 id="the-goal">The goal</h2>
+<p>This is our goal:</p>
+
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube.com/embed/8RCWeKLlVew" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+
+<p>Wow, The Rotating Teapot! Sorry for the blurriness - youtube mercilessly messed up with quality and I don&rsquo;t know how to fix it. As you can see, the application uses tesselation to change the geometry detail. It can be rendered in solid or wireframe mode. I chose it because it covers a lot of pipeline stages so I have to touch a great number of different parts of the API, which is good. I did it before with <a href="http://nikitablack.github.io/post/directx_12_by_example/">DirectX 12</a>, so I already have some ideas on how to start.</p>
+<h2 id="what-will-not-be-in-the-tutorials">What will not be in the tutorials</h2>
+<p>In addition to general graphics concepts, I assume you know what tesselation is, why there are two related stages in the pipeline (tesselation control and tesselation evaluation), so I&rsquo;ll not explain that in detail. The same goes for curved surfaces - if you need to refresh your memory I recommend <a href="http://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php">this Gamasutra article</a>. I&rsquo;ll not explain the math behind projection and other transformation matrices as well. Also, this is not a <code>Rust</code> tutorial and I assume you already installed the <code>Rust</code> compiler and <code>Vulkan</code> SDK.</p>
+<h2 id="code-organization">Code organization</h2>
+<p>I organized the code in so-called <a href="https://doc.rust-lang.org/cargo/reference/workspaces.html">workspaces</a>.</p>
+<pre tabindex="0"><code>lesson/
+ ├──shaders/
+ │   ├──sompiled_spirv
+ │   └──...
+ ├──teapot/
+ │   ├──shaders/
+ │   │   ├──sources
+ │   │   └──...
+ │   ├──src/
+ │   │   ├──vulkan/
+ │   │   │   └──...
+ │   │   ├──main.rs
+ │   │   └──teapot_data.rs
+ │   ├──build.rs
+ │   └──Cargo.toml
+ ├──vulkan_base/
+ │   ├──src/
+ │   │  └──...
+ │   └──Cargo.toml
+ ├──vulkan_utils/
+ │   ├──src/
+ │   │  └──...
+ │   └──Cargo.toml
+ └──Cargo.toml
+</code></pre><p><code>vulkan_base</code> responsible for initialization, <code>teapot</code> is specific for this concrete example, <code>vulkan_utils</code> encapsulates common functionality. The build script <code>lesson/teapot/build.rs</code> will build shader sources from <code>lesson/teapot/shaders</code> and place the compiled binaries in <code>lesson/shaders</code>. I chose <code>glsl</code> as a shading language, though <code>Vulkan</code> does not require it. The geometry data is stored in the <code>teapot_data.rs</code> file. <code>Cargo.toml</code> files hold dependencies that are used in the corresponding workspace. Also, I tried to have a module per function - though it brings a lot of source files it makes code navigation easier, at least for me - I hate 1000s lines long files.</p>
+<h2 id="the-data">The data</h2>
+<p>One of the first <a href="https://www.sjbaker.org/wiki/index.php?title=The_History_of_The_Teapot">links</a> in Google offers us a nice teapot dataset. Though it looks good, it requires some processing - if we use it as it is, we&rsquo;ll get an uncomplete model:</p>
+<a href="#images%2funcomplete_teapot.png">
+    <img src=images/uncomplete_teapot.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/uncomplete_teapot.png">
+  <img src=images/uncomplete_teapot.png>
+</a>
+<p>The initial data describes only a part of the teapot - the body represents a quarter of the object, and the handle and the spout represent half. One way to solve the incompleteness would be to draw multiple instances of the same part. But I find it more complicated than just duplicating the data - it would require multiple draw calls and some other things. I chose to copy indices instead. For example, one rim patch is presented by 16 indices (the dataset uses 16-point patches) - <code>102, 10, 104, 105, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15</code> - this represents the quarter of the teapot rim. So we need 4 such patches to build the complete hull. I added the same indices 3 more times to the patches vector. But as you can guess, just copying the indices will not work - I&rsquo;ll end up rendering the same patch in the same place. That&rsquo;s why I have to introduce another vector with patch transformations. Now the original rim patch will be rendered with identity transform, the next one - with 90 degrees rotation, the third one - with 180 degrees rotation, and the last one with 270 degrees rotation to enclose the surface completely. For mirrored parts, it&rsquo;s a little bit trickier - if I just make a copy of indices and use a mirror matrix (which is a scale matrix with -1 along the mirror axis) - the winding order will change. In the following picture I tried to visualize the problem:</p>
+<a href="#images%2fmirrored_triangle.jpg">
+    <img src=images/mirrored_triangle.jpg class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/mirrored_triangle.jpg">
+  <img src=images/mirrored_triangle.jpg>
+</a>
+<p>Here the right triangle&rsquo;s face points in the positive <code>x</code> direction. Clockwise indices are <code>1-2-3</code>. Now if I want the mirrored triangle to face the negative <code>x</code> direction, I can&rsquo;t use <code>1-2-3</code> anymore - I need to change the order to <code>1-3-2</code> (or change the winding order to counter-clockwise, which I don&rsquo;t want to do since that would require a pipeline change and a separate draw call). That&rsquo;s why I decided to tweak indices if I use a mirror matrix.</p>
+<p>All the data is stored in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_0/teapot/src/teapot_data.rs">teapot_data.rs</a> file - a list of control points, 28 patches 16 points each, and a per-patch data. For visualization, I added random colors. Later in a shader, I&rsquo;ll use patch id (kindly provided by the runtime) to sample the data to get transforms and colors and apply them to a corresponding patch.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>The <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_0/teapot/src/main.rs">main.rs</a> file begins with the initial setup. Here we create a logger (<a href="https://crates.io/crates/log">log</a> and <a href="https://crates.io/crates/simplelog">simplelog</a> crates) which will be used to print useful information. Also, <code>winit</code> (<a href="https://crates.io/crates/winit">winit</a> crate) window is instantiated and an infinite loop is started. The variable <code>app_exit</code> is needed to control, well, the exit. By the nature of <code>winit</code> crate, the entire application will be closed as soon as the window is closed. In <code>CloseRequested</code> handler a cleanup will be executed and all resources will be destroyed. It can happen though that next the <code>MainEventsCleared</code> handler will be executed and we don&rsquo;t want to do any job after all objects are gone. So we simply return from the loop in that case.</p>
+<p>If you compile the code and run the application at this point, you&rsquo;ll see a boring empty window.</p>
+<h2 id="what-next">What next</h2>
+<p>The entire article and no single line of <code>Vulkan</code> code! Sorry for that, it was a necessary long introduction, but I promise that in the next lesson we&rsquo;ll start the real work.</p>
+<p>The source code for this step is <a href="https://github.com/nikitablack/rust_vulkan_teapot/tree/step_0">here</a>.</p>
+<p>You can subscribe to my <a href="https://twitter.com/nikita_cherniy">Twitter account</a> to be notified when the new post is out or for comments and suggestions. If you found a bug, please <a href="https://github.com/nikitablack/rust_vulkan_teapot/issues">raise an issue</a>. If you have a question, you can start a discussion <a href="https://github.com/nikitablack/rust_vulkan_teapot/discussions">here</a>.</p>
+      
+      <div class="related">
+</div>
+      
+    </div>
+    
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
+    
+      <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
+    
+  </div>
+</section>
+
+
+
+</body>
+</html>
+
