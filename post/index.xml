@@ -7,7 +7,20 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <copyright>&amp;copy; &lt;a href=&#34;http://nikitablack.github.io/&#34;&gt;nikitablack&lt;/a&gt; 2021</copyright>
-    <lastBuildDate>Sat, 08 Aug 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 05 Jan 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Vulkan by example 0. Introduction.</title>
+      <link>http://nikitablack.github.io/post/vulkan_by_example_0_introduction/</link>
+      <pubDate>Wed, 05 Jan 2022 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/vulkan_by_example_0_introduction/</guid>
+      <description>&lt;p&gt;Hi everybody. Today I&amp;rsquo;d like to talk about &lt;code&gt;Vulkan&lt;/code&gt; - the modern API for communication with a GPU device. Though there&amp;rsquo;re already lots of information and tutorials on the web as well as books I want to try to write about the API for several reasons:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;I don&amp;rsquo;t want this series to be about general usage of the API. Instead, I want to focus on a single purpose application, more or less &lt;em&gt;advanced&lt;/em&gt;, &lt;em&gt;not&lt;/em&gt; a triangle, and explain how all works by looking at a concrete example.&lt;/li&gt;
+&lt;li&gt;I want to understand &lt;code&gt;Vulkan&lt;/code&gt; better. And, as you know, trying to explain things helps to understand them better.&lt;/li&gt;
+&lt;/ul&gt;</description>
+    </item>
+    
     <item>
       <title>How to use Vulkan Timestamp Queries.</title>
       <link>http://nikitablack.github.io/post/how_to_use_vulkan_timestamp_queries/</link>
@@ -24,19 +37,6 @@
       
       <guid>http://nikitablack.github.io/post/how_i_organize_data_in_functional_style/</guid>
       <description>&lt;p&gt;This article serves as a basement for my future posts. Here I explain how I manage data flow in a functional application.&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>Vulkan by example 0. Introduction.</title>
-      <link>http://nikitablack.github.io/post/vulkan_by_example_0_introduction/</link>
-      <pubDate>Sun, 05 Jan 2020 00:00:00 +0000</pubDate>
-      
-      <guid>http://nikitablack.github.io/post/vulkan_by_example_0_introduction/</guid>
-      <description>&lt;p&gt;Hi everybody. Today I&amp;rsquo;d like to talk about &lt;code&gt;Vulkan&lt;/code&gt; - the modern API for communication with a GPU device. Though there&amp;rsquo;re already lots of information and tutorials on the web as well as books I want to try to write about the API for several reasons:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;I don&amp;rsquo;t want this series to be about general usage of the API. Instead, I want to focus on a single purpose application, more or less &lt;em&gt;advanced&lt;/em&gt;, &lt;em&gt;not&lt;/em&gt; a triangle, and explain how all works by looking at a concrete example.&lt;/li&gt;
-&lt;li&gt;I want to understand &lt;code&gt;Vulkan&lt;/code&gt; better. And, as you know, trying to explain things helps to understand them better.&lt;/li&gt;
-&lt;/ul&gt;</description>
     </item>
     
     <item>
