@@ -82,12 +82,9 @@
     
     <div class="content">
       <p>The last couple of years interesting but not so popular paradigm appears more often. I’m talking about Data Oriented Design (DOD). If you’re searching for a job that involves high-performance calculations be ready to hear corresponding questions. And I was surprised knowing that some my colleagues have never heard about the approach and after the short discussion stayed skeptical. In this article I’ll try to compare traditional OOP approach with DOD on a real world example.</p>
-
 <h4 id="what-is-dod">What is DOD?</h4>
-
-<p>This post is an attempt to compare different programming approach without trying to explain them. I assume you know what we&rsquo;ll talk about. There&rsquo;re a lot of articles on the web about the subject. <a href="https://fuzzyreflection.com/2016/07/14/maximizing-code-performance-by-thinking-data-first-part-1/" target="_blank">This one</a> is good. <a href="https://www.youtube.com/watch?v=rX0ItVEVjHc" target="_blank">This video</a> from <strong>CppCon</strong> also is a <em>must see</em>. But in layman&rsquo;s terms, <strong>DOD</strong> is a way to work with data in <em>cache friendly</em> manner. Better see an example:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#099">#include</span> <span style="color:#099">&lt;chrono&gt;</span><span style="color:#099">
+<p>This post is an attempt to compare different programming approach without trying to explain them. I assume you know what we&rsquo;ll talk about. There&rsquo;re a lot of articles on the web about the subject. <a href="https://fuzzyreflection.com/2016/07/14/maximizing-code-performance-by-thinking-data-first-part-1/">This one</a> is good. <a href="https://www.youtube.com/watch?v=rX0ItVEVjHc">This video</a> from <strong>CppCon</strong> also is a <em>must see</em>. But in layman&rsquo;s terms, <strong>DOD</strong> is a way to work with data in <em>cache friendly</em> manner. Better see an example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#099">#include</span> <span style="color:#099">&lt;chrono&gt;</span><span style="color:#099">
 </span><span style="color:#099">#include</span> <span style="color:#099">&lt;iostream&gt;</span><span style="color:#099">
 </span><span style="color:#099">#include</span> <span style="color:#099">&lt;vector&gt;</span><span style="color:#099">
 </span><span style="color:#099"></span>
@@ -163,36 +160,22 @@
 	}
     
     <span style="color:#069;font-weight:bold">return</span> result;
-}
-</code></pre></div>
-
+}</code></pre></div>
 <p>The second test runs faster by <code>30%</code> (in VS2017 and gcc7.0.1). But why?</p>
-
 <p>The size of the <code>S</code> struct is <code>24</code> bytes. My CPU (Intel Core i7) have <code>32KB</code> L1 cache for each core with <code>64B</code> cache line. That means that when we&rsquo;re requesting data from the main memory one cache line can hold only two full <code>S</code> structs at most. In the first test we&rsquo;re reading only one <code>int</code> field, i.e. in the best case scenario one cache line can hold only two <code>S::i</code> (ok, sometimes three). In the second test we&rsquo;re reading similar <code>int</code> but from the vector of integers. <code>std::vector</code> guarantees sequentiality of the data it holds. That means that one cache line can hold up to <code>16</code> (<code>64KB</code> / <code>sizeof(int)</code> = <code>16</code>) values we need. Obviously, we&rsquo;re communicating with the RAM less often. And it&rsquo;s known that memory operations are the bottleneck in modern CPUs.</p>
-
 <h4 id="what-about-real-life">What about real life?</h4>
-
 <p>The example above clearly shows the benefits of <strong>SoA</strong> (<strong>S</strong>truct <strong>o</strong>f <strong>A</strong>rrays) vs <strong>AoS</strong> (<strong>A</strong>rray <strong>o</strong>f <strong>S</strong>tructures). But this example was from the <em>Hello World</em> category, i.e. it&rsquo;s very far from real world applications. In reality, the code has lots of dependencies and specific data which probably will not give such performance increase. One more thing - if in our example we&rsquo;ll read all fields of the struct there will be no difference in speed.</p>
-
 <p>In order to understand possibility to apply <strong>DOD</strong> I decided to write more or less complex program with both (<strong>OOP</strong> and <strong>DOD</strong>) approaches. Let it be a <code>2d</code> rigid body simulation - we&rsquo;ll create <strong>N</strong> convex polygons with different parameters - mass, speed etc. - and we&rsquo;ll see how many such objects we can simulate staying at <code>30</code> fps.</p>
-
 <h4 id="array-of-structures">Array of Structures</h4>
-
 <p><strong>Initial program</strong></p>
-
-<p>Source code for this version can be found in <a href="https://github.com/nikitablack/cpp-tests/tree/b672ca106ef5c88a23d7f8e2a909e07d6e54ca4a/data_oriented/oop/oop" target="_blank">this</a> commit and we briefly run through the code.</p>
-
+<p>Source code for this version can be found in <a href="https://github.com/nikitablack/cpp-tests/tree/b672ca106ef5c88a23d7f8e2a909e07d6e54ca4a/data_oriented/oop/oop">this</a> commit and we briefly run through the code.</p>
 <p>For simplicity reasons the program is written in Visual Studio for Windows and uses DirectX11 for rendering.</p>
-
 <blockquote>
-<p>I&rsquo;m using the latest VS2017 and some features of c++17, namely <a href="http://en.cppreference.com/w/cpp/utility/optional" target="_blank">std::optional</a>. Intersection detector takes two objects and returns by value a struct with intersection information - normal, penetration depth. Previously I used a boolean flag inside that structure that showed was there an intersection at all. With the new <code>std::optional</code> I got rid of that flag and the code became more clear.</p>
+<p>I&rsquo;m using the latest VS2017 and some features of c++17, namely <a href="http://en.cppreference.com/w/cpp/utility/optional">std::optional</a>. Intersection detector takes two objects and returns by value a struct with intersection information - normal, penetration depth. Previously I used a boolean flag inside that structure that showed was there an intersection at all. With the new <code>std::optional</code> I got rid of that flag and the code became more clear.</p>
 </blockquote>
-
 <p>The purpose of this article is to show some numbers on CPU so we&rsquo;ll not discuss graphics.</p>
-
 <p>The <code>Shape</code> class which represents physical body looks like this (simplified):</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Shape</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Shape</span>
 {
 <span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
 	math<span style="color:#555">::</span>Vec2 position{ <span style="color:#f60">0.0f</span>, <span style="color:#f60">0.0f</span> };
@@ -202,9 +185,7 @@
 	math<span style="color:#555">::</span>Color color;
 	std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>math<span style="color:#555">::</span>Vec2<span style="color:#555">&gt;</span> vertices;
 	math<span style="color:#555">::</span>Bounds bounds;
-};
-</code></pre></div>
-
+};</code></pre></div>
 <ul>
 <li>I believe <code>position</code> and <code>velocity</code> fields don&rsquo;t need a discussion</li>
 <li><code>vertices</code> — a random number of polygon vertices</li>
@@ -213,11 +194,9 @@
 <li><code>color</code> — used for rendering but stored in shape</li>
 <li><code>overlapResolveAccumulator</code> - see below.</li>
 </ul>
-
 <blockquote>
 <p>From the structure, it&rsquo;s already seen that <code>color</code> not used for calculations at all. But steel takes place in the cache line.</p>
 </blockquote>
-
 <a href="#images%2f1.png">
     <img src=images/1.png class="thumbnail">
 </a>
@@ -227,12 +206,9 @@
 <a href="#_" class="lightbox" id="images/1.png">
   <img src=images/1.png>
 </a>
-
 <p>When the triangle intersects shape <code>a</code> we need to move it apart to avoid figures overlapping. Also, we have to recalculate <code>bounds</code>. But now the triangle intersects shape <code>b</code> and we need to repeat the procedure again - move the shape and recalculate bounds. Notice that after the second move the triangle again will be over shape <code>a</code>. To avoid this repetition we&rsquo;ll store the value necessary to separate objects in special accumulator - <code>overlapResolveAccumulator</code> - and later will move the shape by this value but only once. Not physically correct at all, but looks ok. Notice also that this field also adds to the total size of the class which is not good for the memory.</p>
-
 <p>The heart of our program is a <code>ShapesApp::update()</code> function. Here it&rsquo;s simplified form:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> ShapesApp<span style="color:#555">::</span>update(<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> dt)
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> ShapesApp<span style="color:#555">::</span>update(<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> dt)
 {
 	<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> dtStep{ dt <span style="color:#555">/</span> NUM_PHYSICS_STEPS };
 	<span style="color:#069;font-weight:bold">for</span> (<span style="color:#078;font-weight:bold">uint32_t</span> s{ <span style="color:#f60">0</span> }; s <span style="color:#555">&lt;</span> NUM_PHYSICS_STEPS; <span style="color:#555">++</span>s)
@@ -247,15 +223,10 @@
 			}
 		}
 	}
-}
-</code></pre></div>
-
-<p>Every frame we call a <code>ShapesApp::updatePositions()</code> function that updates every shape&rsquo;s <code>position</code> and <code>bounds</code>. Next we check every shape with every other for collision in <code>CollisionSolver::solveCollision()</code> function. I used <a href="https://en.wikipedia.org/wiki/Hyperplane_separation_theorem" target="_blank">Separating Axis Theorem</a> (<em>SAT</em>) for that. And we repeat these steps <code>NUM_PHYSICS_STEPS</code> times. This variable serves several purposes - first, the physics becomes more stable, and second, it limits the number of objects on the screen. <em>c++</em> is fast, amazingly fast, and without this limitation we&rsquo;ll have tens of thosands of objects which will lead to rendering performance issues. In my tests I used <code>NUM_PHYSICS_STEPS = 20</code>.</p>
-
+}</code></pre></div>
+<p>Every frame we call a <code>ShapesApp::updatePositions()</code> function that updates every shape&rsquo;s <code>position</code> and <code>bounds</code>. Next we check every shape with every other for collision in <code>CollisionSolver::solveCollision()</code> function. I used <a href="https://en.wikipedia.org/wiki/Hyperplane_separation_theorem">Separating Axis Theorem</a> (<em>SAT</em>) for that. And we repeat these steps <code>NUM_PHYSICS_STEPS</code> times. This variable serves several purposes - first, the physics becomes more stable, and second, it limits the number of objects on the screen. <em>c++</em> is fast, amazingly fast, and without this limitation we&rsquo;ll have tens of thosands of objects which will lead to rendering performance issues. In my tests I used <code>NUM_PHYSICS_STEPS = 20</code>.</p>
 <p>On my humble laptop this version of the program simulates <code>500</code> shapes before fps starts to drop below <code>30</code>. Wat?? Only <code>500</code>?? Even JavaScript can do better. I agree, not a lot, but don&rsquo;t forget - we&rsquo;re repeating calculations <code>20</code> times per frame.</p>
-
 <p>I think I need to add some pictures to make the post not so boring, so here we go:</p>
-
 <a href="#images%2f2.png">
     <img src=images/2.png class="thumbnail">
 </a>
@@ -265,15 +236,10 @@
 <a href="#_" class="lightbox" id="images/2.png">
   <img src=images/2.png>
 </a>
-
 <p><strong>Optimization #1. Spatial Grid</strong></p>
-
 <p>I mentioned several times that I want to make tests on a program which is as close to real world as possible. Obviously, the code above is not usable - nobody checks each shape with each other - this is veeeery slow. For acceleration usually, some spetial spatial structure being used. We&rsquo;ll use simple <code>2d</code> grid - I called it <code>Grid</code> in the code - which consists of <code>NxM</code> cells - <code>struct Cell</code>. At the calculation start we&rsquo;ll put each object in the corresponding cell. This way all we have to do is to iterate over cells and check intersection between several pairs of objects. I used the similar code a lot of times in real projects and it behaved very well. Besides, it&rsquo;s very easy to implement, easy to debug and understand.</p>
-
-<p>The commit for this version can be found <a href="https://github.com/nikitablack/cpp-tests/tree/8364d7c55c8948ab2fc5630e828d44551c6db951/data_oriented/oop/oop" target="_blank">here</a>. We added a new entity - <code>Grid</code> and changed <code>ShapesApp::update()</code> function. Now it calls <code>Grid</code>&rsquo;s methods for updating and intersections.</p>
-
+<p>The commit for this version can be found <a href="https://github.com/nikitablack/cpp-tests/tree/8364d7c55c8948ab2fc5630e828d44551c6db951/data_oriented/oop/oop">here</a>. We added a new entity - <code>Grid</code> and changed <code>ShapesApp::update()</code> function. Now it calls <code>Grid</code>&rsquo;s methods for updating and intersections.</p>
 <p>This version can simulate <code>8000</code> shapes now at <code>30</code> fps (don&rsquo;t forget about <code>20</code> repetitions in each frame)! I had to decrease shape&rsquo;s sizes in order to fit them in the window.</p>
-
 <a href="#images%2f3.png">
     <img src=images/3.png class="thumbnail">
 </a>
@@ -283,13 +249,9 @@
 <a href="#_" class="lightbox" id="images/3.png">
   <img src=images/3.png>
 </a>
-
 <p><strong>Optimization #2. Multithreading.</strong></p>
-
-<p>These days, when even cell phones have <code>4</code> cores inside, ignore multithreading is silly. In this, the last optimization we&rsquo;ll add a thread pool and will divide main work by equal tasks. For example, <code>ShapesApp::updatePositions()</code> which iterated over all shapes before now iterates only over a part of the shapes on each core. Thread pool class was taken from <a href="https://github.com/progschj/ThreadPool/blob/master/ThreadPool.h" target="_blank">here</a> and the final version of the program you can find <a href="https://github.com/nikitablack/cpp-tests/tree/8d83cb351008a3faf3629279ebaf49ff3fc71b17/data_oriented/oop/oop" target="_blank">in this</a> commit. In my tests, I used <code>4</code> threads (including main).</p>
-
+<p>These days, when even cell phones have <code>4</code> cores inside, ignore multithreading is silly. In this, the last optimization we&rsquo;ll add a thread pool and will divide main work by equal tasks. For example, <code>ShapesApp::updatePositions()</code> which iterated over all shapes before now iterates only over a part of the shapes on each core. Thread pool class was taken from <a href="https://github.com/progschj/ThreadPool/blob/master/ThreadPool.h">here</a> and the final version of the program you can find <a href="https://github.com/nikitablack/cpp-tests/tree/8d83cb351008a3faf3629279ebaf49ff3fc71b17/data_oriented/oop/oop">in this</a> commit. In my tests, I used <code>4</code> threads (including main).</p>
 <p>Dividing the work by tasks added some head pain. For example, if a shape crosses cell boundaries it will end in several cells at the same time.</p>
-
 <a href="#images%2f4.png">
     <img src=images/4.png class="thumbnail">
 </a>
@@ -299,13 +261,9 @@
 <a href="#_" class="lightbox" id="images/4.png">
   <img src=images/4.png>
 </a>
-
 <p>Here the shape <code>a</code> fully contained in one cell, but <code>b</code> is in <code>4</code> cells at the same time. Because of this, we have to synchronize cell access. Also, we have to synchronize access to some fields inside the <code>Shape</code> class. We can achieve this adding <code>std::mutex</code> to the <code>Shape</code> and <code>Cell</code>.</p>
-
 <p>Now I can see <code>13000</code> shapes at <code>30</code> fps. For such amount of objects, I had to increase the window size. And I say it again - in every frame we&rsquo;re repeating simulation <code>20</code> times.</p>
-
 <p>To be honest this program has bad parallelization possibilities. That&rsquo;s why increasing the number of threads will not give us a significant performance boost. But that&rsquo;s another story.</p>
-
 <a href="#images%2f5.png">
     <img src=images/5.png class="thumbnail">
 </a>
@@ -315,14 +273,10 @@
 <a href="#_" class="lightbox" id="images/5.png">
   <img src=images/5.png>
 </a>
-
 <h4 id="structure-of-arrays">Structure of Arrays</h4>
-
 <p><strong>Initial program</strong></p>
-
 <p>The code we wrote above I call traditional <em>OOP</em> approach - I write such code many years and see similar code in general. But now we&rsquo;ll modify it a little - we&rsquo;ll remove class <code>Shape</code> and replace it with vectors and see can this tiny change affect the performance? To my happiness refactoring wasn&rsquo;t hard, even trivial. Instead of the <code>Shape</code> class, we&rsquo;ll use a struct with vectors of data.</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">ShapesData</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">ShapesData</span>
 {
 	std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>math<span style="color:#555">::</span>Vec2<span style="color:#555">&gt;</span> positions;
 	std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>math<span style="color:#555">::</span>Vec2<span style="color:#555">&gt;</span> velocities;
@@ -331,27 +285,16 @@
 	std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>math<span style="color:#555">::</span>Color<span style="color:#555">&gt;</span> colors;
 	std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>math<span style="color:#555">::</span>Vec2<span style="color:#555">&gt;&gt;</span> vertices;
 	std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>math<span style="color:#555">::</span>Bounds<span style="color:#555">&gt;</span> bounds;
-};
-</code></pre></div>
-
+};</code></pre></div>
 <p>We pass this struct like this - <code>solveCollision(struct ShapesData &amp; data, std::size_t const indA, std::size_t const indB)</code>. I.e. instead of shapes instances we pass indices and inside function necessary data is taking from the vectors.</p>
-
-<p><a href="https://github.com/nikitablack/cpp-tests/tree/8363e60c614377cccb777625805b6aea9e699117/data_oriented/dod/dod" target="_blank">This version</a> of the program can simulate <code>500</code> objects at <code>30</code> fps. As you can see there&rsquo;s no difference with the original version. This is because we have relatively small data set and the &ldquo;heaviest&rdquo; function uses almost all fields of the struct.</p>
-
+<p><a href="https://github.com/nikitablack/cpp-tests/tree/8363e60c614377cccb777625805b6aea9e699117/data_oriented/dod/dod">This version</a> of the program can simulate <code>500</code> objects at <code>30</code> fps. As you can see there&rsquo;s no difference with the original version. This is because we have relatively small data set and the &ldquo;heaviest&rdquo; function uses almost all fields of the struct.</p>
 <p>Further without pictures since they are the same.</p>
-
 <p><strong>Optimization #1. Spatial Grid</strong></p>
-
-<p>Everything as before except only we switch to <em>SoA</em> instead of <em>AoS</em>. The source code is <a href="https://github.com/nikitablack/cpp-tests/tree/f726cec7591a2568ef41fbe53623e5447bfdde45/data_oriented/dod/dod" target="_blank">here</a>. The result is better - <code>9500</code> objects vs <code>8000</code> before, i.e. the performance difference is around <code>15%</code>.</p>
-
+<p>Everything as before except only we switch to <em>SoA</em> instead of <em>AoS</em>. The source code is <a href="https://github.com/nikitablack/cpp-tests/tree/f726cec7591a2568ef41fbe53623e5447bfdde45/data_oriented/dod/dod">here</a>. The result is better - <code>9500</code> objects vs <code>8000</code> before, i.e. the performance difference is around <code>15%</code>.</p>
 <p><strong>Optimization #2. Multithreading.</strong></p>
-
-<p>Again take the old code, switch structs and get <code>15000</code> objects at <code>30</code> fps. Again performance increase is around <code>15%</code>. <a href="https://github.com/nikitablack/cpp-tests/tree/ba57d299a26545d6045bd84797bc69d98ceca7bd/data_oriented/dod/dod" target="_blank">Here&rsquo;s</a> the final version of the program.</p>
-
+<p>Again take the old code, switch structs and get <code>15000</code> objects at <code>30</code> fps. Again performance increase is around <code>15%</code>. <a href="https://github.com/nikitablack/cpp-tests/tree/ba57d299a26545d6045bd84797bc69d98ceca7bd/data_oriented/dod/dod">Here&rsquo;s</a> the final version of the program.</p>
 <h4 id="conclusion">Conclusion</h4>
-
 <p>I satisfied with the results. As you can see the small change in the code can lead to the quite big performance boost. But not always. It&rsquo;s even possible to lose some speed. For example, if we need only one instance of a class then with a traditional approach we read the data from memory once and have an access to all fields. On the other side if we read each field individually via vectors we have cache miss on each reading. Moreover, the general readability and complexity become worse.</p>
-
 <p>As usual, it&rsquo;s hard to give an unambiguous answer - should everybody switch to the new paradigm? When I worked on a <code>3d</code> game engine <code>10%</code> performance increase was a huge number. But when I worked on game launcher, mostly UI, then usage of this approach would only cause bewilderment of my colleagues. As general advice - profile, measure and decide yourself.</p>
       
       <div class="related">
@@ -366,7 +309,7 @@
 
 <section class="section">
   <div class="container has-text-centered">
-    <p>&copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2019</p>
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
     
       <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
     

@@ -82,19 +82,12 @@
     
     <div class="content">
       <p>I like modular programming - the style where each separate part of the functionality knows nothing about any other part. But the modules need to communicate with each other somehow.</p>
-
 <p>We can pass callbacks to each other but in that case we can create dependencies - for example, a pointer to member function in C++ looks like this:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span>(SomeClass<span style="color:#555">::*</span>ptr)(<span style="color:#078;font-weight:bold">float</span>);
-</code></pre></div>
-
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span>(SomeClass<span style="color:#555">::*</span>ptr)(<span style="color:#078;font-weight:bold">float</span>);</code></pre></div>
 <p>Here <code>ptr</code> is an actual pointer and <code>SomeClass</code> is the name of the class - owner of this function. As you can imagine, if some class needs to accept a function pointer to another class, then using raw function pointers creates a coupling between them. We can use global or static functions - in that case we don&rsquo;t need to specify a class name (because there&rsquo;s no one). But using this types of functions will complicate the code.</p>
-
-<p>The problem can be solved if instead of passing function pointers we&rsquo;ll pass some generic wrapper - a delegate. Later this wrapper can be called and a call will be delegated to the actual function which delegate wraps. Sounds easy, right? And in fact it&rsquo;s easy and there many many ready solutions. My favorites are <a href="http://www.codeproject.com/Articles/11015/The-Impossibly-Fast-C-Delegates" target="_blank">The Impossibly Fast Delegates</a>, <a href="https://blog.molecular-matters.com/2011/09/19/generic-type-safe-delegates-and-events-in-c" target="_blank">Generic type-safe delegates</a> and <a href="http://blog.coldflake.com/posts/C++-delegates-on-steroids/" target="_blank">Delegates On Steroids</a>. And basically my implementation is a mix of aforementioned code with small additions. So, let&rsquo;s start.</p>
-
+<p>The problem can be solved if instead of passing function pointers we&rsquo;ll pass some generic wrapper - a delegate. Later this wrapper can be called and a call will be delegated to the actual function which delegate wraps. Sounds easy, right? And in fact it&rsquo;s easy and there many many ready solutions. My favorites are <a href="http://www.codeproject.com/Articles/11015/The-Impossibly-Fast-C-Delegates">The Impossibly Fast Delegates</a>, <a href="https://blog.molecular-matters.com/2011/09/19/generic-type-safe-delegates-and-events-in-c">Generic type-safe delegates</a> and <a href="http://blog.coldflake.com/posts/C++-delegates-on-steroids/">Delegates On Steroids</a>. And basically my implementation is a mix of aforementioned code with small additions. So, let&rsquo;s start.</p>
 <p>First, let&rsquo;s found how can we pass a function and call it later. One way is to pass a function pointer as a function argument, store this pointer and call it later. In following example I&rsquo;m not storing it but call immediately:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">foo</span>(<span style="color:#078;font-weight:bold">int</span>(<span style="color:#555">*</span>funcPtr)(<span style="color:#078;font-weight:bold">int</span>))
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">foo</span>(<span style="color:#078;font-weight:bold">int</span>(<span style="color:#555">*</span>funcPtr)(<span style="color:#078;font-weight:bold">int</span>))
 {
   <span style="color:#069;font-weight:bold">return</span> funcPtr(<span style="color:#f60">10</span>);
 }
@@ -104,12 +97,9 @@
   <span style="color:#069;font-weight:bold">return</span> a;
 }
 
-foo(<span style="color:#555">&amp;</span>test);
-</code></pre></div>
-
-<p>Another option is to pass function pointer as <a href="http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter" target="_blank">non-type template parameter</a>. In this case we don&rsquo;t need to keep a pointer - the whole function was created around specified pointer:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#555">*</span>FuncPtr)(<span style="color:#078;font-weight:bold">int</span>)<span style="color:#555">&gt;</span>
+foo(<span style="color:#555">&amp;</span>test);</code></pre></div>
+<p>Another option is to pass function pointer as <a href="http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter">non-type template parameter</a>. In this case we don&rsquo;t need to keep a pointer - the whole function was created around specified pointer:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#555">*</span>FuncPtr)(<span style="color:#078;font-weight:bold">int</span>)<span style="color:#555">&gt;</span>
 <span style="color:#078;font-weight:bold">int</span> foo()
 {
   <span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">FuncPtr</span>(<span style="color:#f60">10</span>);
@@ -120,12 +110,9 @@ foo(<span style="color:#555">&amp;</span>test);
   <span style="color:#069;font-weight:bold">return</span> a;
 }
 
-foo<span style="color:#555">&lt;&amp;</span>test<span style="color:#555">&gt;</span>();
-</code></pre></div>
-
+foo<span style="color:#555">&lt;&amp;</span>test<span style="color:#555">&gt;</span>();</code></pre></div>
 <p>But which us better? What to use? Of cource there&rsquo;s no answer. It depends. If you don&rsquo;t know before which function you need to use as a callback, then passing a function pointer is the only option. But if you know, then passing it as template argument can be a good choice. Check this example:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">call1</span>(<span style="color:#078;font-weight:bold">int</span>(<span style="color:#555">*</span>funcPtr)(<span style="color:#078;font-weight:bold">int</span>))
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">call1</span>(<span style="color:#078;font-weight:bold">int</span>(<span style="color:#555">*</span>funcPtr)(<span style="color:#078;font-weight:bold">int</span>))
 {
   <span style="color:#069;font-weight:bold">return</span> funcPtr(<span style="color:#f60">10</span>);
 }
@@ -150,12 +137,9 @@ foo<span style="color:#555">&lt;&amp;</span>test<span style="color:#555">&gt;</s
   i <span style="color:#555">+=</span> call2<span style="color:#555">&lt;&amp;</span>test<span style="color:#555">&gt;</span>();
   
   <span style="color:#069;font-weight:bold">return</span> i;
-}
-</code></pre></div>
-
-<p>I used <a href="https://gcc.godbolt.org/" target="_blank">https://gcc.godbolt.org/</a> to compile it. Thought it&rsquo;s hard to get useful output - compilers are damn smart and produce optimized code - with <em>gcc</em> compiler and <em>O1</em> optimization I got the following assembly output.</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">test(<span style="color:#078;font-weight:bold">int</span>)<span style="color:#555">:</span>
+}</code></pre></div>
+<p>I used <a href="https://gcc.godbolt.org/">https://gcc.godbolt.org/</a> to compile it. Thought it&rsquo;s hard to get useful output - compilers are damn smart and produce optimized code - with <em>gcc</em> compiler and <em>O1</em> optimization I got the following assembly output.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">test(<span style="color:#078;font-weight:bold">int</span>)<span style="color:#555">:</span>
         mov     eax, edi
         ret
 call1(<span style="color:#078;font-weight:bold">int</span> (<span style="color:#555">*</span>)(<span style="color:#078;font-weight:bold">int</span>))<span style="color:#555">:</span>
@@ -180,24 +164,22 @@ call1(<span style="color:#078;font-weight:bold">int</span> (<span style="color:#
         mov     edi, OFFSET <span style="color:#99f">FLAT</span>:std<span style="color:#555">::</span>ios_base<span style="color:#555">::</span>Init<span style="color:#555">::~</span>Init()
         call    __cxa_atexit
         add     rsp, <span style="color:#f60">8</span>
-        ret
-</code></pre></div>
-
+        ret</code></pre></div>
 <p>You don&rsquo;t need to know an assembly to find one interesting thing - the call to <code>call2()</code> was <em>completely</em> optimized out. And the only call here is a call to <code>call1()</code> function which calls the supplied callback. In other words - the template wrapper was replaced by the compiler to the actual callback invokation (here it also optimized out)! It&rsquo;s hard to tell will the compiler optimize in the same way in real big project but at least this output gives some hope that it will.</p>
-
 <p>Knowing this we can start to implement our delegate. In c++ we have a bunch of callable objects and we can split them in three categories:</p>
-
 <ul>
-<li><p>global functions - functions declared globally and static functions. The pointer to such a function will be passed to our delegate. For example <code>&amp;globalFunction</code> will return the address of a function (<code>&amp;</code> is optional). We can be sure we will not have problems calling it later, because this functions are always exist during program lifetime.</p></li>
-
-<li><p>member functions - members of a class or a struct. The pointer to this function should be called on valid object and it&rsquo;s developer&rsquo;s  responsibility to keep an object alive. The member function pointer can be written, for example, <code>int(SomeObj::*funcPtr)(int)</code> and called <code>obj-&gt;*funcPtr(42)</code>, where <code>obj</code> is a pointer.</p></li>
-
-<li><p>different callable objects that are not fitting in previous categories. This can be functors, lambdas, <code>std::function</code> objects. Thought lambda can be casted to a function pointer and treated as global/static function such a pointer can&rsquo;t be used as template argument. Moreover, only lambdas without capture can be casted. This is why I put lambdas in this category.</p></li>
+<li>
+<p>global functions - functions declared globally and static functions. The pointer to such a function will be passed to our delegate. For example <code>&amp;globalFunction</code> will return the address of a function (<code>&amp;</code> is optional). We can be sure we will not have problems calling it later, because this functions are always exist during program lifetime.</p>
+</li>
+<li>
+<p>member functions - members of a class or a struct. The pointer to this function should be called on valid object and it&rsquo;s developer&rsquo;s  responsibility to keep an object alive. The member function pointer can be written, for example, <code>int(SomeObj::*funcPtr)(int)</code> and called <code>obj-&gt;*funcPtr(42)</code>, where <code>obj</code> is a pointer.</p>
+</li>
+<li>
+<p>different callable objects that are not fitting in previous categories. This can be functors, lambdas, <code>std::function</code> objects. Thought lambda can be casted to a function pointer and treated as global/static function such a pointer can&rsquo;t be used as template argument. Moreover, only lambdas without capture can be casted. This is why I put lambdas in this category.</p>
+</li>
 </ul>
-
 <p>All that means that we should manage 3 cases in our delegate implementation. So let&rsquo;s do it.</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
 <span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Delegate</span>;
 
 <span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> Ret, <span style="color:#069;font-weight:bold">typename</span> ...Args<span style="color:#555">&gt;</span>
@@ -224,14 +206,10 @@ call1(<span style="color:#078;font-weight:bold">int</span> (<span style="color:#
 	Delegate(shared_ptr<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span><span style="color:#555">&gt;</span> obj, CallbackType funcPtr) <span style="color:#555">:</span> callee{ obj }, callback{ funcPtr }
 	{
 	}
-}
-</code></pre></div>
-
+}</code></pre></div>
 <p>Here we created an incomplete base template class and a specialization. This is simply a cosmetic stuff - I like more <code>Delegate&lt;int(int, float)&gt;</code> signature than <code>Delegate&lt;int, int, float&gt;</code>. Next we declared a callback type <code>Ret(*)(shared_ptr&lt;void&gt;, Args...)</code> - the function that accepts arguments that should be passed to supplied callback and an object - the <code>callee</code> - which we&rsquo;ll use to call supplied callback on. This <code>callee</code> will be a pointer to a class/struct instance or a pointer to a lambda/functor and <code>nullptr</code> for global/static functions. Let <code>shared_ptr&lt;void&gt;</code> type scare you not - it will be casted to correct type in elegant manner. Also there&rsquo;re a private constructor - mainly because constructors in c++ can&rsquo;t be called with explicit template parameters and for ceation we&rsquo;ll use a factory function, comparison operator - for having only single callback of the same time and for removing of a callback, and a call operator, so our delegate can be called as a functor or even be passed to another delegate!</p>
-
 <p>Now let&rsquo;s add some meat to our skeleton. The simplest case is a static/global function case:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
 	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span>Ret(<span style="color:#555">*</span>funcPtr)(Args...)<span style="color:#555">&gt;</span>
 	<span style="color:#069;font-weight:bold">static</span> Delegate create()
 	{
@@ -243,29 +221,21 @@ call1(<span style="color:#078;font-weight:bold">int</span> (<span style="color:#
 	<span style="color:#069;font-weight:bold">static</span> Ret globalCaller(shared_ptr<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span><span style="color:#555">&gt;</span>, Args... args)
 	{
 		<span style="color:#069;font-weight:bold">return</span> <span style="color:#c0f">funcPtr</span>(args...);
-	}
-</code></pre></div>
-
+	}</code></pre></div>
 <p>Nothing really complicated here - we just defined a static <code>create</code> function (which calls the private constructor) and a wrapper for the callback. This wrapper is stored for later use. I&rsquo;ll repeat it here - the standard doesn&rsquo;t allow to call a constructor with explicit template arguments. That&rsquo;s why we need <code>create</code> factory function.</p>
-
 <blockquote>
 <p>The downside of template here is that we need to manually type template argument - it can&rsquo;t be deduced.</p>
 </blockquote>
-
 <p>Now we can create and call our first delegate:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">global</span>(<span style="color:#078;font-weight:bold">int</span> a, <span style="color:#078;font-weight:bold">float</span> b)
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">global</span>(<span style="color:#078;font-weight:bold">int</span> a, <span style="color:#078;font-weight:bold">float</span> b)
 {
 	<span style="color:#069;font-weight:bold">return</span> a <span style="color:#555">+</span> <span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(b);
 }
 
 Delegate<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> d{ Delegate<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;::</span>create<span style="color:#555">&lt;&amp;</span>global<span style="color:#555">&gt;</span>() };
-d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);
-</code></pre></div>
-
+d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);</code></pre></div>
 <p>Member function case is slightly more difficult:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
 	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, Ret(T<span style="color:#555">::*</span>funcPtr)(Args...)<span style="color:#555">&gt;</span>
 	<span style="color:#069;font-weight:bold">static</span> Delegate create(shared_ptr<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span> obj)
 	{
@@ -277,14 +247,10 @@ d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);
 	<span style="color:#069;font-weight:bold">static</span> Ret memberCaller(shared_ptr<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span><span style="color:#555">&gt;</span> callee, Args... args)
 	{
 		<span style="color:#069;font-weight:bold">return</span> (<span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span>T<span style="color:#555">*&gt;</span>(callee.get())<span style="color:#555">-&gt;*</span>funcPtr)(args...);
-	}
-</code></pre></div>
-
+	}</code></pre></div>
 <p>Here we have <em>overloaded</em> <code>create()</code> function. And here we need to pass a pointer to existing object which will be stored for later use as well as a wrapper. I decided to use <code>shared_ptr</code> because I want to be sure that object is valid when I call a delegate. With <code>shared_ptr</code> I have this guarantee. The <code>memberCaller()</code> wrapper casts the <code>void*</code> pointer to the provided type so we can say we have some sort of type safety here.</p>
-
 <p>And that&rsquo;s how it can be created and called:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">UserStruct</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">UserStruct</span>
 {
 	<span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">member</span>(<span style="color:#078;font-weight:bold">int</span> a, <span style="color:#078;font-weight:bold">float</span> b)
 	{
@@ -293,12 +259,9 @@ d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);
 };
 
 Delegate<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> d{ Delegate<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;::</span>create<span style="color:#555">&lt;</span>UserStruct, <span style="color:#555">&amp;</span>UserStruct<span style="color:#555">::</span>member<span style="color:#555">&gt;</span>(make_shared<span style="color:#555">&lt;</span>UserStruct<span style="color:#555">&gt;</span>()) };
-d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);
-</code></pre></div>
-
+d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);</code></pre></div>
 <p>The final case is a functor case. Here we don&rsquo;t have a function pointer but only the callable object.</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
 	<span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
 	<span style="color:#069;font-weight:bold">static</span> Delegate create(shared_ptr<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span> t)
 	{
@@ -310,38 +273,27 @@ d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);
 	<span style="color:#069;font-weight:bold">static</span> Ret functorCaller(shared_ptr<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">void</span><span style="color:#555">&gt;</span> functor, Args... args)
 	{
 		<span style="color:#069;font-weight:bold">return</span> (<span style="color:#555">*</span><span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span>T<span style="color:#555">*&gt;</span>(functor.get()))(args...);
-	}
-</code></pre></div>
-
+	}</code></pre></div>
 <p>We have another <em>overloaded</em> <code>create</code> function. We can go wild here and add different compile time checks (for example the check that passed parameter is a callable object) and add readable error message if requirements are violated. But this signature will report about the problems anyway, maybe not in a friendly manner. As in the case with a member function we cast our functor to right type in a <code>functorCaller()</code> wrapper, so no type problems here.</p>
-
 <p>The tricky part is to create a lambda shared pointer. As you may know there&rsquo;s no strict type for lambda. Instead, on every lambda creation new type will be introduced. And this code <code>typeid([](){}).name() == typeid([](){}).name()</code> will return <code>false</code>. In order to create a necessary <code>shared_ptr</code> I created this function:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, <span style="color:#069;font-weight:bold">typename</span> L <span style="color:#555">=</span> <span style="color:#069;font-weight:bold">typename</span> std<span style="color:#555">::</span>decay<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;::</span>type<span style="color:#555">&gt;</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T, <span style="color:#069;font-weight:bold">typename</span> L <span style="color:#555">=</span> <span style="color:#069;font-weight:bold">typename</span> std<span style="color:#555">::</span>decay<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;::</span>type<span style="color:#555">&gt;</span>
 shared_ptr<span style="color:#555">&lt;</span>L<span style="color:#555">&gt;</span> make_shared_lambda(T<span style="color:#555">&amp;&amp;</span> t)
 {
 	<span style="color:#069;font-weight:bold">return</span> make_shared<span style="color:#555">&lt;</span>L<span style="color:#555">&gt;</span>(forward<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;</span>(t));
-}
-</code></pre></div>
-
+}</code></pre></div>
 <p>It&rsquo;s not ideal - the underlying lambda will be copied/moved. Anyway, now we can use functors with a delegate:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">auto</span> ptr <span style="color:#555">=</span> make_shared_lambda([](<span style="color:#078;font-weight:bold">int</span> a, <span style="color:#078;font-weight:bold">float</span> b)<span style="color:#555">-&gt;</span><span style="color:#078;font-weight:bold">int</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">auto</span> ptr <span style="color:#555">=</span> make_shared_lambda([](<span style="color:#078;font-weight:bold">int</span> a, <span style="color:#078;font-weight:bold">float</span> b)<span style="color:#555">-&gt;</span><span style="color:#078;font-weight:bold">int</span>
 {
 	<span style="color:#069;font-weight:bold">return</span> a <span style="color:#555">+</span> <span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(b);
 });
 
 Delegate<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> d{ Delegate<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;::</span>create(ptr) };
-d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);
-</code></pre></div>
-
+d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);</code></pre></div>
 <blockquote>
 <p>The main point of a delegate - call underlying function later. And we want to be sure that callable object exist. That&rsquo;s why we need to track the object&rsquo;s lifetime.</p>
 </blockquote>
-
 <p>As you probably noticed - the declaration of the delegate is pretty verbose. Can it be simplified? I beleive it can with macros and template magic, but I prefer to have a helper class. This class will handle adding and removing of delegates. I call it - <code>Dispatcher</code>. Imagine some abstract <code>Button</code> class. It can have a <code>Dispatcher</code> for some event - a <code>click</code>, for example. Now every entity that want to listen for this <code>click</code> event can add a delegate to this <code>Dispatcher</code>. And when the real event triggers this <code>Dispatcher</code> will invoke all callbacks that was added to it. Here&rsquo;s a simple implementation.</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
 <span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Dispatcher</span>;
 
 <span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> Ret, <span style="color:#069;font-weight:bold">typename</span> ...Args<span style="color:#555">&gt;</span>
@@ -421,19 +373,14 @@ d(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);
 	}
 <span style="color:#069;font-weight:bold">private</span><span style="color:#555">:</span>
 	vector<span style="color:#555">&lt;</span>Delegate<span style="color:#555">&lt;</span>Ret(Args...)<span style="color:#555">&gt;&gt;</span> delegates;
-};
-</code></pre></div>
-
+};</code></pre></div>
 <p>Mostly it&rsquo;s a wrappers around delegate creation functions. Couple of notes here.</p>
-
 <ul>
 <li>When we want to add a delegate - the new one will be created. If we want to remove it - we also need to create it to be able to compare. But that&rsquo;s the price we need to pay in order to have compact delegates, without storing callback pointer and different comparing logic.</li>
 <li>During call of <code>operator()</code> the callback function will be called. And if in this callback we remove the delegate from the dispatcher - bad things can happen. In other words in this implementation it&rsquo;s possible to remove an item from the vector while iterating over this vector. This will lead to crash/corruption and additional logic needed here to avoid this situation.</li>
 </ul>
-
 <p>We can use new <code>Dispatcher</code> class like this:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Dispatcher<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> dispatcher;
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Dispatcher<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>)<span style="color:#555">&gt;</span> dispatcher;
 
 dispatcher.add<span style="color:#555">&lt;&amp;</span>global<span style="color:#555">&gt;</span>();
 
@@ -443,17 +390,13 @@ dispatcher.add<span style="color:#555">&lt;</span>UserStruct, <span style="color
 dispatcher(<span style="color:#f60">10</span>, <span style="color:#f60">5.0f</span>);
 
 dispatcher.remove<span style="color:#555">&lt;&amp;</span>global<span style="color:#555">&gt;</span>();
-dispatcher.remove<span style="color:#555">&lt;</span>UserStruct, <span style="color:#555">&amp;</span>UserStruct<span style="color:#555">::</span>member<span style="color:#555">&gt;</span>(ptr);
-</code></pre></div>
-
+dispatcher.remove<span style="color:#555">&lt;</span>UserStruct, <span style="color:#555">&amp;</span>UserStruct<span style="color:#555">::</span>member<span style="color:#555">&gt;</span>(ptr);</code></pre></div>
 <p>Things that can be improved:</p>
-
 <ul>
 <li>Maybe it would be better to return some delegate handle after adding the delegate to the dispatcher. Keeping this handle will act the same as keeping <code>Delegate</code> instance, but it&rsquo;s more compact and simple. Later we can use the handle to remove a delegate and there will be no need to create a new <code>Delegate</code> instance for comparison.</li>
-<li>The parameters passed to <code>Dispatcher::operator()</code> and <code>Delegate::operator()</code> are passed by copy. It would better to use perfect forwarding. But the problem is that we have <code>typename ...Args</code> parameter pack in class definition but usage of it - <code>Args... args</code> in the function. In other words we have a templated class but not a function. And <a href="http://en.cppreference.com/w/cpp/utility/forward#Example" target="_blank">perfect forwarding</a> with <a href="http://en.cppreference.com/w/cpp/language/reference" target="_blank">reference collapsing rules</a> applies only to function templates. I believe we can fix this templating a function with another parameter pack and comparing this pack with one declared in class template.</li>
+<li>The parameters passed to <code>Dispatcher::operator()</code> and <code>Delegate::operator()</code> are passed by copy. It would better to use perfect forwarding. But the problem is that we have <code>typename ...Args</code> parameter pack in class definition but usage of it - <code>Args... args</code> in the function. In other words we have a templated class but not a function. And <a href="http://en.cppreference.com/w/cpp/utility/forward#Example">perfect forwarding</a> with <a href="http://en.cppreference.com/w/cpp/language/reference">reference collapsing rules</a> applies only to function templates. I believe we can fix this templating a function with another parameter pack and comparing this pack with one declared in class template.</li>
 </ul>
-
-<p>The source code can be found <a href="https://github.com/nikitablack/cpp-tests/blob/master/Delegate/Delegate.h" target="_blank">here</a>.</p>
+<p>The source code can be found <a href="https://github.com/nikitablack/cpp-tests/blob/master/Delegate/Delegate.h">here</a>.</p>
       
       <div class="related">
 </div>
@@ -467,7 +410,7 @@ dispatcher.remove<span style="color:#555">&lt;</span>UserStruct, <span style="co
 
 <section class="section">
   <div class="container has-text-centered">
-    <p>&copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2019</p>
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
     
       <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
     

@@ -82,107 +82,77 @@
     
     <div class="content">
       <p>At some point in my development life, I decided that I want to know how fast my GPU can crack the tasks I throw at it. And if you read this then you probably want to know it too. I expect that you know that measure a GPU time on the CPU makes no sense since CPU and GPU are two different processors and if you place <code>std::chrono::some_clock::now()</code> before and after a draw call it will always give you a time near to zero. Luckily Vulkan provides a tool to make time snapshots - the so-called <strong>Queries</strong>. There’re multiple different query types but today we’ll talk about <strong>Timestamp Queries</strong>.</p>
-
 <p>Before I started to dig the Holy Specification I thought that timestamps on the GPU are quite the same as on the CPU (with for example, <code>std::chrono</code>) - all I need is a special command to write the current time then write another set of commands - the actual work whose duration needs to be measured, and finally, close it with another <em>write-time</em> command. Next, somehow I need to read the time values back and voila. Of course, Vulkan would not be Vulkan if it was so easy, there&rsquo;re so many details to take into account. As usual, the Specification is pretty dry - it just provides all possibilities of the API without going deep. And I was surprised to find that there&rsquo;s almost zero information on the web about the topic. So after a couple of days of rereading the Spec and poking people with stupid questions, I want to share my findings which hopefully will be useful to somebody.</p>
-
 <h2 id="queries">Queries</h2>
-
 <p>As I already mentioned, there&rsquo;re multiple query types - Occlusion, Pipeline Statistics, Performance, etc. Some of them require a specific extension while others work out of the box. The Timestamp Queries belongs to the latter - we don&rsquo;t need to enable anything.</p>
-
 <blockquote>
 <p><strong>Note:</strong> though Timestamp Queries don&rsquo;t require an extension we still need to check their support with <code>VkPhysicalDeviceLimits::timestampComputeAndGraphics</code> (see the Specification).</p>
 </blockquote>
-
-<p>To use queries we need a pool (of course!). The pools&rsquo; creation is pretty straightforward - <code>VkQueryPoolCreateInfo::queryType</code> should be <code>VK_QUERY_TYPE_TIMESTAMP</code> and <code>VkQueryPoolCreateInfo::queryCount</code> should be the equal to number of timestamps we need and the struct is passed to <code>vkCreateQueryPool()</code>, nothing special here. So if we want to measure how long one draw call takes we need two query counts - one for the start and one for the end.</p>
-
+<p>To use queries we need a pool (of course!). The pools' creation is pretty straightforward - <code>VkQueryPoolCreateInfo::queryType</code> should be <code>VK_QUERY_TYPE_TIMESTAMP</code> and <code>VkQueryPoolCreateInfo::queryCount</code> should be the equal to number of timestamps we need and the struct is passed to <code>vkCreateQueryPool()</code>, nothing special here. So if we want to measure how long one draw call takes we need two query counts - one for the start and one for the end.</p>
 <h2 id="getting-query-result">Getting Query Result</h2>
-
 <p>Things go interesting when we read our queries back - the function <code>vkGetQueryPoolResults</code>, besides usual <code>device</code>, <code>queryPool</code>, <code>queryCount</code>, <code>firstQuery</code>, accepts a buffer <code>pData</code> with size <code>dataSize</code>, some <code>stride</code> and of course <code>flags</code>. The size of the buffer as well as stride depends on flags. Possible variants for the flags are:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">VK_QUERY_RESULT_64_BIT
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">VK_QUERY_RESULT_64_BIT
 VK_QUERY_RESULT_WAIT_BIT
 VK_QUERY_RESULT_WITH_AVAILABILITY_BIT
-VK_QUERY_RESULT_PARTIAL_BIT
-</code></pre></div>
-
+VK_QUERY_RESULT_PARTIAL_BIT</code></pre></div>
 <p>If we don&rsquo;t specify any flags the query default data type is <code>uint32_t</code>. The resolution of a query is defined with <code>VkPhysicalDeviceLimits::timestampPeriod</code> value. This is how the Specification describes it:</p>
-
 <blockquote>
 <p><code>timestampPeriod</code> is the number of nanoseconds required for a timestamp query to be incremented by 1.</p>
 </blockquote>
-
 <p><strong>VK_QUERY_RESULT_64_BIT</strong></p>
-
 <p>So if we have queries difference <code>end - start</code> and we want to know the time in nanoseconds we need to multiply that difference by <code>VkPhysicalDeviceLimits::timestampPeriod</code>. On my machine the period is 1, so every timestamp writes some number of nanoseconds (I don&rsquo;t know when the timer starts). The maximum for <code>uint32_t</code> is 4294967295. In my case even if the first query will be 0ns (which is very unlikely) than I can measure only <code>4294967295</code> nanoseconds between two timestamps. Or ~0.43 seconds. Of course, the first query will be somewhere between 0 and <code>uint32_t::max()</code> and if I measure heavy work it&rsquo;s very likely to hit an integer overflow and the final result will be wrong. So I&rsquo;d recommend to always use <code>VK_QUERY_RESULT_64_BIT</code> flag.</p>
-
 <p><strong>VK_QUERY_RESULT_WAIT_BIT</strong> and <strong>VK_QUERY_RESULT_WITH_AVAILABILITY_BIT</strong></p>
-
 <p>Next. You probably know that when you write a Vulkan command and submit it&rsquo;s not get executed immediately. Actually, you can&rsquo;t know when it starts to execute and finishes. And of course, you can&rsquo;t just read queries at an arbitrary point in time because you want to be sure the values are in place. One solution would be to use <code>VK_QUERY_RESULT_WAIT_BIT</code>. From the flag name, it&rsquo;s clear that the CPU will wait until <strong>all</strong> queries are written. There&rsquo;re use cases for this - for example, it would be super easy to fire a single heavy dispatch and wait for its completion on CPU. But in loop applications like games, we can&rsquo;t afford this luxury so this flag is not for us. <code>VK_QUERY_RESULT_WITH_AVAILABILITY_BIT</code> can be used instead. In this case, each frame you check if the value is available on the host and don&rsquo;t issue new write command until you read previous so it&rsquo;s quite possible that some frames may be missed. And here&rsquo;re the rules for this flag:</p>
-
 <ul>
 <li>in addition to query value a special availability value is written after the query value. The non-zero value means that the query is available.</li>
 <li>if nothing is said explicitly the size of the availability value is <code>uint32_t</code>. If <code>VK_QUERY_RESULT_64_BIT</code> is used the size of availability value is <code>uint64_t</code>.</li>
 </ul>
-
 <p>That means that for 2 queries the buffer can be:</p>
-
 <ul>
 <li>if no flags are used the size is <code>2 * sizeof(uint32_t) = 8bytes</code></li>
 <li>if <code>VK_QUERY_RESULT_WITH_AVAILABILITY_BIT</code> only is used the size is <code>2 * sizeof(uint32_t) + 2 * sizeof(uint32_t) = 16bytes</code></li>
 <li>if <code>VK_QUERY_RESULT_64_BIT</code> only is used the size is <code>2 * sizeof(uint64_t) = 16bytes</code></li>
 <li>if both <code>VK_QUERY_RESULT_64_BIT</code> and <code>VK_QUERY_RESULT_WITH_AVAILABILITY_BIT</code> are used the size is <code>2 * sizeof(uint64_t) + 2 * sizeof(uint64_t) = 32bytes</code></li>
 </ul>
-
 <p>Another approach to avoid waiting and don&rsquo;t mess with availabilities is to use multiple query pools as we do with command buffers and descriptor pools. In that case, at the frame start, we read from the current pool then reset it, then record timestamp commands. In the next frame we do the same but for another pool and then repeat.</p>
-
 <p><strong>VK_QUERY_RESULT_PARTIAL_BIT</strong></p>
-
 <p>This flag is not used with timestamp queries.</p>
-
 <h2 id="writing-a-timestamp">Writing a Timestamp</h2>
-
 <p>Another part that led me to the confusion was how to write a timestamp itself. The only function has the following signature:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">vkCmdWriteTimestamp</span>(
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">vkCmdWriteTimestamp</span>(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlagBits                     pipelineStage,
     VkQueryPool                                 queryPool,
-    <span style="color:#078;font-weight:bold">uint32_t</span>                                    query);
-</code></pre></div>
-
+    <span style="color:#078;font-weight:bold">uint32_t</span>                                    query);</code></pre></div>
 <p>where <code>commandBuffer</code> is, well, a command buffer, <code>queryPool</code> is a pool we&rsquo;re working with in the current frame, <code>query</code> is the index of query we want to write and <code>pipelineStage</code> - mysterious stage flag. The suffix <em>bits</em> tells us that only one flag should be used and this is what the Spec tells us:</p>
-
 <blockquote>
 <p><code>vkCmdWriteTimestamp</code> latches the value of the timer when all previous commands have completed executing as far as the specified pipeline stage, and writes the timestamp value to memory.</p>
 </blockquote>
-
 <p>So what does it mean? That means that the timer value will not be written until <strong>all</strong> previously submitted commands reached the specified stage. Let&rsquo;s look at different scenarios to better understand:</p>
-
 <ol>
-<li><p>We want to measure how long does it take to run a vertex shader. We want the first timestamp to be written before the vertex shader begins so the first flag should be <code>VK_PIPELINE_STAGE_VERTEX_SHADER_BIT</code>. The second timestamp must be written when the vertex shader finishes. We open <em>Pipeline Stages Order</em> part in the Specification and see that after <code>VK_PIPELINE_STAGE_VERTEX_SHADER_BIT</code> follows <code>VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT</code> so we could use this flag.</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    vkCmdDrawIndexed();
+<li>
+<p>We want to measure how long does it take to run a vertex shader. We want the first timestamp to be written before the vertex shader begins so the first flag should be <code>VK_PIPELINE_STAGE_VERTEX_SHADER_BIT</code>. The second timestamp must be written when the vertex shader finishes. We open <em>Pipeline Stages Order</em> part in the Specification and see that after <code>VK_PIPELINE_STAGE_VERTEX_SHADER_BIT</code> follows <code>VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT</code> so we could use this flag.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    vkCmdDrawIndexed();
     vkCmdWriteTimestamp(VK_PIPELINE_STAGE_VERTEX_SHADER_BIT); <span style="color:#09f;font-style:italic">// says: write a timestamp as soon as all previous commands (we have only one - vkCmdDrawIndexed) reach STAGE_VERTEX_SHADER
 </span><span style="color:#09f;font-style:italic"></span>    vkCmdWriteTimestamp(VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT); <span style="color:#09f;font-style:italic">// says: write a timestamp as soon as all previous commands reach STAGE_TESSELLATION_CONTROL_SHADER
 </span><span style="color:#09f;font-style:italic"></span>    
 </code></pre></div>
-
-<p>Though this could work in theory in practice we rarely have a single draw command. The more realistic example follows.</p></li>
-
-<li><p>This time we call draw commands in a loop and we want to know how long does it take to run the same vertex shader. Or do we really want to know that? Does it make sense at all? Let&rsquo;s take an abstract GPU and look at what&rsquo;s happening when we submit a batch of work. Let&rsquo;s imagine we submit 100 draw calls. Since our GPU has a limited number of processing units it will not launch all draw calls at the same time. Let&rsquo;s say it will take 10 commands from the queue, execute the vertex shader, and move them to the next pipeline stage. Now it can start another 10 commands and so on. At the end, when the last draw calls&rsquo; vertex shader finishes it&rsquo;s quite possible that the first draw call already passed through the fragment shader. So it turns out that the total measured time will include all pipeline stages for some draw calls. The same can be true even for a single draw call - imagine we submit a HUGE model, millions of vertices - while some triangles are processed, others already can be rasterized. Of course, this is very very rough approximation how a real hardware works but you&rsquo;ve got the idea that this code makes no sense:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    <span style="color:#069;font-weight:bold">for</span>(<span style="color:#f60">0.</span>.N)
+<p>Though this could work in theory in practice we rarely have a single draw command. The more realistic example follows.</p>
+</li>
+<li>
+<p>This time we call draw commands in a loop and we want to know how long does it take to run the same vertex shader. Or do we really want to know that? Does it make sense at all? Let&rsquo;s take an abstract GPU and look at what&rsquo;s happening when we submit a batch of work. Let&rsquo;s imagine we submit 100 draw calls. Since our GPU has a limited number of processing units it will not launch all draw calls at the same time. Let&rsquo;s say it will take 10 commands from the queue, execute the vertex shader, and move them to the next pipeline stage. Now it can start another 10 commands and so on. At the end, when the last draw calls' vertex shader finishes it&rsquo;s quite possible that the first draw call already passed through the fragment shader. So it turns out that the total measured time will include all pipeline stages for some draw calls. The same can be true even for a single draw call - imagine we submit a HUGE model, millions of vertices - while some triangles are processed, others already can be rasterized. Of course, this is very very rough approximation how a real hardware works but you&rsquo;ve got the idea that this code makes no sense:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    <span style="color:#069;font-weight:bold">for</span>(<span style="color:#f60">0.</span>.N)
     {
         vkCmdDrawIndexed();
     }
     vkCmdWriteTimestamp(VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
     vkCmdWriteTimestamp(VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT);
     
-</code></pre></div></li>
-
-<li><p>Now we know that measure a single stage doesn&rsquo;t work well with timestamps but we still want some numbers. We can measure the entire pipeline for a set of draw calls and this is how we can do it:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    vkCmdWriteTimestamp(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT); <span style="color:#09f;font-style:italic">// says: write a timestamp as soon as all previous commands were taken by the command processor
+</code></pre></div>
+</li>
+<li>
+<p>Now we know that measure a single stage doesn&rsquo;t work well with timestamps but we still want some numbers. We can measure the entire pipeline for a set of draw calls and this is how we can do it:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    vkCmdWriteTimestamp(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT); <span style="color:#09f;font-style:italic">// says: write a timestamp as soon as all previous commands were taken by the command processor
 </span><span style="color:#09f;font-style:italic"></span>    <span style="color:#069;font-weight:bold">for</span>(<span style="color:#f60">0.</span>.N)
     {
         vkCmdDrawIndexed();
@@ -190,12 +160,11 @@ VK_QUERY_RESULT_PARTIAL_BIT
     vkCmdWriteTimestamp(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT); <span style="color:#09f;font-style:italic">// says: write a timestamp as soon as all previous commands retire
 </span><span style="color:#09f;font-style:italic"></span>    
 </code></pre></div>
-
-<p>Here we want to put the first timestamp before the work starts. <code>VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT</code> is a special kind of stage and means that the command is parsed by a command processor. <code>VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT</code> is a special thing as well and indicates a stage where commands <em>&ldquo;leave a GPU&rdquo;</em> after work.</p></li>
-
-<li><p>The final example is closer to real-life than previous scenarios:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    <span style="color:#09f;font-style:italic">// work 1
+<p>Here we want to put the first timestamp before the work starts. <code>VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT</code> is a special kind of stage and means that the command is parsed by a command processor. <code>VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT</code> is a special thing as well and indicates a stage where commands <em>&ldquo;leave a GPU&rdquo;</em> after work.</p>
+</li>
+<li>
+<p>The final example is closer to real-life than previous scenarios:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">    <span style="color:#09f;font-style:italic">// work 1
 </span><span style="color:#09f;font-style:italic"></span>    <span style="color:#069;font-weight:bold">for</span>(<span style="color:#f60">0.</span>.N)
     {
         vkCmdDrawIndexed();
@@ -210,10 +179,8 @@ VK_QUERY_RESULT_PARTIAL_BIT
     vkCmdWriteTimestamp(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT); <span style="color:#09f;font-style:italic">// says: write a timestamp as soon as all previous commands retire
 </span><span style="color:#09f;font-style:italic"></span>    
 </code></pre></div>
-
 <p>A small diagram showing how the work can be organized in the GPU:</p>
-
-<pre><code>                                   timestamp
+<pre tabindex="0"><code>                                   timestamp
                                        ↓
 top       work1 work1 work1 work1 work1 work2 work2 work2 work2 work2
 vertex          work1 work1 work1 work1 work1 work2 work2 work2 work2 work2
@@ -224,11 +191,8 @@ bottom                      work1 work1 work1 work1 work1 work2 work2 work2 work
 
 ---------------------------------------|-----|-----------------------------------|-----|----------&gt; time
                                        t1    t2                                  t3    t4
-</code></pre>
-
-<p>Here we want to measure the second set of draw commands. In this - <em>almost ideal</em> setup you can see that the first timestamp is written as soon as all previous commands reached the <code>TOP_OF_PIPE</code> stage (<code>t1</code>) which is a little bit earlier than the first vertex processing happens (<code>t2</code>) for the first command from <em>work2</em>. The same goes for the second timestamp - after the last command from <em>work2</em> (<code>t3</code>), some time passes before the command retires at the <code>BOTTOM_OF_PIPE</code> stage (<code>t4</code>). Hopefully, you see that the measured time is not strictly correct - we have some time before and after work. Additionally, we measure a part of <em>work1</em>. Though it&rsquo;s not that bad here things can be pretty frustrating. Consider this:</p>
-
-<pre><code>                       timestamp
+</code></pre><p>Here we want to measure the second set of draw commands. In this - <em>almost ideal</em> setup you can see that the first timestamp is written as soon as all previous commands reached the <code>TOP_OF_PIPE</code> stage (<code>t1</code>) which is a little bit earlier than the first vertex processing happens (<code>t2</code>) for the first command from <em>work2</em>. The same goes for the second timestamp - after the last command from <em>work2</em> (<code>t3</code>), some time passes before the command retires at the <code>BOTTOM_OF_PIPE</code> stage (<code>t4</code>). Hopefully, you see that the measured time is not strictly correct - we have some time before and after work. Additionally, we measure a part of <em>work1</em>. Though it&rsquo;s not that bad here things can be pretty frustrating. Consider this:</p>
+<pre tabindex="0"><code>                       timestamp
                            ↓
 top       work1 work1 work1 work2 work2 work2
 vertex          wooooooork1 wooooooork1 work2 wooooooork1 work2 work2
@@ -239,15 +203,11 @@ bottom                                  wooooooork1 wooooooork1 work2 work2 work
 
 ---------------------------|-----------|-----------------------------------------|-----------|----&gt; time
                            t1          t2                                        t3          t4
-</code></pre>
-
-<p>Here <em>work1</em> is somewhat heavy and by the nature of GPUs the work will not be done sequentially but the commands will be mixed. The first timestamp is written when all the previous commands have reached <code>TOP_OF_PIPE</code> (as before) but since the tasks from <em>work1</em> are time-consuming the actual work we wanted to measure starts <strong>much</strong> later. Also can happen that the <em>work1</em> finishes <strong>after</strong> the <em>work2</em> (despite the fact it was queued earlier) but because of the stage flag <code>VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT</code> for the second timestamp we have to wait for it. The resulting time in this case is far from the real.</p></li>
+</code></pre><p>Here <em>work1</em> is somewhat heavy and by the nature of GPUs the work will not be done sequentially but the commands will be mixed. The first timestamp is written when all the previous commands have reached <code>TOP_OF_PIPE</code> (as before) but since the tasks from <em>work1</em> are time-consuming the actual work we wanted to measure starts <strong>much</strong> later. Also can happen that the <em>work1</em> finishes <strong>after</strong> the <em>work2</em> (despite the fact it was queued earlier) but because of the stage flag <code>VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT</code> for the second timestamp we have to wait for it. The resulting time in this case is far from the real.</p>
+</li>
 </ol>
-
 <h2 id="conclusion">Conclusion</h2>
-
 <p>Timestamp Queries can&rsquo;t give us a precise time. So should we use it? Definitely! Though measurements are not 100% correct they show at least approximate load on a GPU. In the last example, we can measure both <em>work1</em> and <em>work2</em> and see how numbers change when we increase or decrease the amount of work. Also if you do scientific research and really need to know the exact time you can always wait for something - either for query result or when a device becomes idle.</p>
-
 <blockquote>
 <p><strong>Note:</strong> I found it interesting that on my GPU all timestamps are divisible by 1024. And if there&rsquo;re two timestamps but no work between them I get 1024 or 2048 nanoseconds. I don&rsquo;t know what is it but will try to guess that the internal clock has some specific resolution. Or maybe timestamps are written with a certain frequency?</p>
 </blockquote>
@@ -264,7 +224,7 @@ bottom                                  wooooooork1 wooooooork1 work2 work2 work
 
 <section class="section">
   <div class="container has-text-centered">
-    <p>&copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2019</p>
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
     
       <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
     

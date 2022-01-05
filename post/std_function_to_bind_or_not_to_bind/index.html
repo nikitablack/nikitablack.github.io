@@ -81,22 +81,16 @@
     <h1 class="title">std::function - to bind or not to bind?</h1>
     
     <div class="content">
-      <p>In my <a href="https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html" target="_blank">previous post</a> about delegates I wrote how to bind a member function to <code>std::function</code>. There was a lot of template magic involved in order to pass the correct number of <a href="http://en.cppreference.com/w/cpp/utility/functional/placeholders" target="_blank">placeholders</a>. Shortly after I published I received a lot of feedback and I&rsquo;m very grateful for this. One advice was not to use <a href="http://en.cppreference.com/w/cpp/utility/functional/bind" target="_blank"><code>std::bind()</code></a> at all.</p>
-
+      <p>In my <a href="http://nikitablack.github.io/post/std_function_as_delegate/">previous post</a> about delegates I wrote how to bind a member function to <code>std::function</code>. There was a lot of template magic involved in order to pass the correct number of <a href="http://en.cppreference.com/w/cpp/utility/functional/placeholders">placeholders</a>. Shortly after I published I received a lot of feedback and I&rsquo;m very grateful for this. One advice was not to use <a href="http://en.cppreference.com/w/cpp/utility/functional/bind"><code>std::bind()</code></a> at all.</p>
 <p>I&rsquo;ll paste directly the code from one of the comments and will make some time measurements:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">T</span>, <span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">R</span>, <span style="color:#069;font-weight:bold">class</span> <span style="color:#a00;background-color:#faa">... </span><span style="color:#0a8;font-weight:bold">Args</span><span style="color:#555">&gt;</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">T</span>, <span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">R</span>, <span style="color:#069;font-weight:bold">class</span> <span style="color:#a00;background-color:#faa">... </span><span style="color:#0a8;font-weight:bold">Args</span><span style="color:#555">&gt;</span>
 <span style="color:#069;font-weight:bold">auto</span> make_function(T t, R(T<span style="color:#555">::*</span>mem_fn)(Args...))
 {
   <span style="color:#069;font-weight:bold">return</span> [t, mem_fn] (Args ... args) <span style="color:#069;font-weight:bold">mutable</span> <span style="color:#555">-&gt;</span> R { <span style="color:#069;font-weight:bold">return</span> ((t).<span style="color:#555">*</span>(mem_fn))(args...); };
-}
-</code></pre></div>
-
-<p>As you can see - it&rsquo;s usual lambda that can be converted to <a href="http://en.cppreference.com/w/cpp/utility/functional/function" target="_blank"><code>std::function</code></a>.</p>
-
+}</code></pre></div>
+<p>As you can see - it&rsquo;s usual lambda that can be converted to <a href="http://en.cppreference.com/w/cpp/utility/functional/function"><code>std::function</code></a>.</p>
 <p>My first thoughts were that lambda should be slower - we have a function call and a lambda call over it. To be honest, I don&rsquo;t know how <code>std::bind</code> works, maybe it also creates some wrappers? Anyway, let&rsquo;s benchmark:</p>
-
-<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">S</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">S</span>
 {
 	<span style="color:#078;font-weight:bold">int</span> <span style="color:#c0f">foo</span>(<span style="color:#078;font-weight:bold">int</span> a, <span style="color:#078;font-weight:bold">int</span> b)
 	{
@@ -156,9 +150,7 @@
 	cin.get();
 
 	<span style="color:#069;font-weight:bold">return</span> <span style="color:#f60">0</span>;
-}
-</code></pre></div>
-
+}</code></pre></div>
 <p>On my machine I have around <code>400ms</code> for <em>both</em> <code>std::bind()</code> and lambda. Not bad. My previous code can be simplified dramatically now - there&rsquo;s no need in <code>std::bind()</code> and accompanying template tricks.</p>
       
       <div class="related">
@@ -173,7 +165,7 @@
 
 <section class="section">
   <div class="container has-text-centered">
-    <p>&copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2019</p>
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
     
       <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
     

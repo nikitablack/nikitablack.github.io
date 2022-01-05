@@ -1,64 +1,43 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  
   <url>
     <loc>http://nikitablack.github.io/</loc>
     <lastmod>2020-08-08T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://nikitablack.github.io/post/how_to_use_vulkan_timestamp_queries/</loc>
     <lastmod>2020-08-08T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://nikitablack.github.io/post/</loc>
     <lastmod>2020-08-08T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://nikitablack.github.io/post/how_i_organize_data_in_functional_style/</loc>
     <lastmod>2020-03-21T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
+    <loc>http://nikitablack.github.io/post/vulkan_by_example_0_introduction/</loc>
+    <lastmod>2020-01-05T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>http://nikitablack.github.io/post/functional_programming_in_c&#43;&#43;_by_example/</loc>
     <lastmod>2017-03-23T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://nikitablack.github.io/post/data_oriented_design_by_example/</loc>
     <lastmod>2017-02-02T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://nikitablack.github.io/post/directx_12_by_example/</loc>
     <lastmod>2016-06-23T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://nikitablack.github.io/post/std_function_to_bind_or_not_to_bind/</loc>
     <lastmod>2016-05-24T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://nikitablack.github.io/post/std_function_as_delegate/</loc>
     <lastmod>2016-04-26T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://nikitablack.github.io/post/generic_c&#43;&#43;_delegates/</loc>
     <lastmod>2016-04-12T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://nikitablack.github.io/post/call_a_function_from_the_string_name_and_arguments/</loc>
     <lastmod>2016-02-21T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://nikitablack.github.io/tags/</loc>
   </url>
-  
 </urlset>

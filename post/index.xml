@@ -6,12 +6,8 @@
     <description>Recent content in Posts on Here should be the blog Title</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <copyright>&amp;copy; &lt;a href=&#34;http://nikitablack.github.io/&#34;&gt;nikitablack&lt;/a&gt; 2019</copyright>
-    <lastBuildDate>Sat, 08 Aug 2020 00:00:00 +0000</lastBuildDate>
-    
-	<atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <copyright>&amp;copy; &lt;a href=&#34;http://nikitablack.github.io/&#34;&gt;nikitablack&lt;/a&gt; 2021</copyright>
+    <lastBuildDate>Sat, 08 Aug 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>How to use Vulkan Timestamp Queries.</title>
       <link>http://nikitablack.github.io/post/how_to_use_vulkan_timestamp_queries/</link>
@@ -31,12 +27,25 @@
     </item>
     
     <item>
+      <title>Vulkan by example 0. Introduction.</title>
+      <link>http://nikitablack.github.io/post/vulkan_by_example_0_introduction/</link>
+      <pubDate>Sun, 05 Jan 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/vulkan_by_example_0_introduction/</guid>
+      <description>&lt;p&gt;Hi everybody. Today I&amp;rsquo;d like to talk about &lt;code&gt;Vulkan&lt;/code&gt; - the modern API for communication with a GPU device. Though there&amp;rsquo;re already lots of information and tutorials on the web as well as books I want to try to write about the API for several reasons:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;I don&amp;rsquo;t want this series to be about general usage of the API. Instead, I want to focus on a single purpose application, more or less &lt;em&gt;advanced&lt;/em&gt;, &lt;em&gt;not&lt;/em&gt; a triangle, and explain how all works by looking at a concrete example.&lt;/li&gt;
+&lt;li&gt;I want to understand &lt;code&gt;Vulkan&lt;/code&gt; better. And, as you know, trying to explain things helps to understand them better.&lt;/li&gt;
+&lt;/ul&gt;</description>
+    </item>
+    
+    <item>
       <title>Functional programming in c&#43;&#43; by example</title>
       <link>http://nikitablack.github.io/post/functional_programming_in_c&#43;&#43;_by_example/</link>
       <pubDate>Thu, 23 Mar 2017 00:00:00 +0000</pubDate>
       
       <guid>http://nikitablack.github.io/post/functional_programming_in_c&#43;&#43;_by_example/</guid>
-      <description>&lt;p&gt;Functional programming (&lt;strong&gt;FP&lt;/strong&gt;) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I&amp;rsquo;ll take a code from my &lt;a href=&#34;https://nikitablack.github.io/2017/02/02/Data-Oriented-Design-by-example.html&#34; target=&#34;_blank&#34;&gt;previous article&lt;/a&gt; so the example will be a 2D physics simulation.&lt;/p&gt;</description>
+      <description>&lt;p&gt;Functional programming (&lt;em&gt;FP&lt;/em&gt;) is popular these days. Articles, books, blogs. Every conference has a couple of talks about the beauty of functional approach. I looked at it from the side for a long time and now I want to try it in practice. After I dug a lot through the theory I decided to write a small application in a functional style. I&amp;rsquo;ll take a code from my &lt;a href=&#34;http://nikitablack.github.io/post/data_oriented_design_by_example/&#34;&gt;previous article&lt;/a&gt; so the example will be a 2D physics simulation.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -55,7 +64,6 @@
       
       <guid>http://nikitablack.github.io/post/directx_12_by_example/</guid>
       <description>&lt;h4 id=&#34;disclaimer&#34;&gt;Disclaimer!&lt;/h4&gt;
-
 &lt;p&gt;I&amp;rsquo;m not an expert, computer graphics is my hobby. When I started to learn directx 12 I already was quite comfortable with directx 11 but it was still difficult to switch. And even after several months of investigations I still have a feeling that I just scratched a surface. I&amp;rsquo;m constantly learning and this post is a syncronization of my thoughts. I found that attempts to explain complex things makes me understand these things better. Thought the artile was written by me for me I hope you&amp;rsquo;ll find it useful too.&lt;/p&gt;</description>
     </item>
     
@@ -65,7 +73,7 @@
       <pubDate>Tue, 24 May 2016 00:00:00 +0000</pubDate>
       
       <guid>http://nikitablack.github.io/post/std_function_to_bind_or_not_to_bind/</guid>
-      <description>&lt;p&gt;In my &lt;a href=&#34;https://nikitablack.github.io/2016/04/26/stdfunction-as-delegate.html&#34; target=&#34;_blank&#34;&gt;previous post&lt;/a&gt; about delegates I wrote how to bind a member function to &lt;code&gt;std::function&lt;/code&gt;. There was a lot of template magic involved in order to pass the correct number of &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/placeholders&#34; target=&#34;_blank&#34;&gt;placeholders&lt;/a&gt;. Shortly after I published I received a lot of feedback and I&amp;rsquo;m very grateful for this. One advice was not to use &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/bind&#34; target=&#34;_blank&#34;&gt;&lt;code&gt;std::bind()&lt;/code&gt;&lt;/a&gt; at all.&lt;/p&gt;</description>
+      <description>&lt;p&gt;In my &lt;a href=&#34;http://nikitablack.github.io/post/std_function_as_delegate/&#34;&gt;previous post&lt;/a&gt; about delegates I wrote how to bind a member function to &lt;code&gt;std::function&lt;/code&gt;. There was a lot of template magic involved in order to pass the correct number of &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/placeholders&#34;&gt;placeholders&lt;/a&gt;. Shortly after I published I received a lot of feedback and I&amp;rsquo;m very grateful for this. One advice was not to use &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/bind&#34;&gt;&lt;code&gt;std::bind()&lt;/code&gt;&lt;/a&gt; at all.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -74,7 +82,7 @@
       <pubDate>Tue, 26 Apr 2016 00:00:00 +0000</pubDate>
       
       <guid>http://nikitablack.github.io/post/std_function_as_delegate/</guid>
-      <description>&lt;p&gt;After my &lt;a href=&#34;https://nikitablack.github.io/2016/04/12/Generic-C-delegates.html&#34; target=&#34;_blank&#34;&gt;previous&lt;/a&gt; post some people asked why did I invent what was invented already? Why did I try to write another &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/function&#34; target=&#34;_blank&#34;&gt;&lt;code&gt;std::function&lt;/code&gt;&lt;/a&gt;? Well, from the begining I planed to compare custom and standard approach. So here we are.&lt;/p&gt;</description>
+      <description>&lt;p&gt;After my &lt;a href=&#34;http://nikitablack.github.io/post/generic_c++_delegates/&#34;&gt;previous&lt;/a&gt; post some people asked why did I invent what was invented already? Why did I try to write another &lt;a href=&#34;http://en.cppreference.com/w/cpp/utility/functional/function&#34;&gt;&lt;code&gt;std::function&lt;/code&gt;&lt;/a&gt;? Well, from the begining I planed to compare custom and standard approach. So here we are.&lt;/p&gt;</description>
     </item>
     
     <item>
