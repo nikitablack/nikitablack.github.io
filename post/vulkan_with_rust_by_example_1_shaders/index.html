@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"  lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+<title>Vulkan with rust by example 1. Shaders. | Here should be the blog Title</title>
+
+
+
+<link href="http://nikitablack.github.io/index.xml" rel="alternate" type="application/rss+xml" title="Here should be the blog Title" />
+
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="stylesheet" href="/css/css_lightbox.css"><link rel='stylesheet' href='http://nikitablack.github.io/css/custom.css'><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="canonical" href="http://nikitablack.github.io/post/vulkan_with_rust_by_example_1_shaders/">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+<section class="section">
+  <div class="container">
+    <nav id="nav-main" class="nav">
+      <div id="nav-name" class="nav-left">
+        <a id="nav-anchor" class="nav-item" href="http://nikitablack.github.io/">
+          <h1 id="nav-heading" class="title is-4">Here should be the blog Title</h1>
+        </a>
+      </div>
+      <div class="nav-right">
+        <nav id="nav-items" class="nav-item level is-mobile"><a class="level-item" aria-label="twitter" href='https://twitter.com/nikita_cherniy'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="github" href='https://github.com/nikitablack'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="email" href='mailto:mynameisnikitablack@gmail.com'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+    
+  </svg></i>
+            </span>
+          </a></nav>
+      </div>
+    </nav>
+
+    <nav class="nav">
+      
+
+      
+    </nav>
+
+  </div>
+  <script src="/js/navicon-shift.js"></script>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="subtitle tags is-6 is-pulled-right">
+      
+    </div>
+    <h2 class="subtitle is-6">January 7, 2022</h2>
+    <h1 class="title">Vulkan with rust by example 1. Shaders.</h1>
+    
+    <div class="content">
+      <p>In the <a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_0_introduction/">previous lesson</a>, we made all necessary preparations to start exploring <code>Vulkan</code>.</p>
+<p>Here is the diagram of the current state of the application:</p>
+<a href="#images%2fteapot_app_1.png">
+    <img src=images/teapot_app_1.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/teapot_app_1.png">
+  <img src=images/teapot_app_1.png>
+</a>
+<p>The diagram is pretty empty for now but it will grow as we progress through the tutorials. For now, it&rsquo;s enough to know that there&rsquo;s a CPU, which controls the application and sends commands to the GPU; a GPU itself, which does the magic and produces nice pictures (not necessarily); a window that should present these pictures. The window is put in a separate category because the presentation of the picture is controlled by an OS and not by an application or a GPU.</p>
+<p>The main question for now - where to start? There are so many things to do, there are so many ways to do it. I&rsquo;d suggest starting from the heart of every graphics application - <strong>shaders</strong>. After all, this is exactly what GPU executes, and we&rsquo;re here to program the GPU. In the app, we will use 4 shader stages - Vertex, Tesselation Control, Tesselation Evaluation, Fragment. Let&rsquo;s step over all of our shaders, briefly explaining the purpose of each.</p>
+<h2 id="vertex-shader">Vertex shader</h2>
+<p><a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/teapot/shaders/shader.vert">Vertex shader</a> is the first programmable stage in the pipeline, and it&rsquo;s pretty simple. Looking at the teapot data, we know what information needs to be passed - since we&rsquo;re using patches, we need points to describe them - <code>16</code> points per patch.</p>
+<p>A patch point arrives in the shader via <code>ControlPointBuffer</code> in a <em>binding slot 0</em> (resources are <em>bound</em> to special positions or <em>slots</em> - more on this in next tutorials) and is simply passed through to the next stage. This stage will be executed for every point (vertex). Since there are <code>28</code> patches, <code>16</code> points each, it will be called at most <code>28 * 16 = 448</code> times or less because of caching (it&rsquo;s not important information, just for fun). I decided to use a storage buffer instead of vertex attributes - it simplifies the code a bit.</p>
+<h2 id="tessellation-control-shader">Tessellation control shader</h2>
+<p>The next shader - <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/teapot/shaders/shader.tesc">tessellation control shader</a> - is simple as well and it doesn&rsquo;t do a lot of work. But still, it has a couple of interesting moments. The first one is how the tessellation level (how many new triangles a tessellator should create) is updated. I decided to use a so-called <code>Push Constant</code> - a feature that allows passing a constant directly in a command buffer. For now, it&rsquo;s enough to know that it&rsquo;s a fast and simple way to update data and later we&rsquo;ll see what this means exactly when we&rsquo;ll reach this in the code. You can see in <code>PushConst</code> definition that the tessellation level is a float variable.</p>
+<p>Next, we tell the GPU that this stage produces <code>16</code> control points for the patch, i.e. we don&rsquo;t change the amount (yes, this stage can generate new points as well as remove some). And the number of executions of this shader is equal to the number of specified points per patch times the number of patches, i.e. <code>28 * 16 = 448</code> in our case.</p>
+<h2 id="tessellation-evaluation-shader">Tessellation Evaluation shader</h2>
+<p><a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/teapot/shaders/shader.tese">Tessellation evaluation shader</a> is the actual workhorse of the whole application - all the magic happens here.</p>
+<p>First, we specify tesselation rules: domain (<code>quads</code>), spacing (<code>fractional_odd_spacing</code>), and winding order (<code>cw</code> - clockwise). Next, we define the patch data and if you forgot what it&rsquo;s for, see <a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_0_introduction/">previous lesson</a>. The data comes as an array of <code>PatchData</code> in a <em>binding slot 1</em>. Also, we need transformation matrices which are provided as a single MVP-matrix via Uniform Buffer <em>bound to slot 2</em>.</p>
+<p>Next is scary math - calculation of a 3d point using a <code>gl_TessCoord</code> that came from the tessellator. Actually, the math is not that complicated, <a href="https://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php">this Gamasutra article</a> explains the theory behind curves very well. And the code itself (functions <code>bernsteinBasis()</code> and <code>evaluateBezier()</code>) I shamelessly took from <a href="http://www.gdcvault.com/play/1012740/direct3d">this GDC presentation</a>.</p>
+<p>The outputs of this shader are the newly generated vertex position (written to built-in <code>gl_Position</code> variable) and color (which we send to the next stage in the <em>output location 0</em>). Since the entire patch should be colored with a solid color, every vertex from the same patch should have the same attribute. <code>gl_PrimitiveID</code> is the index of the current patch in the series of patches being processed for this draw call and for every generated triangle in the same patch it will be the same.</p>
+<p>The number of executions of this shader is equal to the number of vertices produced by the tessellator. And it depends on the tesselation factor, which we specified in the tesselation control shader.</p>
+<h2 id="fragment-shader">Fragment shader</h2>
+<p><a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/teapot/shaders/shader.frag">Fragment shader</a> is another <em>&ldquo;lazy&rdquo;</em> shader - the data is coming from the previous stage at <em>input location 0</em> and going to the <em>output location 0</em> (which is a swapchain image, the window surface).</p>
+<p>Hurray! We&rsquo;re done, let&rsquo;s go home! Joking. Once I read the sentence that describes <code>Vulkan</code> in a nutshell: <em>&ldquo;Show me your first triangle in three months.&quot;</em> So be patient. There&rsquo;re <code>7</code> parts are planned in total. Shaders were the easiest part, and all the remaining code we need to write serves a single purpose - to make the shaders run. And run <em>correctly</em>. By correctness, I mean that there should not be data races, GPU stalls or undefined behavior.</p>
+<h2 id="finally-some-vulkan">Finally some Vulkan</h2>
+<p>Before we start, we need to decide how we&rsquo;ll access a <code>Vulkan</code> library, which should be installed in our system. After all, it&rsquo;s written in <code>C</code> and provided as <code>.so</code> library. In <code>Rust</code> it&rsquo;s pretty easy to call <code>C</code>-functions with <a href="https://doc.rust-lang.org/nomicon/ffi.html">FFI</a>. I even wanted to write a wrapper by myself. It&rsquo;s not hard and is a good exercise that helped me to know <code>Rust</code> better. But there&rsquo;re two reasons why I didn&rsquo;t do that:</p>
+<ol>
+<li>It&rsquo;s unusable outside of these tutorials.</li>
+<li>One of the dependencies (<code>gpu_allocator</code>) requires another <code>Vulkan</code> wrapper (<code>ash</code>) as its dependency.</li>
+</ol>
+<p>In the end, my choice fell on the <a href="https://crates.io/crates/ash">ash crate</a>. At the moment of writing, it is the most <em>up to date</em> with the <code>Vulkan</code> wrapper, it&rsquo;s clear and very lightweight. Because it develops very actively and introduces breaking changes quite often, I have to freeze the crate version on <code>0.33.3</code>.</p>
+<p>I&rsquo;ll try to highlight the differences between <code>C</code> and <code>Rust</code> on a function that creates a shader:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">VkResult <span style="color:#c0f">vkCreateShaderModule</span>(
+    VkDevice                                    device,
+    <span style="color:#069;font-weight:bold">const</span> VkShaderModuleCreateInfo<span style="color:#555">*</span>             pCreateInfo,
+    <span style="color:#069;font-weight:bold">const</span> VkAllocationCallbacks<span style="color:#555">*</span>                pAllocator,
+    VkShaderModule<span style="color:#555">*</span>                             pShaderModule);</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">impl</span><span style="color:#bbb"> </span>Device<span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">unsafe</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">fn</span> <span style="color:#c0f">create_shader_module</span>(<span style="color:#bbb">
+</span><span style="color:#bbb">        </span><span style="color:#555">&amp;</span>self,<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>create_info: <span style="color:#069">&amp;</span><span style="color:#0a8;font-weight:bold">vk</span>::ShaderModuleCreateInfo,<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>allocation_callbacks: <span style="color:#366">Option</span><span style="color:#555">&lt;&amp;</span>vk::AllocationCallbacks<span style="color:#555">&gt;</span>,)-&gt; <span style="color:#0a8;font-weight:bold">VkResult</span><span style="color:#555">&lt;</span>vk::ShaderModule<span style="color:#555">&gt;</span><span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<ul>
+<li><code>C</code> is a <em>standalone function</em>, <code>Rust</code> is a method. That means that the <code>Rust</code> function should be called on an instance of the <code>Device</code> object via a <code>.</code> operator and in the <code>C</code> version the <code>device</code> is passed explicitly.</li>
+<li>In <code>C</code> the function return the result via <code>VkResult</code> enumeration and in case of success (<code>VkSuccess</code>) it writes the data in a mutable pointer (<code>VkShaderModule*</code>) whereas in <code>Rust</code> the result is returned through a very convenient <code>ash::VkResult</code> which is an alias to <code>Result&lt;T, ash::Result&gt;</code> where <code>ash::Result</code> is an enumeration of all possible outcomes, the same as <code>C</code> version <code>VkResult</code>. In other words, in case of success, the desired object will be returned, in case of failure - the error code.</li>
+<li><code>Rust</code> version is <code>unsafe</code> and a lot of attention should be paid to passing temporary objects - in the <code>unsafe</code> realm the compiler will not check lifetimes! Here it&rsquo;s very similar to <code>C/C++</code>.</li>
+</ul>
+<p>Besides that, everything is pretty identical, and if you already know <code>C</code>/<code>C++</code> everything should be butter smooth for you.</p>
+<p>So we have some shaders written as text. But we can&rsquo;t use these text files directly. In <code>Vulkan</code>, shaders have to be compiled into a so-called <code>SPIR-V</code> binary format and supplied to the API via <code>ash::ShaderModule</code>. We can create one with the aforementioned <code>ash::Device::create_shader_module</code> function. Let&rsquo;s look at the declaration one more time:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">impl</span><span style="color:#bbb"> </span>Device<span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">unsafe</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">fn</span> <span style="color:#c0f">create_shader_module</span>(<span style="color:#bbb">
+</span><span style="color:#bbb">        </span><span style="color:#555">&amp;</span>self,<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>create_info: <span style="color:#069">&amp;</span><span style="color:#0a8;font-weight:bold">vk</span>::ShaderModuleCreateInfo,<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>allocation_callbacks: <span style="color:#366">Option</span><span style="color:#555">&lt;&amp;</span>vk::AllocationCallbacks<span style="color:#555">&gt;</span>,)-&gt; <span style="color:#0a8;font-weight:bold">VkResult</span><span style="color:#555">&lt;</span>vk::ShaderModule<span style="color:#555">&gt;</span><span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<p>The return value is what we&rsquo;re interested in. The third parameter (<code>allocation_callbacks</code>) is used for custom allocation and will <em>never</em> be used in these lessons (always <code>None</code>). The second parameter (<code>create_info</code>) is the information that describes a shader and we can fill it right now. But the first parameter (<code>self</code>) is what we don&rsquo;t know. This is a so-called <code>Device</code> - a software representation of a <code>GPU</code>. Think about it as an instance of a real physical <code>GPU</code> - while there&rsquo;s always only a single piece of physical hardware there can be multiple instances of logical devices in one application (though we will use only one). We can create a device with <code>ash::Instance::create_device</code> function:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">impl</span><span style="color:#bbb"> </span>Instance<span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">fn</span> <span style="color:#c0f">create_device</span>(<span style="color:#bbb">
+</span><span style="color:#bbb">        </span><span style="color:#555">&amp;</span>self,<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>physical_device: <span style="color:#0a8;font-weight:bold">vk</span>::PhysicalDevice,<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>create_info: <span style="color:#069">&amp;</span><span style="color:#0a8;font-weight:bold">vk</span>::DeviceCreateInfo,<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>allocation_callbacks: <span style="color:#366">Option</span><span style="color:#555">&lt;&amp;</span>vk::AllocationCallbacks<span style="color:#555">&gt;</span>,<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>)<span style="color:#bbb"> </span>-&gt; <span style="color:#0a8;font-weight:bold">VkResult</span><span style="color:#555">&lt;</span>Device<span style="color:#555">&gt;</span><span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<p>where <code>self</code> is an unknown instance of <code>ash::Instance</code>, <code>allocation_callbacks</code> - <code>None</code>, <code>create_info</code> - some information, <code>physical_device</code> - again unknown. It represents a unique piece of hardware and can be used for obtaining some useful info, like capabilities and limits of the <code>GPU</code>. We can&rsquo;t create an instance of a physical device, but can ask the API to give it to us with <code>ash::Instance::enumerate_physical_devices</code> - this function enumerates available physical devices in a system:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">impl</span><span style="color:#bbb"> </span>Instance<span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">fn</span> <span style="color:#c0f">enumerate_physical_devices</span>(<span style="color:#555">&amp;</span>self)<span style="color:#bbb"> </span>-&gt; <span style="color:#0a8;font-weight:bold">VkResult</span><span style="color:#555">&lt;</span><span style="color:#366">Vec</span><span style="color:#555">&lt;</span>vk::PhysicalDevice<span style="color:#555">&gt;&gt;</span><span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<p>where self is, again, an instance of <code>ash::Instance</code>. Oh my, this will never end&hellip;</p>
+<p>In addition to the unknown <code>instance</code> thing, the function returns a list of <em>all</em> available devices in the system, but we&rsquo;re interested only in one. For our application, we need a GPU that supports tesselation, wireframe mode and can output images to the operating system&rsquo;s presentation engine. Yes, it sounds weird but in theory, there can be a device that can&rsquo;t render, but it will work fine with <code>Vulkan</code>. Running a little bit ahead I&rsquo;ll tell you that in order to check the device&rsquo;s <em>&ldquo;presentability&rdquo;</em> we need some information about a rendering surface. In <code>Vulkan</code> this information is stored in <code>ash::vk::SurfaceKHR</code> object. Fortunately with <a href="https://crates.io/crates/ash-window">ash-window crate</a> getting this object is an easy task:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">unsafe</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">fn</span> <span style="color:#c0f">create_surface</span><span style="color:#555">&lt;</span>L<span style="color:#555">&gt;</span>(<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>entry: <span style="color:#069">&amp;</span><span style="color:#0a8;font-weight:bold">EntryCustom</span><span style="color:#555">&lt;</span>L<span style="color:#555">&gt;</span>,<span style="color:#bbb"> 
+</span><span style="color:#bbb">    </span>instance: <span style="color:#069">&amp;</span><span style="color:#0a8;font-weight:bold">Instance</span>,<span style="color:#bbb"> 
+</span><span style="color:#bbb">    </span>window_handle: <span style="color:#069">&amp;</span><span style="color:#0a8;font-weight:bold">dyn</span><span style="color:#bbb"> </span>HasRawWindowHandle,<span style="color:#bbb"> 
+</span><span style="color:#bbb">    </span>allocation_callbacks: <span style="color:#366">Option</span><span style="color:#555">&lt;&amp;</span>AllocationCallbacks<span style="color:#555">&gt;</span><span style="color:#bbb">
+</span><span style="color:#bbb"></span>)<span style="color:#bbb"> </span>-&gt; <span style="color:#0a8;font-weight:bold">VkResult</span><span style="color:#555">&lt;</span>SurfaceKHR<span style="color:#555">&gt;</span></code></pre></div>
+<p>Here <code>ash::EntryCustom</code> is <code>ash</code>-specific and can be easily created without any dependency. It is a thing that knows where to find certain functions. And the already seen before <code>ash::Instance</code> is an entity that keeps the state of the application. We can create it with <code>ash::EntryCustom::create_instance</code> function:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">impl</span><span style="color:#555">&lt;</span>L<span style="color:#555">&gt;</span><span style="color:#bbb"> </span>EntryCustom<span style="color:#555">&lt;</span>L<span style="color:#555">&gt;</span><span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">unsafe</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">fn</span> <span style="color:#c0f">create_instance</span>(<span style="color:#bbb">
+</span><span style="color:#bbb">        </span><span style="color:#555">&amp;</span>self,<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>create_info: <span style="color:#069">&amp;</span><span style="color:#0a8;font-weight:bold">vk</span>::InstanceCreateInfo,<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>allocation_callbacks: <span style="color:#366">Option</span><span style="color:#555">&lt;&amp;</span>vk::AllocationCallbacks<span style="color:#555">&gt;</span>,<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>)<span style="color:#bbb"> </span>-&gt; <span style="color:#366">Result</span><span style="color:#555">&lt;</span>Self::Instance,<span style="color:#bbb"> </span>InstanceError<span style="color:#555">&gt;</span>;<span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<p>There should be one instance per application.</p>
+<p>Let&rsquo;s return to the surface thing - <code>ash::vk::SurfaceKHR</code>. It&rsquo;s somewhat special - the <code>KHR</code> ending means that this object is not a part of a <em>standard</em> <code>Vulkan</code>, but an object that can be obtained through <em>extensions</em>. Indeed, presentation is so OS-specific that it&rsquo;s very hard to make it a part of a standard. There are instance-level extensions and device-level extensions. Extensions are provided as strings during the instance or device creation, and for the surface extension, we need the name which is platform-dependent. We&rsquo;ll find out how to get the name later.</p>
+<p>At this point, there are no more unknown variables! But I already forgot why do we need all this&hellip; Ah, indeed, I wanted to create <code>Shader Modules</code>.</p>
+<p>To summarize, here&rsquo;s the dependency chain:</p>
+<pre tabindex="0"><code>VkShaderModule -&gt; VkDevice -&gt; VkPhysicalDevice -&gt; VkSurfaceKHR -&gt; VkInstance -&gt; extensions
+</code></pre><p>Or in words:</p>
+<ul>
+<li>To create a shader module, a logical device is needed.</li>
+<li>The logical device requires a physical device.</li>
+<li>To get a physical device, we need to know surface properties.</li>
+<li>For the surface, an instance is required.</li>
+<li>Additionally, for the surface an extension name is required which should be provided during the instance creation.</li>
+</ul>
+<p>Next, we&rsquo;ll step through the code to find out how to create everything we need.</p>
+<p><strong>Required window extensions</strong></p>
+<p>Both device and instance extensions need to be passed to the base initialization. For now, we&rsquo;re interested only in instance extensions which we get in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/teapot/src/vulkan/get_required_instance_extensions.rs">teapot::get_required_instance_extensions</a>. This function is very specific to the application itself because different applications may need different extensions. That&rsquo;s why it is in the <code>teapot</code> workspace. This function is called from the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/teapot/src/main.rs">main.rs</a> and the result is passed further. <code>ash_window</code> crate helps a lot - the <code>ash_window::enumerate_required_extensions</code> hides from us the platform-dependent code and returns the list of instance extensions, required for displaying an image on a given platform. On my <code>Ubuntu</code> platform it returns: <code>&quot;VK_KHR_surface&quot;</code> and <code>&quot;VK_KHR_xcb_surface&quot;</code>.</p>
+<p>Additionally, we add one more extension - <code>&quot;VK_EXT_debug_utils&quot;</code>. This one is very useful for debugging. With it, we can give objects meaningful names. Some tools use these names when describing a frame. For example, <a href="https://renderdoc.org/">RenderDoc</a>. That is how it looks with and without names:</p>
+<a href="#images%2frenderdoc_1.png">
+    <img src=images/renderdoc_1.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/renderdoc_1.png">
+  <img src=images/renderdoc_1.png>
+</a>
+<a href="#images%2frenderdoc_2.png">
+    <img src=images/renderdoc_2.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/renderdoc_2.png">
+  <img src=images/renderdoc_2.png>
+</a>
+<p>In the first case, the tool displays the names we gave to the objects (like <code>vertex shader</code> or <code>uniform buffer</code>). In the second case, it shows just some generic names.</p>
+<p>Moreover, the <code>Vulkan</code> layers use names in their messages. More on layers a bit later.</p>
+<p><strong>Instance</strong></p>
+<p>With the lists of extensions, we can move to the <code>vulkan_base</code> workspace where the major part of today&rsquo;s code will take place. We begin the initialization in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/lib.rs">vulkan_base::VulkanBase::new</a> function. First, we create the entry in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/create_entry.rs">vulkan_base::create_entry</a> function. It is a pure <code>ash</code> entity and doesn&rsquo;t require any parameters to create.</p>
+<p>You probably know that <code>Vulkan</code> evolves, and there&rsquo;re multiple versions of the API. Each newer version adds new core features, new functions, new structs. While the older version is fully compatible with newer, the other way around obviously doesn&rsquo;t work. Though I&rsquo;ll not use any functionality from the API &gt; 1.0, I want to show how to enable the newer version. We&rsquo;ll use <code>Vulkan 1.2</code> as a minimum required version (and the latest at the moment of writing). In <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/check_instance_version.rs">vulkan_base::check_instance_version</a>, we check that the instance supports that version. Inside the function we call <code>ash::EntryCustom::try_enumerate_instance_version</code>. This function is an example of the new functionality - it was introduced in <code>1.1</code>. If it returns <code>None</code> that means that the current <code>Vulkan</code> in the system has version <code>1.0</code> and we can&rsquo;t proceed. The solution is to update the driver. If it succeeds, it returns the API version, and we simply check that we&rsquo;re not less than <code>1.2</code>.</p>
+<p>What can happen if the instance we&rsquo;re trying to create does not support some of the extensions? Well, nothing good - the create function will return a failure result. That can happen if we use an older driver, for example, or a vendor-specific extension. And we want to handle this case by checking for supported extensions first. In <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/check_required_instance_extensions.rs">vulkan_base::check_required_instance_extensions</a>, we do exactly that - we request <strong>all</strong> supported instance extensions and then look if all of the required extensions are present in that list.</p>
+<p>Finally, we can create an instance with <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/create_instance.rs">vulkan_base::create_instance</a> function. Here we can see the typical <code>Vulkan</code> approach to object creation - first, we fill a special structure that gets passed to a function. Normally, each structure has <code>s_type</code> field and <code>p_next</code> field. The former is used to specify the type of object we want to create and is different for different structures. The latter is used for some advanced things and will <strong>never</strong> be used in the tutorials. <code>ash::vk::InstanceCreateInfo</code> has these fields too. In <code>Rust</code> it&rsquo;s common to use a so-called <a href="https://doc.rust-lang.org/1.0.0/style/ownership/builders.html">Builder Pattern</a> that handles defaults nicely, and every structure in the <code>ash</code> crate has a corresponding builder. In the future, I will not describe these fields and others for which the default values are fine. Notice how we provide the <code>api_version</code> in another structure <code>ash::vk::ApplicationInfo</code>. Again, this structure has many fields besides the <code>api_version</code>, but all they are irrelevant for us and hence not described.</p>
+<p>Next, I have to make a side note to explain what is this <code>guard</code> thing that surrounds the instance creation.</p>
+<p><strong>Scopeguard</strong></p>
+<p>I&rsquo;ll start with a simple example. Suppose we have a <code>C++</code> struct:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">S</span> {
+    VkDevice device;
+    VkShaderModule vertexShaderModule;
+    VkShaderModule fragmentShaderModule;
+}</code></pre></div>
+<p>And we want to initialize that struct:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">auto</span> <span style="color:#c0f">init</span>() <span style="color:#555">-&gt;</span> S {
+    S s{};
+    s.device               <span style="color:#555">=</span> create_device();
+    s.vertexShaderModule   <span style="color:#555">=</span> create_vertex_shader_module(s.device);
+    s.fragmentShaderModule <span style="color:#555">=</span> create_vertex_shader_module(s.device);
+
+    <span style="color:#069;font-weight:bold">return</span> s;
+}</code></pre></div>
+<p>I hope it&rsquo;s pretty straightforward and self-explanatory - first, we default-initialize the struct, and next, one by one, initialize the fields. But there&rsquo;s a problem - if any of the calls fail, we don&rsquo;t want to proceed further. Moreover, we want to clear <em>what already was created</em>. In the example above, consider that <code>create_vertex_shader_module</code> fails. In that case, our program should destroy the vertex shader module and the device. There&rsquo;re many ways of how to fix this in <code>C++</code>. For example, something like this would work:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">auto</span> <span style="color:#c0f">init</span>() <span style="color:#555">-&gt;</span> S {
+    S s{};
+
+    <span style="color:#069;font-weight:bold">try</span> {
+        s.device               <span style="color:#555">=</span> create_device();
+        s.vertexShaderModule   <span style="color:#555">=</span> create_vertex_shader_module(s.device);
+        s.fragmentShaderModule <span style="color:#555">=</span> create_fragment_shader_module(s.device);
+    }
+    <span style="color:#069;font-weight:bold">catch</span>(std<span style="color:#555">::</span>runtime_error<span style="color:#555">&amp;</span>)
+    {
+        <span style="color:#069;font-weight:bold">throw</span> std<span style="color:#555">::</span>move(s);
+    }
+
+    <span style="color:#069;font-weight:bold">return</span> s;
+}
+
+<span style="color:#069;font-weight:bold">auto</span> <span style="color:#c0f">main</span>() <span style="color:#555">-&gt;</span> <span style="color:#078;font-weight:bold">int</span> {
+    <span style="color:#069;font-weight:bold">try</span> {
+        <span style="color:#069;font-weight:bold">auto</span> s <span style="color:#555">=</span> init();
+    }
+    <span style="color:#069;font-weight:bold">catch</span> (S bad) {
+        clear(bad);
+    }
+    
+    <span style="color:#069;font-weight:bold">return</span> <span style="color:#f60">0</span>;
+}</code></pre></div>
+<p>Now go back to <code>Rust</code>. Let&rsquo;s take the same struct:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">S</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span>device: <span style="color:#0a8;font-weight:bold">ash</span>::Device;<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span>vertex_shader_module: <span style="color:#0a8;font-weight:bold">ash</span>::vk::ShaderModule,<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span>fragment_shader_module: <span style="color:#0a8;font-weight:bold">ash</span>::vk::ShaderModule,<span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<p>Here comes the first problem - we can&rsquo;t default-initialize a struct in <code>Rust</code>. I.e., this will simply not work:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">let</span><span style="color:#bbb"> </span>s<span style="color:#bbb"> </span><span style="color:#555">=</span><span style="color:#bbb"> </span>S{};</code></pre></div>
+<p>Of course, we can create all the necessary objects for our struct and later feed them to the struct instance:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">fn</span> <span style="color:#c0f">init</span>()<span style="color:#bbb"> </span>-&gt; <span style="color:#0a8;font-weight:bold">S</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">let</span><span style="color:#bbb"> </span>device<span style="color:#bbb">                 </span><span style="color:#555">=</span><span style="color:#bbb"> </span>create_device()<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">let</span><span style="color:#bbb"> </span>vertex_shader_module<span style="color:#bbb">   </span><span style="color:#555">=</span><span style="color:#bbb"> </span>create_vertex_shader_module(s.device);<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">let</span><span style="color:#bbb"> </span>fragment_shader_module<span style="color:#bbb"> </span><span style="color:#555">=</span><span style="color:#bbb"> </span>create_fragment_shader_module(s.device);<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>S{device,<span style="color:#bbb"> </span>vertex_shader_module,<span style="color:#bbb"> </span>fragment_shader_module}<span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<p>But this will not work if we fail to create the fragment shader module - what should we return from the function? How should we clear the objects?</p>
+<p>There&rsquo;s an option to make the struct default-initializable:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#099">#[derive(Default)]</span><span style="color:#bbb">
+</span><span style="color:#bbb"></span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">S</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span>device: <span style="color:#0a8;font-weight:bold">ash</span>::Device;<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span>vertex_shader_module: <span style="color:#0a8;font-weight:bold">ash</span>::vk::ShaderModule,<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span>fragment_shader_module: <span style="color:#0a8;font-weight:bold">ash</span>::vk::ShaderModule,<span style="color:#bbb">
+</span><span style="color:#bbb"></span>}<span style="color:#bbb">
+</span><span style="color:#bbb">
+</span><span style="color:#bbb"></span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">fn</span> <span style="color:#c0f">init</span>()<span style="color:#bbb"> </span>-&gt; <span style="color:#366">Result</span><span style="color:#555">&lt;</span>S,<span style="color:#bbb"> </span>S<span style="color:#555">&gt;</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">let</span><span style="color:#bbb"> </span>s<span style="color:#bbb"> </span><span style="color:#555">=</span><span style="color:#bbb"> </span>S{};<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#555">..</span>.<span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<p>In this case, the code works identically to the <code>C++</code> version. But instead of exceptions, a result is returned with the partially filled <code>Err(S)</code>. Then on the caller side, we can check which fields need to be cleared and take appropriate actions. That could work well in theory, but in practice, there&rsquo;re third-party crates. Yes, likely, some of the structs in some crates can&rsquo;t default. Then if we place it to our struct <code>S</code>, it becomes <em>&ldquo;default-uninitializable</em>&rdquo; too. <code>ash::Entry</code> is an example of such struct as well as <code>ash::Instance</code> and many others.</p>
+<p>There&rsquo;re many different solutions to the problem. For example, it&rsquo;s possible to make the fields that don&rsquo;t implement the <code>Default</code> trait optional by wrapping them in <code>Option</code>. Then by default, they will be set to <code>None</code>. But I find this unlogical - if my struct was fully initialized, then I&rsquo;m sure that all fields are initialized too, and there&rsquo;s no need to check if an option has value. And though unwrapping an <code>Option</code> is fast, it still has cost. There are other possibilities, but in the end, I decided to go with the <a href="https://crates.io/crates/scopeguard/">scopeguard</a> crate. What it does is wrap an object into a so-called <code>ScopeGuard</code>, and a provided closure is called on a scope exit. In other words, it&rsquo;s <a href="https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization">RAII</a> in action. For example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">let</span><span style="color:#bbb"> </span>instance_sg<span style="color:#bbb"> </span><span style="color:#555">=</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">let</span><span style="color:#bbb"> </span>instance<span style="color:#bbb"> </span><span style="color:#555">=</span><span style="color:#bbb"> </span>create_instance(<span style="color:#555">&amp;</span>entry,<span style="color:#bbb"> </span>required_instance_extensions)<span style="color:#555">?</span>;<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>guard(instance,<span style="color:#bbb"> </span><span style="color:#555">|</span>instance<span style="color:#555">|</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>log::warn<span style="color:#555">!</span>(<span style="color:#c30">&#34;instance scopeguard&#34;</span>);<span style="color:#bbb">
+</span><span style="color:#bbb">        </span><span style="color:#069;font-weight:bold">unsafe</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">            </span>instance.destroy_instance(<span style="color:#366">None</span>);<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>}<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>})<span style="color:#bbb">
+</span><span style="color:#bbb"></span>};</code></pre></div>
+<p>First, an <code>instance</code> is created, which is moved to the <code>scopeguard::guard</code>, which returns an instance of the <code>ScopeGuard</code> object. Together with the <code>instance</code> a closure is passed, which should be called upon the <code>ScopeGuard</code> instance destruction. If, for some reason, a function that created this guard will return earlier than was planned the closure will be called and will destroy the <code>instance</code>. When we reach the end of the function and are sure that everything went well, we can get our object back:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">let</span><span style="color:#bbb"> </span>instance<span style="color:#bbb"> </span><span style="color:#555">=</span><span style="color:#bbb"> </span>ScopeGuard::into_inner(instance_sg);</code></pre></div>
+<p>In this case, the guard closure will not be called. Though this approach adds some complexity, I find it very clear - we don&rsquo;t need to wrap fields to an <code>Option</code>, we don&rsquo;t need to create or duplicate additional structs. It just does what it was told to do.</p>
+<p>Now let&rsquo;s return to our <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/lib.rs">VulkanBase</a> initialization.</p>
+<p><strong>Debug utils</strong></p>
+<p>Previously I told about debug utils. After enabling the extension the new function is available - <code>debug_utils_set_object_name</code>. But to use it, we need to load it first. In <code>C/C++</code> we need to get the address of the function, but in <code>Rust</code> we create a loader <code>ash::extensions::ext::DebugUtils</code> that knows where the functions for this extension lives. The loader is created in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/create_debug_utils_loader.rs">vulkan_base::create_debug_utils_loader</a> function.</p>
+<blockquote>
+<p><strong>NOTE:</strong> It&rsquo;s ok to create a loader without providing an extension. It&rsquo;s not ok to call an extension function - the loader will simply crash. For example, if we remove <code>VK_EXT_debug_utils</code> from the extensions list during the instance creation but try to use the <code>DebugUtils::debug_utils_set_object_name</code> function, <code>ash</code> will panic with the message: <code>'Unable to load set_debug_utils_object_name_ext'</code>.</p>
+</blockquote>
+<p><strong>Surface loader and Surface</strong></p>
+<p>Since a surface-thing is an extension, we need another loader - <code>ash::extensions::khr::Surface</code> which we create in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/create_surface_loader.rs">vulkan_base::create_surface_loader</a>. With it, we can call different surface extension functions (do you still remember how we got the necessary extension names before). The surface itself is a very platform-specific entity. Fortunately, the <code>ash_window</code> crate helps us again in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/create_surface.rs">vulkan_base::create_surface</a> function.</p>
+<p><strong>Physical device</strong></p>
+<p>Now we can try to find a real GPU device in
+<a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/get_physical_device.rs">vulkan_base::get_physical_device</a> function. It&rsquo;s a bit long because we need to check more than one thing. First, we need to get all available devices in the system. We do this with <code>ash::Instance::enumerate_physical_devices()</code>. Next, we iterate over the devices trying to find one that works for us. In <code>check_device_suitability()</code>, we accept only a device that supports API version 1.2, supports tesselation, can draw in wireframe, and supports all required device extensions. Device extensions are very similar to instance extensions we already discussed but work per device, not globally. We&rsquo;re not using any in this tutorial, so the list is empty.</p>
+<p>If the proper GPU was found we can continue to the next steps. We can try to obtain some information that depends on a device and/or a surface.</p>
+<p><strong>Device properties</strong></p>
+<p>This one is simple. The device properties hold useful information like device name, driver version, etc. We get them in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/get_physical_device_properties.rs">vulkan_base::get_physical_device_properties</a> function. Some functions in the API can&rsquo;t fail and this is one of them.</p>
+<p><strong>Surface format</strong></p>
+<p>Next, we need a format of the surface we are going to render into. A given device and a surface can support multiple formats, and we choose one in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/get_surface_format.rs">vulkan_base::get_surface_format</a> function. Here we get all supported formats first. Next, we iterate over all supported formats searching for the one we would like to work with. <code>SurfaceFormatKHR{B8G8R8A8_UNORM, SRGB_NONLINEAR}</code> is a good choice. And if the desired format was not found, we just return the first one from the list of available formats.</p>
+<p><strong>Present mode</strong></p>
+<p>After the format was found we proceed to a presentation mode. As you know, a monitor works with some frequency. For example, if the monitor has the frequency 60Hz, it presents on the screen every 1/60th of a second. The OS takes care of this presentation, and all we need to do is provide an image to show to the presentation engine. Also, you may know that a monitor presents the complete image not immediately at some moment in time but fills the screen line by line from top to bottom and do it very fast. Now think what can happen if the engine displayed half of the picture from the previous frame and we suddenly provided a new one? Right - the engine continues to present a picture but not the one it started with. On the screen, we have the combination of two images, the so-called <em>tearing</em>. Sometimes this is an admissible behavior and sometimes we want to avoid this. That&rsquo;s why we need the presentation mode that we try to find in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/get_present_mode.rs">&lsquo;vulkan_base::get_present_mode&rsquo;</a> function. First, we get all available present modes for a given device and a surface. Next, we select the desired mode:</p>
+<ul>
+<li>
+<p>If we don&rsquo;t want the tearing in our application, we tell the presentation engine to use its' internal queue - now the pending requests will be added to that queue, and when the engine is ready to display it acquires the image from the beginning of the queue by removing it. And we never see the tearing. <code>MAILBOX</code> tells the engine to use a single-entry queue, meaning that the pending requests will be replaced by the newest ones. This mode is what I want for the application, but there&rsquo;s no guarantee that it is supported.</p>
+</li>
+<li>
+<p>If we failed to find <code>MAILBOX</code> we try to find the next one - <code>IMMEDIATE</code>. This mode does not use a queue, so tearing is possible. The mode is not guaranteed to be supported.</p>
+</li>
+<li>
+<p><code>FIFO</code> is the only mode required to be supported, so we return it if the previous attempts fail. This mode uses a queue too, but the size is not specified. The difference with <code>MAILBOX</code> is that if the queue is full the application will be blocked until the engine removes the available image and frees the place in the queue.</p>
+</li>
+</ul>
+<p><strong>Queue family</strong></p>
+<p>In the next step, we get the so-called <em>queue family</em> for the device. As you may know, the CPU communicates with the GPU via commands. In <code>Vulkan</code>, we record these commands with special functions like <code>cmd_draw</code> or <code>cmd_bind_vertex_buffers</code> to a so-called <em>command buffer</em>. After a set of commands is recorded, it needs to be sent to the device. We don&rsquo;t send it directly but put it to some queue, and the implementation later consumes that queue. Just think of these queues as connection pipes between the CPU and the GPU. <code>Vulkan</code> defines 5 different queue families - <code>GRAPHICS</code>, <code>COMPUTE</code>, <code>TRANSFER</code>, <code>SPARSE_BINDING</code>, and <code>PROTECTED</code>. Each queue supports certain operations, so we need to be careful when submitting commands. The specification has a special section for every command where it specifies the queue a command can be used with. There&rsquo;s a guarantee from Vulkan that graphics queue (<code>GRAPHICS</code>) supports transfer operations as well, so if you have to submit a transfer command you can do it with that queue, no need to create a transfer queue (<code>TRANSFER</code>). But why do we need multiple queue families at all? Well, in theory using multiple queues can speed up the application - the submission of commands happens in parallel. And you know the word <em>parralel</em> is the synonym of <em>good</em>. How this works is described by Matt Pettineo (aka MJP) in these <a href="https://mynameismjp.wordpress.com/2018/03/06/breaking-down-barriers-part-1-whats-a-barrier/">amazing article series</a>. There&rsquo;s one more thing - each queue family can have <em>multiple</em> queues, hence the name <em>family</em>. So, again, in theory, you can use multiple queues from the same family to submit commands faster, you just need a proper GPU.</p>
+<blockquote>
+<p><strong>NOTE:</strong> though there&rsquo;re 5 queue types, there&rsquo;s a special command that requires a special queue property. This function is <code>queue_present()</code> that takes a queue as a parameter, and that queue should support presentation to a given surface. Probably there&rsquo;s a reason why the API-makers didn&rsquo;t add another queue type <code>PRESENT</code>, but I don&rsquo;t know it.</p>
+</blockquote>
+<p>In <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/get_queue_family.rs"><code>vulkan_base::get_queue_family</code></a> function, we first get all available families for a given device. Next, we try to find proper family queue indices. In the application, we will need 2 different queue types - one for rendering and the other for transfer. Since we know that the <code>GRAPHICS</code> queue also supports <code>TRANSFER</code> commands, we need only one queue family that can also be used for presentation. Though it&rsquo;s not guaranteed that the <code>GRAPHICS</code> queue can present, the chances that your GPU has a queue that supports all of these operations are quite high. The correct solution would be to handle a case where this is not true, but this adds a huge chunk of complexity. So we search for a queue that can do both graphics and present (checked with <code>ash::extensions::khr::Surface::get_physical_device_surface_support</code> function), and if we can&rsquo;t find any, we run to the nearest shop and buy another GPU. Note that this is the extension function and will fail if the proper extension was not included during the instance creation.</p>
+<p><strong>Depth format</strong></p>
+<p>Though we&rsquo;ll not deal with depth buffering in the nearest future, we&rsquo;ll still try to find a proper depth format today, so we don&rsquo;t need to do it later. In <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/get_depth_format.rs">vulkan_base::get_depth_format</a>, we look for one of the formats we like. An image with the supported format should be capable of depth reading/writing, and also the tiling should be optimal. The specification says:</p>
+<blockquote>
+<p><code>VK_IMAGE_TILING_OPTIMAL</code> specifies optimal tiling (texels are laid out in an implementation-dependent arrangement, for more optimal memory access).</p>
+</blockquote>
+<p><strong>Logical device</strong></p>
+<p>Remember, the logical device is a software representation of a GPU and is needed almost for every other <code>Vulkan</code> function call. In <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/create_logical_device.rs">vulkan_base::create_logical_device</a>, we first tell a driver which queue families will be used with the selected GPU. Together with the families, we need to specify the number of actual queues and their priorities within a family. A queue with a higher priority theoretically can get more processing time than a queue with a lower priority. In the demo, we use only one queue family with one queue per family, so we simply set priority to 1.0. Notice that we only have a family index - a number, but when the logical device is created, the specified queue object is created as well. We&rsquo;ll request that object in a moment. Next, we need to enable device features with the <code>ash::vk::PhysicalDeviceFeatures</code> struct. The application needs <code>tessellation_shader</code> and <code>fill_mode_non_solid</code> to be turned on. Recall how we checked if these features are supported when we searched for a suitable physical device. Also, we use the device extensions vector. For now, this list is empty since in the first tutorials we won&rsquo;t use any device extensions.</p>
+<p>All this data I provide via <code>ash::vk::DeviceCreateInfo</code> structure which is passed to <code>ash::Instance::create_device</code>.</p>
+<p><strong>Get device queues</strong></p>
+<p>Now when we have the device, we can get a queue object. Remember that we have only a family index and an index in the family which were specified during the device creation. In the function <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_base/src/get_queue.rs">vulkan_base::get_queue</a> we simply get our queue. This function can&rsquo;t fail because as soon as the logical device is created, all the queues we specified were created as well.</p>
+<p>This is where the base initialization stops (at least for now), and we can proceed to the application initialization.</p>
+<p><strong>Create shader modules</strong></p>
+<p>Let&rsquo;s return to the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/teapot/src/vulkan/vulkan_data.rs">teapot::VulkanData</a> struct in the <code>teapot</code> workspace to create some shaders. But wait, remember we wrote the shaders in <code>glsl</code>? <code>Vulkan</code> doesn&rsquo;t understand text files - it expects shader binary data in the <code>SPIR-V</code> format. Previously I wrote that a shader source should be compiled with a special tool, for example, with <code>glslangValidator</code> or <code>shaderc</code>. It is very tedious to run a command line to recompile the shader after every change, so it would be cool to add shader compilation as a part of the build process. Amazing <code>Rust</code> has a build script feature. This script runs just before the main application compilation. <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/teapot/build.rs">The script</a> iterates over all files in the <code>shaders</code> directory and recompiles if there was a change. Now, when we build the application, the shaders get compiled into binaries. We load them in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/vulkan_utils/src/create_shader_module.rs"><code>vulkan_utils::create_shader_module</code></a> utility function. The specification requires the size of a blob to be a multiple of 4, and we use the <code>ash</code> utility function to convert bytes to <code>Vec&lt;u32&gt;</code> type. Finally in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/teapot/src/vulkan/vulkan_data.rs">VulkanData::new()</a> we create four shader modules.</p>
+<p>Notice how we use <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/teapot/src/vulkan/set_debug_utils_object_name.rs">vulkan_utils::set_debug_utils_object_name</a> function here to give a shader a name.</p>
+<p><strong>Cleaning</strong></p>
+<p>Though it&rsquo;s not strictly necessary to clean up on application exit, I believe it&rsquo;s a good habit to do so. In <code>vulkan_base::VulkanBase::clean</code> and <code>teapot::VulkanData::clean</code>, we destroy all the <code>Vulkan</code> objects we created during the lesson. It&rsquo;s important to destroy base objects (from <code>vulkan_base::VulkanBase</code>) after the application objects since the former use <code>Device</code>. For example, <code>device.destroy_shader_module</code>. In general, for every <em>create</em> function, the <code>Vulkan</code> has a corresponding <em>destroy</em> function, for every <em>allocate</em> - <em>free</em>. As with the case of manual <code>new</code> and <code>delete</code> management in <code>C++</code>, it&rsquo;s difficult to keep track of created and destroyed objects. For some reasons that will be clear later, it&rsquo;s not always possible to drop the object as soon as it&rsquo;s not needed (spoiler - though the object is not needed on the host, it still can be used on the device). That&rsquo;s why destroying a <code>Vulkan</code> object in <code>drop</code> can&rsquo;t be implemented without special tracking, and we&rsquo;ll not do this in the tutorials. Fortunately, <code>Vulkan</code> has a mechanism for tracking live objects with the help of validation layers. These are special software that is injected between the <code>Vulkan</code> function call and a driver, and which can do some checks. Besides live object tracking, the layers can do tons of other stuff, like checking the API usage correctness, synchronization checking, performance recommendations, GPU <code>printf</code>, etc. Some layers can inject their rendering on top of our (I believe <code>Steam</code> does that). The layers are very important during the development, I&rsquo;d say it&rsquo;s a must-have for every application but should be turned off for the release build because some layers are very heavy (but still, there&rsquo;s a way to activate them even for a shipped product. Yes, you can start your favorite <code>Steam</code> game with <code>Vulkan</code> support and see all the calls with the information layer turned on!).</p>
+<p>There&rsquo;re multiple ways to activate layers. Previously we had to enable them programmatically in the code, but with a release of a special tool called Vulkan Configurator (<code>vkconfig</code>), <code>Khronos</code> introduced a very easy way to manage layers. All we need to do is just launch the tool, select <code>Validation</code> configuration (be sure that <code>Object Lifetimes</code> is checked), and that&rsquo;s it. Either launch the application from the tool or allow the tool to override layers settings. Here&rsquo;s the screenshot with the settings applied:</p>
+<a href="#images%2fvkconfig.png">
+    <img src=images/vkconfig.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/vkconfig.png">
+  <img src=images/vkconfig.png>
+</a>
+<p>After launching the application, the layers will be loaded and start to produce useful information for us. For example, if we forget to destroy one of the shaders before we destroyed the device, we&rsquo;ll see the message in standard output (by default, layers print to the standard output, but it&rsquo;s possible to catch a message):</p>
+<pre tabindex="0"><code>VUID-vkDestroyDevice-device-00378(ERROR / SPEC): msgNum: 1901072314 - Validation Error: [ VUID-vkDestroyDevice-device-00378 ] Object 0: handle = 0x557deaa0ba90, type = VK_OBJECT_TYPE_DEVICE; Object 1: handle = 0x50000000005, name = fragment shader, type = VK_OBJECT_TYPE_SHADER_MODULE; | MessageID = 0x71500fba | OBJ ERROR : For VkDevice 0x557deaa0ba90[], VkShaderModule 0x50000000005[fragment shader] has not been destroyed. The Vulkan spec states: All child objects created on device must have been destroyed prior to destroying device (https://vulkan.lunarg.com/doc/view/1.2.162.1~rc2/linux/1.2-extensions/vkspec.html#VUID-vkDestroyDevice-device-00378)
+    Objects: 2
+        [0] 0x557deaa0ba90, type: 3, name: NULL
+        [1] 0x50000000005, type: 15, name: fragment shader
+</code></pre><p>Notice how the layer prints the shaders name that we set with debug utils extension!</p>
+<p>Without the debug name, the same message will be:</p>
+<pre tabindex="0"><code>VUID-vkDestroyDevice-device-00378(ERROR / SPEC): msgNum: 1901072314 - Validation Error: [ VUID-vkDestroyDevice-device-00378 ] Object 0: handle = 0x55d5805b8a90, type = VK_OBJECT_TYPE_DEVICE; Object 1: handle = 0x50000000005, type = VK_OBJECT_TYPE_SHADER_MODULE; | MessageID = 0x71500fba | OBJ ERROR : For VkDevice 0x55d5805b8a90[], VkShaderModule 0x50000000005[] has not been destroyed. The Vulkan spec states: All child objects created on device must have been destroyed prior to destroying device (https://vulkan.lunarg.com/doc/view/1.2.162.1~rc2/linux/1.2-extensions/vkspec.html#VUID-vkDestroyDevice-device-00378)
+    Objects: 2
+        [0] 0x55d5805b8a90, type: 3, name: NULL
+        [1] 0x50000000005, type: 15, name: NULL
+</code></pre><p>Feel the difference.</p>
+<p>The call to the clean function happens in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/teapot/src/main.rs">main</a> function on exit request or if initialization has failed. Notice how we take ownership of the structs in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_1/teapot/src/vulkan/vulkan_clean.rs">teapot::vulkan_clean</a> function by moving the data from the <code>Option</code>. This function should be the last call in the app and should be called only once. After it, no more <code>Vulkan</code> data is available.</p>
+<p><strong>What next</strong></p>
+<p>We have a pack of compiled shaders. We have <code>Vulkan</code> objects that represent these shaders. But if we launch the program, we&rsquo;ll see the same empty window. Everything we&rsquo;ve done so far was a CPU (host) part, and now we need to upload the shaders to the GPU together with other resources the shaders refer to. We&rsquo;ll do this next time.</p>
+<p>The source code for this step is <a href="https://github.com/nikitablack/rust_vulkan_teapot/tree/step_1">here</a>.</p>
+<p>You can subscribe to my <a href="https://twitter.com/nikita_cherniy">Twitter account</a> to be notified when the new post is out or for comments and suggestions. If you found a bug, please <a href="https://github.com/nikitablack/rust_vulkan_teapot/issues">raise an issue</a>. If you have a question, you can start a discussion <a href="https://github.com/nikitablack/rust_vulkan_teapot/discussions">here</a>.</p>
+      
+      <div class="related">
+</div>
+      
+    </div>
+    
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
+    
+      <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
+    
+  </div>
+</section>
+
+
+
+</body>
+</html>
+
