@@ -3,10 +3,13 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>http://nikitablack.github.io/</loc>
-    <lastmod>2022-01-07T00:00:00+00:00</lastmod>
+    <lastmod>2022-01-10T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://nikitablack.github.io/post/</loc>
-    <lastmod>2022-01-07T00:00:00+00:00</lastmod>
+    <lastmod>2022-01-10T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://nikitablack.github.io/post/vulkan_with_rust_by_example_2_resources/</loc>
+    <lastmod>2022-01-10T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://nikitablack.github.io/post/vulkan_with_rust_by_example_1_shaders/</loc>
     <lastmod>2022-01-07T00:00:00+00:00</lastmod>

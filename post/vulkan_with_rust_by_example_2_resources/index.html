@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"  lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+<title>Vulkan with rust by example 2. Resources. | Here should be the blog Title</title>
+
+
+
+<link href="http://nikitablack.github.io/index.xml" rel="alternate" type="application/rss+xml" title="Here should be the blog Title" />
+
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="stylesheet" href="/css/css_lightbox.css"><link rel='stylesheet' href='http://nikitablack.github.io/css/custom.css'><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="canonical" href="http://nikitablack.github.io/post/vulkan_with_rust_by_example_2_resources/">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+<section class="section">
+  <div class="container">
+    <nav id="nav-main" class="nav">
+      <div id="nav-name" class="nav-left">
+        <a id="nav-anchor" class="nav-item" href="http://nikitablack.github.io/">
+          <h1 id="nav-heading" class="title is-4">Here should be the blog Title</h1>
+        </a>
+      </div>
+      <div class="nav-right">
+        <nav id="nav-items" class="nav-item level is-mobile"><a class="level-item" aria-label="twitter" href='https://twitter.com/nikita_cherniy'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="github" href='https://github.com/nikitablack'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="email" href='mailto:mynameisnikitablack@gmail.com'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+    
+  </svg></i>
+            </span>
+          </a></nav>
+      </div>
+    </nav>
+
+    <nav class="nav">
+      
+
+      
+    </nav>
+
+  </div>
+  <script src="/js/navicon-shift.js"></script>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="subtitle tags is-6 is-pulled-right">
+      
+    </div>
+    <h2 class="subtitle is-6">January 10, 2022</h2>
+    <h1 class="title">Vulkan with rust by example 2. Resources.</h1>
+    
+    <div class="content">
+      <p>We have 4 shaders we created in the <a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_1_shaders/">previous step</a>, but these are useless until we feed GPU data. Let&rsquo;s look at the picture to recall which kind of resources we need.</p>
+<a href="#images%2fteapot_app_2.png">
+    <img src=images/teapot_app_2.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/teapot_app_2.png">
+  <img src=images/teapot_app_2.png>
+</a>
+<p>The upper part for every block shows input parameters, and the lower part shows output, i.e., the result of a shader.</p>
+<p>Let&rsquo;s start with the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/teapot/shaders/shader.vert">vertex shader</a>. We see that the shader reads a list of control points in the set 0 at binding 0. We left sets and bindings for later. There&rsquo;re multiple ways to supply data to a shader and we&rsquo;ll pass it via <code>ControlPointBuffer</code> which is a <strong>read-only storage buffer</strong> that holds an array of <code>ControlPoint</code> structs. I decided to use a storage buffer instead of a vertex buffer because it&rsquo;s simpler. For a vertex buffer, a special input assembler struct is needed that describes how a vertex is laid out in memory. With storage buffer, we don&rsquo;t need that. Besides that, there&rsquo;s no difference in performance. So let&rsquo;s create it.</p>
+<blockquote>
+<p><strong>NOTE:</strong> For the application, we need only 3-component vectors for position and the logical question would be why not write directly <code>vec3 data[]</code>? By weird <a href="https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/chap16.html#interfaces-resources-layout">packing and alignment rules</a> <code>vec3</code> and <code>vec4</code> are aligned as its <code>vec4</code>. So sampling <code>buf[i]</code> will return a value with an alignment equal to four times its scalar alignment. Just a <code>float</code> or <code>vec2</code> is fine, but <code>vec3</code> - not. That&rsquo;s why there&rsquo;s a struct with separate <code>x</code>, <code>y</code>, <code>z</code> fields.</p>
+</blockquote>
+<h2 id="control-points-buffer">Control points buffer</h2>
+<p>There&rsquo;re multiple ways to make some data available on the device. For example, the system memory can be made visible to the hardware or the data can be copied to the device&rsquo;s memory (which the CPU doesn&rsquo;t have direct access to). What&rsquo;s better depends on the concrete GPU model. For example, integrated GPUs usually have a very limited amount of memory but share the system memory, so the best solution would be to use a memory that is visible by both sides here. On the other hand, a discrete GPU with gigabytes of memory accesses the local memory faster, so the best solution would be to copy data there. And of course, the usage scenario is also matters. If the data is updated every frame, there&rsquo;s no need to copy it over because a device can read it directly from the shared memory.</p>
+<p>In our application, the control points buffer is static, and the amount of data is not big at all. That means, that it would be a good choice to copy the data to the GPU. Yes, we&rsquo;ll spend some time copying it from a CPU memory to a GPU memory, but subsequent buffer reads will be blazingly fast because of data locality. That is the algorithm for this:</p>
+<ul>
+<li>Create a staging (temporary) buffer visible by the CPU and the GPU.
+<ul>
+<li>Create a buffer object.</li>
+<li>Find an appropriate memory type.</li>
+<li>Allocate the needed amount of memory.</li>
+<li>Bind the memory and the buffer object together.</li>
+</ul>
+</li>
+<li>Copy data to the staging buffer.</li>
+<li>Create a device buffer visible by the GPU only.
+<ul>
+<li>Create a buffer object.</li>
+<li>Find an appropriate memory type.</li>
+<li>Allocate the needed amount of memory.</li>
+<li>Bind the memory and the buffer object together.</li>
+</ul>
+</li>
+<li>Copy the staging buffer to the device buffer.
+<ul>
+<li>Create a command pool.</li>
+<li>Allocate a command buffer.</li>
+<li>Execute a copying operation.</li>
+</ul>
+</li>
+</ul>
+<p>Welcome to the <code>Vulkan</code> world. Everything here is so explicit and you have to worry literally about everything. It would be correct to say that every <code>Vulkan</code> app is a little driver. The good part is that now the driver is not a magic box that tries to guess what you need, you control everything!</p>
+<p>Buffer in <code>Vulkan</code> doesn&rsquo;t take memory. It&rsquo;s an object that holds type, size, and position in some memory. In oppose to a CPU memory, a GPU can have multiple different memory types - some are better for certain operations. When creating a buffer, we need to ask <code>Vulkan</code> to find an appropriate type for our case. When we have the type, we need to allocate the memory, taking alignment into account. If the allocation was successful, we bind two objects together - the buffer and the memory.</p>
+<p>Though it&rsquo;s a good exercise to do all these steps manually, a better solution would be to get some help from a specialized library. <a href="https://crates.io/crates/gpu-allocator">gpu-allocator</a> crate is an excellent choice when we&rsquo;re talking about memory management in <code>Vulkan</code>. It hides a lot of steps, like searching for a memory type, dealing with alignment, and many other things.</p>
+<p>First, we need to initialize the library. Since it&rsquo;s some sort of a generic thing, the allocator is created during <code>vulkan_base</code> initialization. We add a new field <code>allocator</code> to the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/vulkan_base/src/lib.rs">VulkanBase</a> struct. The allocator itself is created in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/vulkan_base/src/create_allocator.rs">create_allocator</a> function. Default values are pretty fine for our application.</p>
+<blockquote>
+<p><strong>NOTE:</strong> it is possible to set up the allocator so, that it will print a warning if we have some allocated memory that was not freed before the allocator was destroyed.</p>
+</blockquote>
+<p>The control points buffer we create in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/teapot/src/vulkan/vulkan_data.rs">teapot::VulkanData::new</a> function by calling the utility function <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/vulkan_utils/src/create_buffer.rs">vulkan_utils::create_gpu_buffer_init</a>. The <code>init</code> part in the name, and the <code>init_data</code> parameter tell us that the buffer should be filled with the initial data. In the function, we first create a staging buffer with the following parameters:</p>
+<ul>
+<li><code>size</code> - should be enough to fit all control points.</li>
+<li><code>usage</code> - <code>ash::vk::BufferUsageFlags::TRANSFER_SRC</code> - this buffer will be the source for data when executing a copy operation on the GPU.</li>
+<li><code>sharing_mode</code> - <code>ash::vk::SharingMode::EXCLUSIVE</code> - this buffer will be accessed exclusively by a single queue family.</li>
+</ul>
+<p>We create a buffer by calling the <code>ash::Device::create_buffer</code> function. After the buffer object, we need to allocate memory for it - this is where the <code>gpu_allocator</code> helps us. We create an allocation with the following parameters:</p>
+<ul>
+<li><code>requirements</code> - <code>ash::vk::MemoryRequirements</code> - the memory requirements specific for that buffer. We use the <code>Vulkan</code> function <code>ash::Device::get_buffer_memory_requirements</code> to get them.</li>
+<li><code>location</code> - <code>gpu_allocator::MemoryLocation::CpuToGpu</code> - this buffer should be accessable by the both <code>CPU</code> and <code>GPU</code>.</li>
+<li><code>linear</code> - <code>true</code> - buffers in <code>Vulkan</code> are always laid in memory linearly.</li>
+</ul>
+<blockquote>
+<p><strong>NOTE:</strong> if the usage flag will is not specified or a wrong flag is used, the validation layers will kindly report that when we&rsquo;ll try to copy into the buffer:</p>
+</blockquote>
+<pre tabindex="0"><code>VUID-vkCmdCopyBuffer-srcBuffer-00118(ERROR / SPEC): msgNum: 2006960150 - Validation Error: [ VUID-vkCmdCopyBuffer-srcBuffer-00118 ] Object 0: handle = 0x60000000006, name = staging control points buffer, type = VK_OBJECT_TYPE_BUFFER; | MessageID = 0x779fc816 | Invalid usage flag for VkBuffer 0x60000000006[staging control points buffer] used by vkCmdCopyBuffer(). In this case, VkBuffer should have VK_BUFFER_USAGE_TRANSFER_SRC_BIT set during creation. The Vulkan spec states: srcBuffer must have been created with VK_BUFFER_USAGE_TRANSFER_SRC_BIT usage flag (https://vulkan.lunarg.com/doc/view/1.2.162.1~rc2/linux/1.2-extensions/vkspec.html#VUID-vkCmdCopyBuffer-srcBuffer-00118)
+    Objects: 1
+        [0] 0x60000000006, type: 9, name: staging control points buffer
+</code></pre><p>After we got an allocation by calling the function <code>gpu_allocator::Allocator::allocate</code>, we need to bind the buffer object to the allocation. We do it by calling the function <code>ash::Device::bind_buffer_memory</code>.</p>
+<blockquote>
+<p><strong>NOTE:</strong> for a host visible memory, the <code>gpu-allocator</code> crate maps that memory automatically, so we don&rsquo;t need to do it manually, and we can retrieve the mapped pointer at any time. It&rsquo;s a good practice to map a memory only once and keep it mapped during its lifetime.</p>
+</blockquote>
+<blockquote>
+<p><strong>NOTE:</strong> the <code>Vulkan</code> spec guarantees that there must be at least one memory type with both the <code>VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT</code> and <code>VK_MEMORY_PROPERTY_HOST_COHERENT_BIT</code> flags (<code>11.2.1. Device Memory Properties</code>). Also, it guarantees that mappable coherent memory can always be attached to linear images and buffers created without the <code>VK_BUFFER_CREATE_SPARSE_BINDING_BIT</code> flag (<code>12.7. Resource Memory Association</code>).</p>
+</blockquote>
+<blockquote>
+<p><strong>NOTE:</strong> the word <code>COHERENT</code> means that writing to the memory makes it visible to the device automatically (if the writing happened before submitting commands to a queue). Without that flag, the memory must be flushed manually by calling the <code>ash::Device::flush_mapped_memory_ranges</code> function.</p>
+</blockquote>
+<p>With the buffer and allocation created, we can copy the initial data by taking a mapped slice and placing data there.</p>
+<p>Similarly, we create the GPU buffer with the following parameters:</p>
+<ul>
+<li><code>size</code> - same as the staging buffer.</li>
+<li><code>usage</code> - <code>BufferUsageFlags::STORAGE_BUFFER | BufferUsageFlags::TRANSFER_DST</code> - this buffer will be the destination for data when executing a copy operation on GPU, and also, it will be used as a storage buffer.</li>
+<li><code>location</code> - <code>gpu_allocator::MemoryLocation::GpuOnly</code> - this time, the buffer is only GPU-available.</li>
+</ul>
+<p>At this point, we have two buffer objects and two allocations - one (staging) initialized with control points initial data, and another (device local) is <em>empty</em>. We want to copy the data from the first (<em>&ldquo;slow&rdquo;</em>) memory to the second (<em>&ldquo;fast&rdquo;</em>). The copy operation should happen on the GPU (because of the device-local buffer), so we need to tell the device to do it. Recall that we communicate with the GPU via <em>commands</em>. These commands are organized in <em>command buffers</em> which we allocate from <em>command pools</em>. So our first step would be to create a command pool. In the <code>create_command_pool</code> function we pass the queue family index to <code>ash::vk::CommandPoolCreateInfo</code>. Command buffers allocated from this pool can only be used with this family queue. As was discussed earlier, the graphics queue can do copy operations so we can safely specify this queue family index. Also, with the <code>ash::vk::CommandPoolCreateFlags::TRANSIENT</code> flag, we tell the driver that our command buffers will be short-lived. A driver can use this information for optimizations.</p>
+<p>In the <code>allocate_command_buffer</code> function, we allocate a command buffer. Here we specify a <code>commandPool</code> - the just created object, <code>level</code> - there&rsquo;re primary and secondary command pools. Secondary pools are often used with multiple threads, and since we&rsquo;re not using multithreading, we specify <code>ash::vk::CommandBufferLevel::PRIMARY</code>.</p>
+<p>The <code>copy_buffer</code> function is the heart of the entire process. Here we populate the just allocated command buffer. We start with the beginning command buffer by filling <code>CommandBufferBeginInfo</code> and calling <code>ash::Device::begin_command_buffer</code>. In the info, we set the <code>ash::vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT</code> flag because we&rsquo;ll not reuse command buffer, basically fire once and forget.</p>
+<p>Next, we fill <code>BufferCopy</code> struct with needed <code>size</code> and offsets and pass it to <code>ash::Device::cmd_copy_buffer</code>. At this point, nothing copying yet -  we&rsquo;re only planning our work by placing it in the buffer.</p>
+<blockquote>
+<p><strong>NOTE:</strong> <code>Vulkan</code> commands which are executed on the GPU have a <code>cmd_</code> prefix, whereas CPU commands don&rsquo;t have it.</p>
+</blockquote>
+<p>Next, we&rsquo;re going to talk about the most confusing part of the <code>Vulkan</code> (at least for me) - synchronization. As you see, we&rsquo;re going to copy data between different buffers. Let&rsquo;s imagine that we copy a huge amount of data. I want to emphasize the fact that the operation can take some time. You probably heard that a GPU is a highly parallel machine with lots of cores. To keep them fed, jobs on the GPU are executed out of order, and nothing waits for anything (if you didn&rsquo;t ask to do it explicitly, of course). Now imagine that we started a GPU job that uses our big buffer, and it happened that this new job starts before the previous job (the copy job) finishes, and it may try to read from the buffer while it&rsquo;s not ready! Sounds like an <em>Undefined Behavior</em>. To prevent such behavior, we need some kind of a barrier that will tell the device to wait until the data is ready. But even if the read job starts after the writing job is finished, there&rsquo;s still no guarantee that we read the valid data! How can that be? From the CPU world, you may know that multicore processors require special attention regarding synchronization between cores. Here I&rsquo;m not talking about things like mutexes. Here I mean cache synchronization. Some protocols guarantee that the data written by one core can be successfully read by another core. <a href="https://en.wikipedia.org/wiki/MESI_protocol">MESI</a> is an example of such a protocol. And everything happens <em>automagically</em> without us. GPUs, on the other hand, don&rsquo;t have this luxury. What happens is that when we copy data to a buffer, it ends up in the memory. But when a shader reads a buffer it can read it from a cache, and the cache doesn&rsquo;t know that the data have changed. We need a special action to make the data <em>visible</em>, i.e. to update the cache with the fresh data.</p>
+<blockquote>
+<p><strong>NOTE:</strong> There&rsquo;s an <a href="https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/chap44.html#memory-model-availability-visibility">Availability and Visibility</a> section in the specification for the <code>Vulkan</code> memory model. The <a href="https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/chap6.html#synchronization-dependencies-available-and-visible">Synchronization</a> section also has important information. The Holy Specification can be quite hard to read, and I recommend starting with <a href="http://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/">The Maister blog post about synchronization</a> - this one is amazing and helped me to understand how things work.</p>
+</blockquote>
+<p>Luckily both our problems (execution order and availability/visibility) can be solved by setting a barrier. There&rsquo;re 3 types of barriers - general, buffer, and image. Since we&rsquo;re dealing with buffers, we use <code>ash::vk::BufferMemoryBarrier</code>, which we pass to the <code>ash::Device::cmd_pipeline_barrier</code>. The <code>buffer</code> with <code>size</code> we already know, <code>src_queue_family_index</code> and <code>dst_queue_family_index</code> should be used with the queue family ownership transfer. We use a single queue so these fields can be ignored. In access masks, we need to specify, well, types of access. Since the data is coming to the buffer via a copying operation (copy from the staging buffer to the device local buffer), the <code>src_access_mask</code> is <code>ash::vk::AccessFlags::TRANSFER_WRITE</code>. Here is what the spec says:</p>
+<blockquote>
+<p><code>VK_ACCESS_TRANSFER_WRITE_BIT</code> specifies write access to an image or buffer in a clear or <strong>copy</strong> operation.</p>
+</blockquote>
+<p>The data will be read in a shader, so the <code>dst_access_mask</code> should be <code>ash::vk::AccessFlags::SHADER_READ</code>. In other words, you need to know how the data comes (the source) and how it will be used (the destination). Note I didn&rsquo;t mention where it comes from or where it&rsquo;s used. The stages where it was used and will be used have to be set during the barrier submission in <code>ash::Device::cmd_pipeline_barrier</code>, and they are known as the source stage and the destination stage. We can&rsquo;t set arbitrary values here because access masks and stage masks are tied together. We need to refer to a special table <strong>Supported access types</strong> of section <code>6.1.3. Access Types</code> of the specification. For the <code>ash::vk::AccessFlags::TRANSFER_WRITE</code> flag there&rsquo;s only one corresponding stage flag - <code>ash::vk::PipelineStageFlags::TRANSFER</code>. Our control points buffer will be used in the vertex shader, so the destination stage flag is <code>ash::vk::PipelineStageFlags::VERTEX_SHADER</code>.</p>
+<blockquote>
+<p><strong>NOTE:</strong> Wonder what will happen if we set the wrong stage flag? Right - the mighty layers report about the problem. For example:</p>
+</blockquote>
+<pre tabindex="0"><code>VUID-vkCmdPipelineBarrier-srcAccessMask-02815(ERROR / SPEC): msgNum: 618171435 - Validation Error: [ VUID-vkCmdPipelineBarrier-srcAccessMask-02815 ] Object 0: handle = 0x5635c2237750, name = copy command buffer for control points buffer, type = VK_OBJECT_TYPE_COMMAND_BUFFER; | MessageID = 0x24d88c2b | vkCmdPipelineBarrier(): pBufferMemBarriers[0].srcAccessMask (0x1000) is not supported by srcStageMask (0x8). The Vulkan spec states: The srcAccessMask member of each element of pMemoryBarriers must only include access flags that are supported by one or more of the pipeline stages in srcStageMask, as specified in the table of supported access types (https://vulkan.lunarg.com/doc/view/1.2.162.1~rc2/linux/1.2-extensions/vkspec.html#VUID-vkCmdPipelineBarrier-srcAccessMask-02815)
+    Objects: 1
+        [0] 0x5635c2237750, type: 6, name: copy command buffer for control points buffer
+</code></pre><p>By setting the barrier we tell the vertex shader stage to wait until the transfer operation is done, to flush a cache after the copy is finished, and to invalidate a cache before reading from it.</p>
+<p>At this point, we wrote all the commands we need to the command buffer, and we close it by calling <code>ash::Device::end_command_buffer</code>.</p>
+<p>Next, we submit the buffer to our queue by calling <code>ash::Device::queue_submit</code>. After that, we gave the GPU a signal to start the job. We could finish here, but first, we need to clean after ourselves by destroying the temporary staging buffer and the command pool. But if we simply destroy the objects we&rsquo;ll get:</p>
+<pre tabindex="0"><code>Cannot free VkBuffer 0x60000000006[staging control points buffer] that is in use by a command buffer. The Vulkan spec states: All submitted commands that refer to buffer, either directly or via a VkBufferView, must have completed execution
+
+Attempt to destroy command pool with VkCommandBuffer 0x5600fc5bc6d0[copy command buffer for control points buffer] which is in use. The Vulkan spec states: All VkCommandBuffer objects allocated from commandPool must not be in the pending state
+</code></pre><p>We just tried to destroy objects that are in use. Recall what we learned earlier - writing to the command buffer and submitting it doesn&rsquo;t start the actual work. The work will start sometime later. For now, we&rsquo;ll go a simple way and will just wait until the queue we submitted will become idle, i.e. finishes the work. We do it with the <code>ash::Device::queue_wait_idle</code> function, which waits on the CPU until GPU is done. Usually, it&rsquo;s not recommended to use such a heavy synchronization, but since our initialization happens only once it&rsquo;s fine.</p>
+<p>Congratulations, we created our first GPU buffer!</p>
+<h2 id="side-note">Side note</h2>
+<p>Do you remember how we allocated the buffer memory with <code>gpu_allocator::Allocator::create_buffer</code>? The function returned a struct that we can inspect for various useful stuff. For example, on my machine, I have the following data:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">Allocation</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#555">..</span>.<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>offset: <span style="color:#f60">0</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// offset in VkDeviceMemory object to the beginning of this allocation, in bytes
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>size: <span style="color:#f60">1536</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// size of this allocation, in bytes
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>memory_type_index: <span style="color:#f60">7</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// memory type index that this allocation was allocated from
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>device_memory: <span style="color:#f60">0x0000100000000010</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// handle to a Vulkan memory object
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>mapped_ptr: <span style="color:#366">None</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// mapped pointer to the beginning of this allocation
+</span><span style="color:#09f;font-style:italic"></span>}</code></pre></div>
+<p>Interesting things to note: I requested for 1416 bytes, but <code>Vulkan</code> allocated 1536 - this is due to alignment rules. Mapped data is <code>null</code> because we requested a GPU-only visible memory. The memory type index is 7. Let&rsquo;s look closer to that type. If we want to allocate some memory for an object, there&rsquo;re multiple steps, as you saw before. First, we need to get memory requirements for the needed object. For a buffer we need to call <code>ash::Device::get_buffer_memory_requirements()</code> that returns a struct:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">AllocationInfo<span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb"></span><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">MemoryRequirements</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>size: <span style="color:#f60">1536</span>,<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>alignment: <span style="color:#f60">256</span>,<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>memory_type_bits: <span style="color:#f60">1921</span>,<span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<p>The <code>memory_type_bits</code> is 1921 or 11110000001 in binary, and:</p>
+<blockquote>
+<p>is a bitmask and contains one bit set for every supported memory type for the resource. Bit <code>i</code> is set if and only if the memory type i in the VkPhysicalDeviceMemoryProperties structure for the physical device is supported for the resource.</p>
+</blockquote>
+<p>From this mask, we can see that my GPU has at least 11 memory types (11 bits in total). We can retrieve these types programmatically, but we&rsquo;ll use the already familiar <code>vkconfig</code> tool to inspect the properties. Open the tool, navigate to the <code>Tools</code> menu, then <code>Vulkan Info</code> -&gt; <code>Device Properties and Extensions</code> -&gt; select the GPU -&gt; <code>VkPhysicalDeviceMemoryProperties</code> -&gt; <code>memoryTypes</code>. Here we can see 11 memory types:</p>
+<a href="#images%2fmemory_1.png">
+    <img src=images/memory_1.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/memory_1.png">
+  <img src=images/memory_1.png>
+</a>
+<blockquote>
+<p><strong>NOTE:</strong> There can be many types with similar characteristics, and for the types with identical properties, the memory with the better performance is placed before. That&rsquo;s why it is recommended to traverse the list from the beginning when searching for the appropriate memory type.</p>
+</blockquote>
+<p>According to the rising bits, our buffer can use a memory type under the index 0th, 7th, 8th, 9th, or 10th. Let&rsquo;s unfold the list to see the properties:</p>
+<a href="#images%2fmemory_2.png">
+    <img src=images/memory_2.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/memory_2.png">
+  <img src=images/memory_2.png>
+</a>
+<p>To find the memory type for the buffer, we need to observe property flags for each type. Recall that we wanted our control points buffer to be device local (<code>gpu_allocator::MemoryLocation::GpuOnly</code>). The <code>gpu_allocator</code> crate internally uses the <code>ash::vk::MemoryPropertyFlags::DEVICE_LOCAL</code> flag when searching for the appropriate memory type index. From the picture, we see that the very first type doesn&rsquo;t support that flag, as well as the next 6 types. But the 7th type has the flag <code>MEMORY_PROPERTY_DEVICE_LOCAL_BIT</code> set. Now, hopefully, we understand where this number comes from.</p>
+<p>The selected memory type struct itself has the following fields:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">MemoryType<span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>propertyFlags: <span style="color:#0a8;font-weight:bold">MEMORY_PROPERTY_DEVICE_LOCAL_BIT</span>,<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>heapIndex: <span style="color:#f60">0</span>,<span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<p>The <code>heapIndex</code> field points to the memory heap. Similar to the memory types, we can get memory heaps programmatically, but we&rsquo;ll use the <code>vkconfig</code> tool again. My GPU has 3 heaps:</p>
+<a href="#images%2fmemory_3.png">
+    <img src=images/memory_3.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/memory_3.png">
+  <img src=images/memory_3.png>
+</a>
+<p>That looks correct - the heap under the index 0 points to the GPU memory, which indeed has 4Gb of memory. The other two are a system memory and a fast device memory that is CPU-visible (and the one that was used for the staging buffer).</p>
+<p>Do you now see how exactly low-level <code>Vulkan</code> is?</p>
+<h2 id="index-buffer">Index buffer</h2>
+<p>Though there are no more buffer declarations in the vertex shader, there&rsquo;s still a buffer that is used explicitly. Let&rsquo;s look closely at this line in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/teapot/shaders/shader.vert">shader</a>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">ControlPoint<span style="color:#bbb"> </span>cp<span style="color:#bbb"> </span><span style="color:#555">=</span><span style="color:#bbb"> </span>controlPointBuffer.data[gl_VertexIndex];</code></pre></div>
+<p>This <code>gl_VertexIndex</code> - what is it, and where does it come from? Well, looking at the variable name, it should be clear that it is a build-in input variable that holds an integer index for the vertex. And the value depends on how the draw call was initiated. For example, if we call the draw function like this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">device.cmd_draw(command_buffer,<span style="color:#bbb"> </span>vertex_count,<span style="color:#bbb"> </span><span style="color:#555">..</span>.);</code></pre></div>
+<p>we tell the API to draw a <code>vertex_count</code> number of vertices, and <code>gl_VertexIndex</code> will be the index from this count.</p>
+<p>But if we look at the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/teapot/src/teapot_data.rs">teapot_data</a>, we find a vector <code>patches</code>. Each entry in that vector is an index pointing to a control point in the <code>control_points</code> vector. We need this to reduce vertex (control point to be more precise) data. If you recall, the original data doesn&rsquo;t cover a full teapot shell but some part of it. For example, the body part represents only a quarter of a full surface. Additionally, adjacent patches share the same control points. If we would not use the indices, we&rsquo;d have to copy each point multiple times. And each point is a 3-component vector (with <code>x</code>, <code>y</code>, <code>z</code> components). Instead, we use only a single 2-byte index to point to the identical data. We call a draw command like this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">device.cmd_draw_indexed(command_buffer,<span style="color:#bbb"> </span>index_count,<span style="color:#bbb"> </span><span style="color:#555">..</span>.);</code></pre></div>
+<p>with a bound index buffer (more about binding later).</p>
+<p>Since in our case the index data is static, we use the same <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/vulkan_utils/src/create_buffer.rs">create_buffer::create_gpu_buffer_init</a> function as for the control points buffer. This time we specify the usage as <code>ash::vk::BufferUsageFlags::INDEX_BUFFER</code> and the buffer will be read (<code>ash::vk::AccessFlags::INDEX_READ</code>) in the <code>ash::vk::PipelineStageFlags::VERTEX_INPUT</code> stage.</p>
+<p>Let&rsquo;s see what the allocator library created:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">Allocation</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#555">..</span>.<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>offset: <span style="color:#f60">1536</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// offset in VkDeviceMemory object to the beginning of this allocation, in bytes
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>size: <span style="color:#f60">1024</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// size of this allocation, in bytes
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>memory_type_index: <span style="color:#f60">7</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// memory type index that this allocation was allocated from
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>device_memory: <span style="color:#f60">0x0000100000000010</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// handle to a Vulkan memory object
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>mapped_ptr: <span style="color:#366">None</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// mapped pointer to the beginning of this allocation
+</span><span style="color:#09f;font-style:italic"></span>}</code></pre></div>
+<p>The requested size is 896 bytes, the actual size of the allocated memory is 1024. Offset 1536 says that the buffer is placed not at the beginning of the allocated memory. Recall that the control point buffer takes 1536 bytes. The allocator allocates one big memory chunk and binds different objects to different offsets in this chunk. It&rsquo;s recommended to have as few allocations as possible. There&rsquo;s even a limitation to the number of allocations - the Specification guarantees only 4096. My GPU allows more - 4294967295 allocations total.</p>
+<hr>
+<p>There are no bound resources in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/teapot/shaders/shader.tesc">tessellation control shader</a>, and we don&rsquo;t need to create any resources for that stage. There&rsquo;s a push constant, but that&rsquo;s different - we don&rsquo;t need to allocate any memory for that. Push constants will be discussed later.</p>
+<h2 id="patch-instance-buffer">Patch instance buffer</h2>
+<p>Next one is the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/teapot/shaders/shader.tese">tessellation evaluation shader</a>. This time there&rsquo;re 2 buffers bound to this stage.</p>
+<p>The first buffer holds color and a matrix per patch. This data is static and we use the same <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/vulkan_utils/src/create_buffer.rs">vulkan_utils::create_gpu_buffer_init</a> function as before. I called this buffer <code>instances buffer</code>. It&rsquo;s a storage buffer (<code>ash::vk::BufferUsageFlags::STORAGE_BUFFER</code>) that will be read (<code>ash::vk::AccessFlags::SHADER_READ</code>) in the tesselation evaluation shader (<code>ash::vk::PipelineStageFlags::TESSELLATION_EVALUATION_SHADER</code>).</p>
+<p>The allocation info for the buffer is:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">Allocation</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#555">..</span>.<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>offset: <span style="color:#f60">2560</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// offset in VkDeviceMemory object to the beginning of this allocation, in bytes
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>size: <span style="color:#f60">2304</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// size of this allocation, in bytes
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>memory_type_index: <span style="color:#f60">7</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// memory type index that this allocation was allocated from
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>device_memory: <span style="color:#f60">0x0000100000000010</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// handle to a Vulkan memory object
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>mapped_ptr: <span style="color:#366">None</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// mapped pointer to the beginning of this allocation
+</span><span style="color:#09f;font-style:italic"></span>}</code></pre></div>
+<p>Requested size - 2240 bytes, allocated size - 2304 bytes. The memory for this buffer <em>lives</em> in the same allocation as the previous two buffers. Control points buffer is 1536 bytes, index buffer is 1024 bytes, hence 1536 + 1024 = 2560 bytes offset.</p>
+<h2 id="uniform-buffer">Uniform buffer</h2>
+<p>This time we have a dynamic buffer. I.e., the data inside it is not persistent and will be changing from frame to frame. It could be a storage buffer as well, but since it holds only a single matrix, we are sure that we&rsquo;ll fit in memory space limits. Additionally, on some GPUs accessing this type of memory can be faster.</p>
+<blockquote>
+<p><strong>NOTE:</strong> The Specification guarantees <code>maxUniformBufferRange</code> at least 16384 bytes, whereas <code>maxStorageBufferRange</code> is 2e27 bytes.</p>
+</blockquote>
+<p>Here&rsquo;s a snippet of how to create the buffer with <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/vulkan_utils/src/create_buffer.rs">vulkan_utils::create_buffer</a> function:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">let</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">mut</span><span style="color:#bbb"> </span>mem_buffers<span style="color:#bbb"> </span><span style="color:#555">=</span><span style="color:#bbb"> </span><span style="color:#366">Vec</span>::with_capacity(<span style="color:#069;font-weight:bold">crate</span>::CONCURRENT_RESOURCE_COUNT<span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">as</span><span style="color:#bbb"> </span><span style="color:#078;font-weight:bold">usize</span>);<span style="color:#bbb">
+</span><span style="color:#bbb"></span><span style="color:#069;font-weight:bold">for</span><span style="color:#bbb"> </span>i<span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">in</span><span style="color:#bbb"> </span><span style="color:#f60">0</span><span style="color:#555">..</span><span style="color:#069;font-weight:bold">crate</span>::CONCURRENT_RESOURCE_COUNT<span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#069;font-weight:bold">let</span><span style="color:#bbb"> </span>mem_buffer<span style="color:#bbb"> </span><span style="color:#555">=</span><span style="color:#bbb"> </span>vulkan_utils::create_buffer(<span style="color:#bbb">
+</span><span style="color:#bbb">        </span><span style="color:#555">..</span>.<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>vk::BufferUsageFlags::UNIFORM_BUFFER,<span style="color:#bbb">
+</span><span style="color:#bbb">        </span>gpu_allocator::MemoryLocation::CpuToGpu,<span style="color:#bbb">
+</span><span style="color:#bbb">        </span><span style="color:#555">..</span>.<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>)<span style="color:#555">?</span>;<span style="color:#bbb">
+</span><span style="color:#bbb">
+</span><span style="color:#bbb">    </span>mem_buffers.push(mem_buffer);<span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<p>We don&rsquo;t need to initialize the buffer with data this time. We&rsquo;ll do it every frame just before the rendering. Here we want a uniform buffer (<code>ash::vk::BufferUsageFlags::UNIFORM_BUFFER</code>), accessible both by CPU and GPU (<code>gpu_allocator::MemoryLocation::CpuToGpu</code>). The allocator crate will map the memory so we can access its pointer at any time. But wait, why do we create buffers in a loop? What is this <code>crate::CONCURRENT_RESOURCE_COUNT</code>?</p>
+<p>Let&rsquo;s look at what can happen when we render multiple frames in a row. Before, I wrote that a CPU and a GPU are not synchronized in any way by default. When we submit a bunch of commands on a CPU, we don&rsquo;t know when a GPU will start to execute these commands, and we don&rsquo;t know when it will finish.</p>
+<p>Now imagine, in the very first frame, we wrote data into our mapped uniform buffer, then submitted a work that uses that buffer. According to <code>§ 7.9. Host Write Ordering Guarantees</code> of the Specification:</p>
+<blockquote>
+<p>When batches of command buffers are submitted to a queue via a queue submission command, it defines a memory dependency with prior host operations, and execution of command buffers submitted to the queue.</p>
+</blockquote>
+<p>That means that if we wrote to a buffer on the host before a submit command, <code>Vulkan</code> takes care of synchronization automatically. That is one of the rare cases of <strong>implicit</strong> synchronization. Because of that, in the first frame, the GPU will see the valid data, and all is fine.</p>
+<p>Now we&rsquo;re going to render a second frame. Remember that we don&rsquo;t know if GPU finished or not, there&rsquo;s no <strong>implicit</strong> synchronization for this case, and if we use the same uniform buffer we used in frame 1, we can end up writing to the buffer that the GPU uses right now (i.e., reads). Sounds like a race condition and undefined behavior. What can we do? Well, we can wait on the host until the device finishes like we did after we copied the staging buffer with <code>ash::Device::queue_wait_idle</code>. But that&rsquo;s not good - we&rsquo;ll wait on the CPU doing nothing. What we can do instead is to create another buffer where we can safely write. Now we proceed to frame 3. We may think that the GPU finished with frame 1, and we can use the first buffer again. But that&rsquo;s not true - <em>there&rsquo;s no implicit synchronization</em>, and we don&rsquo;t know if GPU finished or not. We can have a very fast processor and a very old and slow GPU where we submit heavy work so that the CPU can record hundreds of frame jobs before the device completes only one. We can, of course, create more buffers, but we&rsquo;ll go the other way. We&rsquo;ll use 2 buffers, and we&rsquo;ll synchronize <strong>explicitly</strong> - together with a buffer, we&rsquo;ll submit a special object - a <code>Fence</code>. With it, we can find out the status of our work previously.</p>
+<p>Now our render cycle will look like this:</p>
+<ul>
+<li>Frame A: look at <code>fence1</code> and, if needed, wait until <code>job1</code> is completed, update <code>buffer1</code>, submit <code>buffer1</code> and <code>fence1</code>.</li>
+<li>Frame B: look at <code>fence2</code> and, if needed, wait until <code>job2</code> is completed, update <code>buffer2</code>, submit <code>buffer2</code> and <code>fence2</code>.</li>
+<li>Repeat.</li>
+</ul>
+<p>The number of interleaving buffers (2) is stored in a global constant <code>crate::CONCURRENT_RESOURCE_COUNT</code>. It will be used a couple more times.</p>
+<p>For 2 uniform buffers, the allocations look like this on my machine:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">Allocation</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#555">..</span>.<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>offset: <span style="color:#f60">0</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// offset in VkDeviceMemory object to the beginning of this allocation, in bytes
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>size: <span style="color:#f60">256</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// size of this allocation, in bytes
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>memory_type_index: <span style="color:#f60">10</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// memory type index that this allocation was allocated from
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>device_memory: <span style="color:#f60">0x0000563a848b2c80</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// handle to a Vulkan memory object
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>mapped_ptr: <span style="color:#366">Some</span>(<span style="color:#f60">0x00007f9ebc517000</span>),<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// mapped pointer to the beginning of this allocation
+</span><span style="color:#09f;font-style:italic"></span>}</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">Allocation</span><span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span><span style="color:#555">..</span>.<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>offset: <span style="color:#f60">256</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// offset in VkDeviceMemory object to the beginning of this allocation, in bytes
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>size: <span style="color:#f60">256</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// size of this allocation, in bytes
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>memory_type_index: <span style="color:#f60">10</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// memory type index that this allocation was allocated from
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>device_memory: <span style="color:#f60">0x0000563a848b2c80</span>,<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// handle to a Vulkan memory object
+</span><span style="color:#09f;font-style:italic"></span><span style="color:#bbb">    </span>mapped_ptr: <span style="color:#366">Some</span>(<span style="color:#f60">0x00007f9ebc517000</span>),<span style="color:#bbb"> </span><span style="color:#09f;font-style:italic">// mapped pointer to the beginning of this allocation
+</span><span style="color:#09f;font-style:italic"></span>}</code></pre></div>
+<p>The requested size for each buffer is 64 bytes (size of a single matrix), but the allocated size is 256. What a waste of space! It would be better to have a single buffer 64 * 2 bytes size and change offsets every frame before writing the data. But we&rsquo;ll not do this for this application. Notice how the library uses the same memory chunk but allocates a piece of it with the offset for the second buffer. Also, the memory type index is different this time and points to:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">MemoryType<span style="color:#bbb"> </span>{MEMORY_PROPERTY_DEVICE_LOCAL_BIT<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>property_flags: <span style="color:#0a8;font-weight:bold">VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT</span><span style="color:#bbb"> </span><span style="color:#555">|</span><span style="color:#bbb"> </span>VK_MEMORY_PROPERTY_HOST_CACHED_BIT<span style="color:#bbb"> </span><span style="color:#555">|</span><span style="color:#bbb"> </span>VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>heap_index: <span style="color:#f60">1</span>,<span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<p>Looks correct - we asked for a host-visible memory since we&rsquo;re going to update the buffer every frame. The heap under the index 1:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">MemoryHeap<span style="color:#bbb"> </span>{<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>size: <span style="color:#f60">24654882816</span>,<span style="color:#bbb">
+</span><span style="color:#bbb">    </span>flags: <span style="color:#f60">0</span>,<span style="color:#bbb">
+</span><span style="color:#bbb"></span>}</code></pre></div>
+<p>The ~23Gb size tells us that this is system memory. On my machine, I have 30Gb. Also, notice that the allocations <code>mapped_ptr</code> is not <code>None</code> - the <code>gpu-allocator</code> crate maps a host-visible memory as soon as it&rsquo;s created.</p>
+<hr>
+<p>The <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/teapot/shaders/shader.frag">fragment</a> doesn&rsquo;t have any bound resources.</p>
+<p><strong>Clean</strong></p>
+<p>As usual, we don&rsquo;t forget to destroy <code>Vulkan</code> objects and free memory. In the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/teapot/src/vulkan/vulkan_data.rs">clean function</a>, for every created buffer we need to destroy a buffer object with the <code>ash::Device::destroy_buffer</code> function and free an allocation with <code>gpu_allocator::Allocator::free</code> function. It is important to do it before destroying the allocator itself, which we do in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_2/vulkan_base/src/lib.rs">vulkan_base::clean</a> function.</p>
+<p><strong>What next</strong></p>
+<p>We created a lot of resources today. But if we&rsquo;ll launch the program, we&rsquo;ll see the same empty window again. Though we uploaded the data on the GPU, we didn&rsquo;t say how to use it. We need to tell the device which resource goes to which slot. We&rsquo;ll do this next time.</p>
+<p>The source code for this step is <a href="https://github.com/nikitablack/rust_vulkan_teapot/tree/step_2">here</a>.</p>
+<p>You can subscribe to my <a href="https://twitter.com/nikita_cherniy">Twitter account</a> to be notified when the new post is out or for comments and suggestions. If you found a bug, please <a href="https://github.com/nikitablack/rust_vulkan_teapot/issues">raise an issue</a>. If you have a question, you can start a discussion <a href="https://github.com/nikitablack/rust_vulkan_teapot/discussions">here</a>.</p>
+      
+      <div class="related">
+</div>
+      
+    </div>
+    
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
+    
+      <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
+    
+  </div>
+</section>
+
+
+
+</body>
+</html>
+

@@ -7,7 +7,16 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <copyright>&amp;copy; &lt;a href=&#34;http://nikitablack.github.io/&#34;&gt;nikitablack&lt;/a&gt; 2021</copyright>
-    <lastBuildDate>Fri, 07 Jan 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 10 Jan 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Vulkan with rust by example 2. Resources.</title>
+      <link>http://nikitablack.github.io/post/vulkan_with_rust_by_example_2_resources/</link>
+      <pubDate>Mon, 10 Jan 2022 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/vulkan_with_rust_by_example_2_resources/</guid>
+      <description>&lt;p&gt;We have 4 shaders we created in the &lt;a href=&#34;https://nikitablack.github.io/post/vulkan_with_rust_by_example_1_shaders/&#34;&gt;previous step&lt;/a&gt;, but these are useless until we feed GPU data. Let&amp;rsquo;s look at the picture to recall which kind of resources we need.&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>Vulkan with rust by example 1. Shaders.</title>
       <link>http://nikitablack.github.io/post/vulkan_with_rust_by_example_1_shaders/</link>
