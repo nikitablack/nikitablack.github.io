@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"  lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+<title>Vulkan with rust by example 3. Pipelines. | Here should be the blog Title</title>
+
+
+
+<link href="http://nikitablack.github.io/index.xml" rel="alternate" type="application/rss+xml" title="Here should be the blog Title" />
+
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="stylesheet" href="/css/css_lightbox.css"><link rel='stylesheet' href='http://nikitablack.github.io/css/custom.css'><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="canonical" href="http://nikitablack.github.io/post/vulkan_with_rust_by_example_3_pipelines/">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+<section class="section">
+  <div class="container">
+    <nav id="nav-main" class="nav">
+      <div id="nav-name" class="nav-left">
+        <a id="nav-anchor" class="nav-item" href="http://nikitablack.github.io/">
+          <h1 id="nav-heading" class="title is-4">Here should be the blog Title</h1>
+        </a>
+      </div>
+      <div class="nav-right">
+        <nav id="nav-items" class="nav-item level is-mobile"><a class="level-item" aria-label="twitter" href='https://twitter.com/nikita_cherniy'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="github" href='https://github.com/nikitablack'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="email" href='mailto:mynameisnikitablack@gmail.com'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+    
+  </svg></i>
+            </span>
+          </a></nav>
+      </div>
+    </nav>
+
+    <nav class="nav">
+      
+
+      
+    </nav>
+
+  </div>
+  <script src="/js/navicon-shift.js"></script>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="subtitle tags is-6 is-pulled-right">
+      
+    </div>
+    <h2 class="subtitle is-6">January 17, 2022</h2>
+    <h1 class="title">Vulkan with rust by example 3. Pipelines.</h1>
+    
+    <div class="content">
+      <p>In the <a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_2_resources/">previous step</a> we uploaded the data to the GPU, but we still don&rsquo;t know how to use it. Today we&rsquo;ll fill that gap partially. We need to tell <code>Vulkan</code> upfront which resources we&rsquo;re going to use for a particular effect. We do it via pipelines.</p>
+<p>Let&rsquo;s look again at the shaders layout:</p>
+<a href="#images%2fteapot_app_3.png">
+    <img src=images/teapot_app_3.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/teapot_app_3.png">
+  <img src=images/teapot_app_3.png>
+</a>
+<p>Let&rsquo;s look at the buffer&rsquo;s declaration, namely, at the set and binding. It would be nice to have just a slot and at runtime just say: <em>&ldquo;hey API, I want to set my vertex buffer to slot number 0&rdquo;</em>. But <code>Vulkan</code> would not be <code>Vulkan</code> if it was so easy. Because of the broad architectures range of <code>Vulkan</code> conformant devices, it was decided to use a binding model that will work everywhere. And this binding model consists of descriptors that are organized in sets. Imagine that some device has a special memory where it holds a table with indices to resources. Since this memory is limited, it&rsquo;s not possible to have a lot of tables (sets), and the size of these tables is also limited.</p>
+<blockquote>
+<p><strong>NOTE:</strong> The Specification guarantees at least 4 sets (<code>VkPhysicalDeviceLimits::maxBoundDescriptorSets</code>) and 128 resources per stage (<code>VkPhysicalDeviceLimits::maxPerStageResources</code>). On my <code>NVidia Quadro P1000</code>, the maximum number of sets is 32, and the maximum number of resources is 4294967295.</p>
+</blockquote>
+<p>Let&rsquo;s find out how and where we declare these sets.</p>
+<h2 id="descriptor-set-layout">Descriptor set layout</h2>
+<p>We need to navigate to the <code>teapot</code> workspace, where we continue initializing the main data structure. We declare sets in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_3/teapot/src/vulkan/create_descriptor_set_layout.rs">teapot::create_descriptor_set_layout</a> function. Here we fill different <code>ash::vk::DescriptorSetLayoutBinding</code> structures, which we pass with the <code>ash::vk::DescriptorSetLayoutCreateInfo</code> structure to the <code>ash::Device::create_descriptor_set_layout</code> function.</p>
+<p>It&rsquo;s recommended to split sets by update frequency, which I didn&rsquo;t do in the application. Updating a set has some cost, and if it&rsquo;s possible to avoid such an update better not to do it. Since we have a very limited number of resources, I decided to keep everything in one set. For example, one set can be reserved for constant data that is rare or never changed, such as a projection matrix. Another set can be used with per-frame updated resources, such as view matrix. Finally, another set is - for per draw updated data, a model matrix, for example. When we need to update a descriptor set, we batch descriptors and submit everything in one go. In our example, we have only one set and bind the buffers as follows:</p>
+<ul>
+<li>Control points buffer - slot 0 of the vertex shader.</li>
+<li>Patch data buffer - slot 1 of the tesselation evaluation shader.</li>
+<li>Uniform buffer - slot 2 of the tesselation evaluation shader.</li>
+</ul>
+<p>Notice that the set is a sort of a global structure. Although we need to specify a shader stage, we can&rsquo;t bind a resource to the same slot in different shaders. That is what we&rsquo;ll get if we&rsquo;ll try to bind the control points buffer to slot 1 in the vertex shader with the validation layers enabled:</p>
+<blockquote>
+<p>Validation Error: duplicated binding number in VkDescriptorSetLayoutBinding. The Vulkan spec states: The VkDescriptorSetLayoutBinding::binding members of the elements of the pBindings array must each have different values</p>
+</blockquote>
+<p>Also, notice that we don&rsquo;t specify the actual data when creating a layout. The analogy to the descriptor set layout would be a function declaration in <code>C/C++</code>. When we declare a function <code>foo(int)</code>, we tell the type of the argument, the value itself we&rsquo;ll pass later when we&rsquo;ll call that function. The same is here - we just tell the API our intentions so the driver can check the correctness.</p>
+<p>Now, when we have a descriptor set layout, how do we use it in <code>Vulkan</code>? We do it through a structure <code>ash::vk::PipelineLayout</code>, which in turn, we provide through another structure when creating a pipeline. So let&rsquo;s first understand what is a pipeline.</p>
+<h2 id="pipelines">Pipelines</h2>
+<p>Simply put - a pipeline holds the state of a draw call. In the application, we use two different pipelines - one for solid rendering and another for wireframe rendering. It&rsquo;s <strong>not</strong> possible to create a single pipeline for these two different drawing methods since every method requires a GPU state change. Changing a state is very tricky to do at runtime, so <code>Vulkan</code> went another way - everything should be declared upfront. There&rsquo;re some exceptions to these rules, and some states are allowed to be changed at a draw time. We&rsquo;ll see that shortly. We create pipelines in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_3/teapot/src/vulkan/create_pipelines.rs">teapot::create_pipelines</a> function. That&rsquo;s quite a lengthy procedure. Scroll down to the place where <code>ash::vk::GraphicsPipelineCreateInfo</code> for the solid pipeline is instantiated, we&rsquo;ll walk through all the states we need.</p>
+<ul>
+<li>
+<p><code>flags(ash::vk::PipelineCreateFlags::ALLOW_DERIVATIVES)</code> - creating a pipeline means compiling shaders, doing lots of checks. But if we have multiple similar pipelines, we can speed up the creation of the following objects. The flag <code>ash::vk::PipelineCreateFlags::ALLOW_DERIVATIVE</code> marks a pipeline as <em>parent</em>. We create a pipeline for solid rendering first, and based on it, we create a second pipeline.</p>
+</li>
+<li>
+<p><code>stages(&amp;stages)</code> - list of shaders stages with shader modules and entry function names. We have 4 stages with <code>main</code> entry in all of them. Every stage is kept in <code>ash::vk::PipelineShaderStageCreateInfo</code> structure. Here we specify a shader stage, a shader module, and an entry function name.</p>
+</li>
+<li>
+<p><code>input_assembly_state(&amp;ia_state)</code> - we need to specify the topology for the model we&rsquo;re going to render with the pipeline. In our case this is <code>ash::vk::PrimitiveTopology::PATCH_LIST</code>, which we pass in a <code>ash::vk::PipelineInputAssemblyStateCreateInfo</code> structure.</p>
+</li>
+<li>
+<p><code>rasterization_state(&amp;raster_state)</code> - describes how geometry should be rasterized. In the <code>ash::vk::PipelineRasterizationStateCreateInfo</code> structure, we set a polygon mode as <code>ash::vk::PolygonMode::FILL</code> - we want solid triangles filled with color, cull mode as <code>ash::vk::CullModeFlags::BACK</code> - we want to cull the back faces, i.e., <strong>not</strong> to render a triangle if it looks away. To find if a face is looking back or forward, we specify a front face vertices order - <code>ash::vk::FrontFace::CLOCKWISE</code>. The line width is not necessary when rendering a solid triangle, but it&rsquo;s necessary when rendering in a wireframe mode, which we&rsquo;ll see shortly.</p>
+</li>
+<li>
+<p><code>color_blend_state(&amp;col_blend_state)</code> - in the application we render only opaque triangles. That means we don&rsquo;t need any blending. Also, we need to specify a write mask, i.e., which color components should be written. This info we provide in a <code>ash::vk::PipelineColorBlendAttachmentState</code> structure. The color blend state needs to be specified per render target. Since we&rsquo;ll use a single target (a window surface), this single state we store in a <code>ash::vk::PipelineColorBlendStateCreateInfo</code> structure.</p>
+</li>
+</ul>
+<blockquote>
+<p><strong>NOTE:</strong> Once I spent a good hour trying to understand why I have a black screen. It turned out that I forgot to specify this mask, and by default, it&rsquo;s 0, i.e. don&rsquo;t save anything. As you can see - this is not an error, so the validation layers were silent.</p>
+</blockquote>
+<ul>
+<li><code>dynamic_state(&amp;dyn_state)</code> - the dynamic states we talked above. In the application, I decided to resize the window freely. Resizing a surface would mean a state change. If there would no dynamic states, or we omit them, we would have to create a new pipeline every time we change the window size. Luckily for us, we can mark the states <code>ash::vk::DynamicState::VIEWPORT</code> and <code>ash::vk::DynamicState::SCISSOR</code> as dynamic. That means that now we have to set these states every time before rendering. But still, I found this simpler than the new pipeline after the change.</li>
+</ul>
+<blockquote>
+<p><strong>NOTE:</strong> There&rsquo;re many other dynamic states.</p>
+</blockquote>
+<ul>
+<li><code>viewport_state(&amp;viewport_state)</code> - although we specified that the viewport and scissor are dynamic we still need to provide the state in a <code>ash::vk::PipelineViewportStateCreateInfo</code> structure. At least with default values. If we&rsquo;ll not do this we&rsquo;ll get an error:</li>
+</ul>
+<blockquote>
+<p>Validation Error: Rasterization is enabled, but pCreateInfos[0].pViewportState (=NULL) is not a valid pointer. The Vulkan spec states: If the rasterizerDiscardEnable member of pRasterizationState is VK_FALSE, pViewportState must be a valid pointer to a valid VkPipelineViewportStateCreateInfo structure.</p>
+</blockquote>
+<ul>
+<li>
+<p><code>layout(pipeline_layout)</code> - this is the pipeline layout we talked about. It shouldn&rsquo;t be confused with the descriptor set layout we created at the beginning. We create one in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_3/teapot/src/vulkan/create_pipeline_layout.rs">teapot::create_pipeline_layout</a> function. And this is the place where we provide the aforementioned descriptor set layout. Recall that we decided to use only one set hence there&rsquo;s only one entry in the <code>layouts</code> array. That will be our set number 0, which we can see in the shaders. The single set with multiple bindings. Also, you probably noticed the <code>ash::vk::PushConstantRange</code> structure usage in <code>ash::vk::PipelineLayoutCreateInfo</code>. A small amount of data can be written directly in a command buffer, and before rendering a frame, it will be copied to GPU registers. How small should it be? The Specification guarantees at least 128 bytes (<code>VkPhysicalDeviceLimits::maxPushConstantsSize</code>). Of course, the actual size depends on the hardware. The best practice regarding the push constant usage would be to reduce its usage (a single 4-byte number or maybe a 4 component vector are ok) or not to use them at all and provide data in uniform buffers. If there&rsquo;s no more space to keep a push constant in registers, it will be copied to the memory, and that is a slow operation. If you have something to add, please drop a message in the GitHub discussion to that post (the link at the bottom). Nevertheless, we&rsquo;ll use the push constant here for the tesselation factor. Since these 128 bytes (or more) are reserved for the entire pipeline, we need to provide a size and an offset together with a shader stage. In our case, the only stage that uses the push constant is <code>ash::vk::ShaderStageFlags::TESSELLATION_CONTROL</code>. Let&rsquo;s imagine that we need another 2 floats constant in the fragment shader - in that case, we need another <code>ash::vk::PushConstantRange</code> structure where the stage flag would be <code>ash::vk::ShaderStageFlags::FRAGMENT</code>, the size - 8 bytes and the offset - 4 bytes (because the first 4 bytes reserved by the tesselation factor).</p>
+</li>
+<li>
+<p><code>render_pass(render_pass)</code> - in <code>Vulkan</code>, the rendering is organized in render passes. If you want to draw something, you have to start a render pass and draw inside it. The render passes themselves are organized in subpasses. The concept of render passes mostly relates to a mobile world where the GPU architecture differs from desktop GPUs. Probably you heard about tiled architectures - to avoid costly memory operations, the render area is split on independent tiles. The size of one tile is selected such that it can fit in fast on-chip memory. Let&rsquo;s look at how a depth test can be handled on a tiled architecture. When we draw a new fragment, we need to <strong>read</strong> the current depth from the depth buffer and compare it with the new. If the new <em>&ldquo;wins&rdquo;</em> we have to <strong>write</strong> it to the buffer. After we&rsquo;re done, we can either <strong>save</strong> the depth buffer for further usage or <strong>ignore</strong> it. I marked bold the memory requests, and as you can see, there&rsquo;re multiple of them, and they are considered expensive operations. But if this memory is a special fast-tile-on-chip-memory, then we can reduce the costs of reading and writing to the main memory or avoid them completely if we <strong>ignore</strong> the final store operation. Interesting to know that when we process a tile, we can&rsquo;t get any information from neighbor tiles because they do not exist. That limits some operations, but we&rsquo;ll not see this in our application. In render passes, we define which attachments are used in which subpasses. Another word for attachment is render target. <code>Vulkan</code> implicitly sets dependency barriers between attachments. It is important to understand that the same effect can be achieved with multiple subpasses inside a single render pass or multiple render passes with a single subpass each. In the second case, we&rsquo;d need to set barriers manually, and probably it will be slower on mobile (on desktop, it mostly makes no difference, but it depends on a GPU, of course). In our application, we have only one render pass with a single subpass. We create it in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_3/teapot/src/vulkan/create_render_pass.rs">teapot::create_render_pass</a> function. Here we define a single attachment - the surface we&rsquo;ll render into. We set the following properties for it:</p>
+<ul>
+<li><code>format</code> that we selected when got the physical device.</li>
+<li>number of <code>samples</code> - 1 in our case.</li>
+<li><code>load_op = ash::vk::AttachmentLoadOp::CLEAR</code> - when we begin to work with the memory, we want to clear it to some value. On tiled GPU, the tile-memory will be initialized with that value, and no main memory will be involved.</li>
+<li><code>store_op = ash::vk::AttachmentStoreOp::STORE</code> - when we finish, we want to keep the memory so the information from it can be displayed on a monitor. On tiled GPUs, the complete tile memory will be copied to the main memory.</li>
+<li><code>stencil_load_op = ash::vk::AttachmentLoadOp::DONT_CARE</code> and <code>stencil_store_op = ash::vk::AttachmentStoreOp::DONT_CARE</code> - we&rsquo;re not using stencils in the application.</li>
+<li><code>stencil_store_op = ash::vk::AttachmentStoreOp::DONT_CARE</code></li>
+<li><code>initial_layout = ash::vk::ImageLayout::UNDEFINED</code> - to set implicit barriers, the runtime has to know the layout of an attachment so it can transition between different layouts safely. In our application, we don&rsquo;t care about the layout at the beginning of the render pass&hellip;</li>
+<li><code>final_layout = ash::vk::ImageLayout::PRESENT_SRC_KHR</code> - &hellip;but we care about the final layout so the memory can be transitioned to the format appropriate for the presenting.</li>
+</ul>
+<p>The defined attachment we provide in a <code>ash::vk::AttachmentReference</code> structure as a reference to a <code>ash::vk::SubpassDescription</code> structure, which is passed further to <code>ash::vk::RenderPassCreateInfo</code>. This structure has a <code>dependencies</code> field, which we need to set if we have multiple subpasses. Even with a single subpass, we need to provide a dependency before the subpass and after the subpass. Luckily <code>Vulkan</code> set this kind of dependencies (called <code>VK_SUBPASS_EXTERNAL</code> dependencies) implicitly. The render pass itself we create by calling the <code>ash::Device::create_render_pass</code> function.</p>
+</li>
+<li>
+<p><code>subpass(0)</code> - yes, we need a pipeline for every subpass (of course, if it differs).</p>
+</li>
+<li>
+<p><code>multisample_state(&amp;multisample_state)</code> - the app doesn&rsquo;t use multisample, but we still need to set the sample count (1 in our case) with a <code>ash::vk::PipelineMultisampleStateCreateInfo</code> structure.</p>
+</li>
+<li>
+<p><code>tessellation_state(&amp;tessellation_state)</code> - we&rsquo;re using tessellation, so we have to set this state. In <code>ash::vk::PipelineTessellationStateCreateInfo</code> we tell how many control points we want per patch (16 in our case).</p>
+</li>
+<li>
+<p><code>vertex_input_state(&amp;vert_inp_state)</code> - recall that we provide the vertex data as a storage buffer and not as a vertex buffer. Because of that, we&rsquo;re not interested in the vertex input, but we still have to set a default one with a <code>ash::vk::PipelineVertexInputStateCreateInfo</code> structure. If we don&rsquo;t do this, we&rsquo;ll get:</p>
+</li>
+</ul>
+<blockquote>
+<p>Validation Error: Invalid Pipeline CreateInfo[0] State: Missing pVertexInputState. The Vulkan spec states: If pStages includes a vertex shader stage, pVertexInputState must be a valid pointer to a valid VkPipelineVertexInputStateCreateInfo structure</p>
+</blockquote>
+<p>With the fully prepared <code>ash::vk::GraphicsPipelineCreateInfo</code> struct, we can build the solid pipeline. But recall, we want another pipeline to draw a wireframe. These two pipelines are very similar because they share the same shaders and the majority of the states. The only different state is the rasterization state which should have the following parameters:</p>
+<ul>
+<li><code>polygon_mode</code> is now <code>ash::vk::PolygonMode::LINE</code>.</li>
+<li><code>cull_mode</code> is now <code>ash::vk::CullModeFlags::NONE</code> because we want to see wireframes even for back-facing triangles.</li>
+<li><code>front_face</code> - <code>ash::vk::FrontFace::CLOCKWISE</code>, as before, but since we&rsquo;re not culling, it can be anything.</li>
+<li><code>line_width</code> - should be 1.0 this time. For the width other than 1.0, the special feature (<code>ash::vk::PhysicalDeviceFeatures::wide_lines</code>) should be supported and enabled.</li>
+</ul>
+<p>Additionally, we need to modify the <code>ash::vk::GraphicsPipelineCreateInfo</code> struct:</p>
+<ul>
+<li><code>flags</code> is now <code>vk::PipelineCreateFlags::DERIVATIVE</code> because this is a child pipeline.</li>
+<li><code>base_pipeline_index</code> - we&rsquo;ll provide both info structs in a create function. Since the wireframe pipeline is a child pipeline, it should point to its parent. The index 0 tells the API to derive from the first pipeline in the list, which we&rsquo;ll create shortly.</li>
+</ul>
+<p>All other information can be copied from the previous pipeline info.</p>
+<p>With the two structs ready, we pass them in a list to the <code>ash::Device::create_graphics_pipelines</code> function (notice the plural in the functions name), and if everything was ok, it gives us a list of created pipelines.</p>
+<p>It&rsquo;s important to remember that we didn&rsquo;t specify the actual resources yet. We just declared the types of resources we want to use in the future with these pipelines. We don&rsquo;t have any images, but we still created a render pass where we described the render target.</p>
+<p><strong>Clean</strong></p>
+<p>As usual, we destroy everything we created so far in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_3/teapot/src/vulkan/vulkan_data.rs">teapot::clean</a> function - descriptor set layout, pipeline layout, render pass, and pipelines.</p>
+<p><strong>What next</strong></p>
+<p>We have shaders, have buffers filled with the data, have instructions for the GPU where to read the data from and the type of the data. But if we run the app, we&rsquo;ll see the same empty window. This is because we didn&rsquo;t set the correct data to the correct slot, didn&rsquo;t tell GPU to start rendering. But there&rsquo;s another important thing we didn&rsquo;t touch so far. Although we discussed the surface when we selected a physical device (recall surface format, present mode), we didn&rsquo;t create anything where we could render. A surface is an abstraction, it doesn&rsquo;t own memory. In the next step, we&rsquo;ll create a so-called swapchain - a set of images that the presentation engine will use to present in the window.</p>
+<p>The source code for this step is <a href="https://github.com/nikitablack/rust_vulkan_teapot/tree/step_3">here</a>.</p>
+<p>You can subscribe to my <a href="https://twitter.com/nikita_cherniy">Twitter account</a> to be notified when the new post is out or for comments and suggestions. If you found a bug, please <a href="https://github.com/nikitablack/rust_vulkan_teapot/issues">raise an issue</a>. If you have a question, you can start a discussion <a href="https://github.com/nikitablack/rust_vulkan_teapot/discussions">here</a>.</p>
+      
+      <div class="related">
+</div>
+      
+    </div>
+    
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
+    
+      <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
+    
+  </div>
+</section>
+
+
+
+</body>
+</html>
+

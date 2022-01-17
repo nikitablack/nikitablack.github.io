@@ -7,7 +7,16 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <copyright>&amp;copy; &lt;a href=&#34;http://nikitablack.github.io/&#34;&gt;nikitablack&lt;/a&gt; 2021</copyright>
-    <lastBuildDate>Mon, 10 Jan 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 17 Jan 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Vulkan with rust by example 3. Pipelines.</title>
+      <link>http://nikitablack.github.io/post/vulkan_with_rust_by_example_3_pipelines/</link>
+      <pubDate>Mon, 17 Jan 2022 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/vulkan_with_rust_by_example_3_pipelines/</guid>
+      <description>&lt;p&gt;In the &lt;a href=&#34;https://nikitablack.github.io/post/vulkan_with_rust_by_example_2_resources/&#34;&gt;previous step&lt;/a&gt; we uploaded the data to the GPU, but we still don&amp;rsquo;t know how to use it. Today we&amp;rsquo;ll fill that gap partially. We need to tell &lt;code&gt;Vulkan&lt;/code&gt; upfront which resources we&amp;rsquo;re going to use for a particular effect. We do it via pipelines.&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>Vulkan with rust by example 2. Resources.</title>
       <link>http://nikitablack.github.io/post/vulkan_with_rust_by_example_2_resources/</link>
