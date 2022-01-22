@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"  lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+<title>Vulkan with rust by example 5. Drawing. | Here should be the blog Title</title>
+
+
+
+<link href="http://nikitablack.github.io/index.xml" rel="alternate" type="application/rss+xml" title="Here should be the blog Title" />
+
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="stylesheet" href="/css/css_lightbox.css"><link rel='stylesheet' href='http://nikitablack.github.io/css/custom.css'><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="canonical" href="http://nikitablack.github.io/post/vulkan_with_rust_by_example_5_drawing/">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+<section class="section">
+  <div class="container">
+    <nav id="nav-main" class="nav">
+      <div id="nav-name" class="nav-left">
+        <a id="nav-anchor" class="nav-item" href="http://nikitablack.github.io/">
+          <h1 id="nav-heading" class="title is-4">Here should be the blog Title</h1>
+        </a>
+      </div>
+      <div class="nav-right">
+        <nav id="nav-items" class="nav-item level is-mobile"><a class="level-item" aria-label="twitter" href='https://twitter.com/nikita_cherniy'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="github" href='https://github.com/nikitablack'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="email" href='mailto:mynameisnikitablack@gmail.com'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+    
+  </svg></i>
+            </span>
+          </a></nav>
+      </div>
+    </nav>
+
+    <nav class="nav">
+      
+
+      
+    </nav>
+
+  </div>
+  <script src="/js/navicon-shift.js"></script>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="subtitle tags is-6 is-pulled-right">
+      
+    </div>
+    <h2 class="subtitle is-6">January 22, 2022</h2>
+    <h1 class="title">Vulkan with rust by example 5. Drawing.</h1>
+    
+    <div class="content">
+      <p>Today we&rsquo;ll fight with the final boss and save the princess. We&rsquo;ll finally see our teapot on the screen.</p>
+<p>Let&rsquo;s remember what we did - we initialized <code>Vulkan</code>, created shaders, created resources and uploaded data on the GPU, created pipelines, swapchain, and framebuffers.</p>
+<p>Here&rsquo;s a snapshot of what we have so far:</p>
+<a href="#images%2fteapot_app_5.drawio.png">
+    <img src=images/teapot_app_5.drawio.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/teapot_app_5.drawio.png">
+  <img src=images/teapot_app_5.drawio.png>
+</a>
+<p>In this step, we&rsquo;ll use all this information and instruct the GPU to execute the shaders. The <code>draw</code> function lives in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/draw.rs">draw.rs</a> file in the <code>teapot</code> workspace. And here are the actions we need to take to draw our object:</p>
+<ol>
+<li>We have multiple images in the swapchain. We need to find the index of the next available image in the swapchain - it will be used by some functions.</li>
+<li>We have multiple resources in flight - we need this because we don&rsquo;t want to wait until the GPU is done with a previous frame, so we prepare another meanwhile. But since the CPU may finish its job faster, we have to wait until the resources are safe to reuse.</li>
+<li>As we already saw, we tell the GPU what to do by recording commands to a command buffer, and later we submit that buffer. We need to get a command buffer and begin the recording.</li>
+<li>Some commands (for example, <code>cmd_draw_indexed</code>) can be used only inside the render pass scope, so we need to begin a render pass.</li>
+<li>When we created pipelines, we specified some states as dynamic (it was the viewport and the scissor states). We must set these states.</li>
+<li>We have a list of buffers, and a descriptor set layout, but until this point, we didn&rsquo;t tell the GPU which resource to use for what. We only described the types of resources for the pipeline. We need to get a descriptor set and update it with the real objects.</li>
+<li>We decided to update an MVP matrix via a uniform buffer. We need to write the new matrix data that will be used in a shader.</li>
+<li>We decided to update a tesselation level via a push constant.</li>
+<li>We need to bind everything together - the updated descriptor set, the pipeline, the index buffer.</li>
+<li>Draw!</li>
+<li>Every started render pass should be ended.</li>
+<li>Every started command buffer should be ended.</li>
+<li>We must submit the recorded command buffer to the queue.</li>
+<li>Finally, we can present the swapchain image on the screen.</li>
+</ol>
+<p>Don&rsquo;t be afraid of the number of actions. They all are pretty simple, and as usual, we&rsquo;ll walk through all of them step by step. For simplicity, I have moved all the code related to drawing to a separate module (<code>vulkan_draw</code> in the <code>teapot</code> workspace). Let us open the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/draw.rs">draw</a> function and go through it line by line.</p>
+<p><strong>Getting swapchain image index</strong></p>
+<p>We get the index using the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/get_image_index.rs">vulkan_draw::get_image_index</a> function. Here we call the function <code>ash::extensions::khr::Swapchain::acquire_next_image</code>. As you can see from the abbreviation <code>khr</code>, this function is not part of the core <code>Vulkan</code> and should be enabled with the extension <code>VK_KHR_swapchain</code> that we added in the <a href="TODO">previous</a> step. Here we provide:</p>
+<ul>
+<li>our swapchain.</li>
+<li><code>u64:: MAX</code> nanoseconds (a special value that means infinite time) we are ready to wait for the available image.</li>
+<li>a semaphore.</li>
+</ul>
+<p>The last point is something new - we have never seen anything like this before. In <code>Vulkan</code> there are several synchronisation primitives and <code>Semaphore</code> is one of them. The Specification states:</p>
+<blockquote>
+<p>Semaphores can be used to control resource access across multiple queues.</p>
+</blockquote>
+<p>In other words, a semaphore &ldquo;lives&rdquo; entirely in the GPU and enables synchronisation between queues.</p>
+<p>Even if <code>acquire_next_image</code> returns an index, the image can still be &ldquo;busy&rdquo;:</p>
+<blockquote>
+<p>The presentation engine may not have finished reading from the image at the time it is acquired</p>
+</blockquote>
+<p>This sounds strange - why return something that is not yet ready? Rendering into this image is an undefined behaviour. But this is done for performance reasons. The combination of index + semaphore <em>&ldquo;allows rendering operations to be recorded and submitted before the presentation engine has completed its use of the image&rdquo;</em>. So we need to provide an unsignalized semaphore to this function and when an image can be used, it will be signalled. Remember this semaphore - it will be used later in the <code>draw</code> function.</p>
+<blockquote>
+<p><strong>Note:</strong> it is possible to use a fence instead of a semaphore. A fence can be signaled on the GPU while waiting on the host. So we can pass a fence to the function and wait some time later for the presentation engine to mark the fence as signaled so we can use the image. Of course, this GPU-CPU trip is expensive and should only be used in rare cases, such as when reading a swapchain on the host.</p>
+</blockquote>
+<p>This semaphore is called <code>image_available_semaphore</code> and is stored as part of <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_data.rs">teapot::VulkanData</a>. We create it using the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/vulkan_utils/src/create_semaphore.rs">vulkan_utils::create_semaphore</a> function. We use the default information in the <code>ash::Device::create_semaphore</code> function.</p>
+<p>Another interesting thing is that <code>acquire_next_image</code> returns a tuple of an index and a bool if successful. In <code>C</code>, it can return the result <code>VK_SUBOPTIMAL_KHR</code>. The Specification says:</p>
+<blockquote>
+<p>If an image is acquired successfully, vkAcquireNextImageKHR must either return  <code>VK_SUCCESS</code>, or <code>VK_SUBOPTIMAL_KHR</code> if the swapchain no longer matches the surface properties exactly, but can still be used for presentation.</p>
+</blockquote>
+<p>This can happen, for example, if we have resized a window and we have a new size but an old image. In this case, we return from the <code>draw</code> function and on the swapchain is rebuilt in the next frame.</p>
+<p><strong>Waiting for resources</strong></p>
+<p>Waiting until resources are safe to use is done in the <code>wait_resource_available</code> function. Here we call the function <code>ash::Device::wait_for_fences</code>. We pass in a fence, say we want to wait for all fences passed in (we only have one, so <code>false</code> would be fine too) and the wait time is specified as <code>u64:: MAX</code> nanoseconds.</p>
+<p>But what is this fence? Let us take a uniform buffer as an example and see how it behaves across multiple frames:</p>
+<ul>
+<li>Recall that we have 2 uniform buffers - one for each frame in flight. At frame 0, we want to update the first buffer. Since this is the first frame, the resource has not yet been used, so we can safely write to it.</li>
+<li>We do not want to wait until frame 0 is fully processed. Instead, we prepare frame 1. We update a second buffer. Since the resource has not been used yet, we can safely write to it.</li>
+<li>Now interesting - at frame 2, we have no more free buffers. Also, we can not guarantee that the GPU has finished the first frame. Yes, GPU work can be hard, but CPU can be fast enough to complete all tasks. This is where the fences help us. When we submit work at the end of a frame, we can submit a Fence - a synchronisation primitive that is signalled on the GPU but listened to on the CPU. So we need as many fences as there are frames in flight (and as many buffers), and at the end of each frame we submit a fence corresponding to a current <em>resource index</em>. In other words, we have a circular buffer of frames, and in our case with 2 frames in flight, these indexes will be 0-1-0-1-0-1-etc. So at frame 2 ( remember, we start at 0) we wait for the 0th fence. When it is signalled, we can safely update the 0th buffer.</li>
+<li>At frame 3, we wait for the fence that was submitted in frame 1, and so on.</li>
+</ul>
+<p>These <code>fences</code> are stored in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_data.rs">teapot::VulkanData</a> and are created in the function <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/create_fences.rs">teapot::create_fences</a> function. Here we call the function <code>ash::Device::create_fence</code> asking to create fences in the state <code>ash::vk::FenceCreateFlags::SIGNALED</code> so that the first call to <code>wait_for_fences</code> is not blocked but returned immediately.</p>
+<p><strong>Command buffer</strong></p>
+<p>We have already worked with a command buffer when we copied data from the CPU to the GPU, so you should be familiar with the concept. As you recall, command buffers are allocated from a command pool. Technically, we could create a pool, allocate a command buffer from it, and record everything in advance as we repeat the same work from frame to frame. But that&rsquo;s not how it&rsquo;s usually done. Allocating a command buffer is a cheap operation, and it&rsquo;s fine to allocate new buffers every frame. But if we keep allocating every frame, we will run out of memory. So here is our strategy:</p>
+<ul>
+<li>
+<p>we create multiple command pools - corresponding to the number of frames in flight (2). This is necessary to avoid waiting.</p>
+</li>
+<li>
+<p>before we get a command buffer, we reset a current pool. From the Specification:</p>
+<blockquote>
+<p>Resetting a command pool recycles all of the resources from all of the command buffers allocated from the command pool back to the command pool. All command buffers that have been allocated from the command pool are put in the initial state.</p>
+</blockquote>
+<p>Resetting a pool resets all the command buffers at once and we can reuse them. If we have only one pool, it would be an undefined behavior to reset it - the command buffers of the previous frame could still be processed by the GPU. That&rsquo;s why we need more than one. And after waiting for a fence, it is safe to reset. The same strategy as for uniform buffers.</p>
+</li>
+<li>
+<p>next, we try to get a command buffer. We keep track of available and used command buffers. These two lists are stored in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_data.rs">teapot::VukanData</a> and are called <code>available_command_buffers</code> and <code>used_command_buffers</code>. Actually, these are lists of lists - again, we have a separate collection for each frame in the flight. If <code>available_command_buffers</code> is not empty for the current frame, we simply get a buffer from it and mark the buffer as used by putting it in <code>used_command_buffers</code>. If <code>available_command_buffers</code> is empty, we allocate a set of new buffers and place them all in <code>available_command_buffers</code>.</p>
+</li>
+</ul>
+<p>Command pools <code>command_pools</code> are stored in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_data.rs">teapot::VukanData</a> and are created with the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/create_command_pools.rs">teapot::create_command_pools</a> function. Here we create <code>CONCURRENT_RESOURCE_COUNT</code> number of pools by calling the function <code>ash::Device::create_command_pool</code> . The pools are created with the flag <code>ash::vk::CommandPoolCreateFlags::TRANSIENT</code>, which means <em>&ldquo;that command buffers allocated from the pool will be short-lived, meaning that they will be reset or freed in a relatively short timeframe. This flag may be used by the implementation to control memory allocation behavior within the pool&rdquo;</em>.</p>
+<p>In the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/draw.rs">vulkan_draw::draw</a> module, a current command buffer is reset in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/reset_command_pool.rs">vulkan_draw::reset_command_pool</a> function by calling the <code>ash::Device::reset_command_pool</code> function. The <code>ash::vk::CommandPoolResetFlags::RELEASE_RESOURCES</code> flag provided to the function means <em>&ldquo;that resetting a command pool recycles all of the resources from the command pool back to the system&rdquo;</em>.</p>
+<p>In the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/draw.rs">vulkan_draw::draw</a> function, a command buffer is obtained by the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/get_command_buffer.rs">vulkan_draw::get_command_buffer</a> function. Here, a new buffer is allocated by calling the function <code>ash::DeviceV::allocate_command_buffers</code>. With the field <code>ash::vk::CommandBufferLevel::PRIMARY</code> we specify the level of the buffer. There are two levels of command buffers - primary and secondary. The Specification:</p>
+<blockquote>
+<p>There are two levels of command buffers - primary command buffers, which can execute secondary command buffers, and which are submitted to queues, and secondary command buffers, which can be executed by primary command buffers, and which are not directly submitted to queues.</p>
+</blockquote>
+<p>We use only primary command buffers in the application.</p>
+<p>Once we have the command buffer, we need to put it in a record state. A command buffer can be in one of several states, but individual commands can only be written to the buffer that is in the <code>Recording</code> state. For this purpose, we must <em>begin</em> the command buffer. This is done by calling the function <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/begin_command_buffer.rs">vulkan_draw::begin_command_buffer</a>. Here we call the function <code>ash::Device::begin_command_buffer</code> and specify the buffer usage as <code>ash::vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT</code>. This flag says <em>&ldquo;that each recording of the command buffer will only be submitted once, and the command buffer will be reset and recorded again between each submission&rdquo;</em>. You recall that we reset a buffer by resetting a command pool.</p>
+<p><strong>Render pass</strong></p>
+<p>Remember that drawing in <code>Vulkan</code> can only be done as part of a render pass. It is a must. For example, if you open the documentation for the <code>vkCmdDrawIndexed</code> command and scroll to the <code>Command Properties</code> section, you will notice that the command can only be called within a render pass. Also, some additional states are set at the beginning of a render pass. We begin a render pass by calling the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/begin_render_pass.rs">vulkan_draw::begin_render_pass</a> function. We start by filling the <code>ash::vk::RenderPassBeginInfo</code> structure:</p>
+<ul>
+<li><code>render_pass</code> - the render pass we want to begin.</li>
+<li><code>framebuffer</code> - remember how we created multiple framebuffers in the <a href="TODO">previous step</a> - one for each image in the swapchain. Now we tell that we want to draw into a swapchain image with index <code>image_index</code> we got earlier.</li>
+<li><code>render_area</code> - we want to draw into the entire surface.</li>
+<li><code>clear_values</code> - if you look at the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/create_render_pass.rs">create_render_pass</a> function, you will remember that the <code>load_op</code> of the single attachment (which is a swapchain image) is <code>ash::vk::AttachmentLoadOp:: CLEAR</code>. This means that we need to specify a clear value for it and the attachment will be set to that color. It is possible to have multiple attachments (render targets) and in this case we need to specify multiple clear values.</li>
+</ul>
+<p>We pass this info structure to the function <code>ash::Device::cmd_begin_render_pass</code>. Together with info we pass our command buffer. The argument <code>ash::vk::SubpassContents:: INLINE</code> simply says that we will continue to write commands to the provided buffer. The beginning and the ending of a render pass can only be called using the primary command buffer, but it is also possible to use secondary command buffers for commands within a render pass. In this case <code>ash::vk::SubpassContents::SECONDARY_COMMAND_BUFFERS</code> will be used and all commands on the primary buffer are forbidden until the end of the render pass or subpass.</p>
+<p><strong>Vieport and scissor</strong></p>
+<p>Recall how we used dynamic state when creating a <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/create_pipelines.rs">pipeline</a>. We set <code>ash::vk::DynamicState:: VIEWPORT</code> and <code>ash::vk::DynamicState:: SCISSOR</code>. Now before you call a draw command, this state should be satisfied. We set the vieport in the function <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/set_viewport.rs">vulkan_draw::set_viewport</a> and scissor in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/set_scissor.rs">vulkan_draw::set_scissor</a>.</p>
+<p><strong>Descriptors</strong></p>
+<p>Recall that so far we have not specified the actual resources we want to use for a particular frame. We have created the descriptor set layout that specifies the types of resources. But before we draw, we want to assign the right buffers to the right slots. To do this, we need to allocate descriptor sets and update descriptors. Descriptor management is similar to command buffer management - we have multiple descriptor pools - one for each frame in flight. First, we reset a current pool. Unlike resetting a command pool, which resets command buffers but does not release them, resetting a descriptor pool implicitly releases the descriptor sets allocated from that pool. We then allocate and update a new set. Again, we need multiple pools because we can not reset a pool until all previously assigned tasks have been completed.</p>
+<p>Descriptor pools are stored in the <code>descriptor_pools</code> field of the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_data.rs">teapot::VulkanData</a> structure and created using the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/create_descriptor_pools.rs">teapot::create_descriptor_pools</a> function. When we open the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/create_descriptor_set_layout.rs">teapot::create_descriptor_set_layout</a> function, we will recall that we need one descriptor set with 3 bindings - 2 for the storage buffers and 1 for the uniform buffer. We can find the same information in the shaders - our vertex and tessellation evaluation shaders declare sets and bindings. So when we create a pool, we can safely specify the number of sets as 1 and the number of descriptors as 2 and 1 for the different descriptor types. But in real life, we usually do not know how many descriptors we need to use in a given frame, as this number can vary. Therefore, a good strategy would be to create a pool that has enough space to hold many sets with many different descriptors. This is exactly what we do in the function:</p>
+<ul>
+<li>we have 2 pool sizes - one for 100 descriptors of type <code>ash::vk::DescriptorType::STORAGE_BUFFER</code> and another for 100 descriptors of type <code>ash::vk::DescriptorType::UNIFORM_BUFFER</code>.</li>
+<li>in create info we specify the maximum number of sets as 100.</li>
+<li>we create <code>CONCURRENT_RESOURCE_COUNT</code> number of pools.</li>
+</ul>
+<p>A pool is created by calling the function <code>ash::Device::create_descriptor_pool</code>.</p>
+<p>It is important to understand how pool sizes and maximum number of sets work. New descriptors can be allocated until there is enough space in the pool. Let us take our pool configuration as an example with 100 maximum sets, 100 storage descriptors, and 100 uniform descriptors. If we have a descriptor set layout with 1 storage and 1 uniform descriptor, we can allocate 100 sets. If another layout uses 50 storage descriptors, we can allocate only 2 sets - 50 * 2 = 100 - the maximum number of storage descriptors is reached. Or if a third layout uses 50 storage and 100 uniform descriptors, we can allocate only 1 set. If there is no more space in the pool, another pool should be created.</p>
+<p>Reseting a pool happens in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/reset_descriptor_pool.rs">vulkan_draw::reset_descriptor_pool</a> function. Here we call <code>ash::Device::reset_descriptor_pool</code> with the current descriptor pool.</p>
+<p>After we free the pool&rsquo;s space, we can allocate a descriptor set. As was described above, we need to handle a situation when the pool is full, but in our case, we know for sure that the allocation will succeed because we need only one set. We allocate a set in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/allocate_descriptor_set.rs">vulkan_draw::allocate_descriptor_set</a> function, where we call <code>ash::Device::allocate_descriptor_sets</code> function. We pass the current descriptor pool from which we want to allocate a set and the descriptor set layout. The function returns a vector of allocated sets, but since in the layout (and shaders) we declared a single set, we take the first (and only) element.</p>
+<p>With the newly allocated descriptor set, we need to update it with real data. I.e., we need to tell which resources go to which binding slots. We do this in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/update_descriptor_set.rs">vulkan_draw::update_descriptor_set</a> function. Recall that we have 3 buffers - control points, patch instances, and uniform. We create 3 <code>ash::vk::DescriptorBufferInfo</code> instances where we store a buffer with its data range. Notice how the first 2 buffers are passed directly, but a uniform buffer is selected from the list. This is because positions and data are static, but a uniform buffer needs to be updated every frame. And again, we select a buffer where it is safe to write in the current frame. Next, we create 3 <code>ash::vk::WriteDescriptorSet</code> instances where we specify a set to update, info, type, and a binding slot. We specified a type in so many places - when creating a buffer when created the descriptor set layout, and we still need to do it here as well. This is because objects in <code>Vulkan</code> are just handles and don&rsquo;t have a state. If we make a mistake, in the best case, we&rsquo;ll see nothing, and in the worst case, the system will crash. Luckily, the layers keep the state and can find any error we make. Finally, we call the <code>ash::Device::update_descriptor_sets</code> function, which updates the set with correct data pointers.</p>
+<p><strong>Uniform buffer</strong></p>
+<p>While the control points and patch data both hold ready-to-use information, a uniform buffer is empty - we never updated it. In the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/draw.rs">vulkan_draw::draw</a> function, we get a current uniform buffer (the same one we used to update a descriptor set above) and write a previously calculated matrix into it. We use the <code>cgmath</code> crate for the math. With the help of the <code>bytemuck</code> crate, we cast the matrix data to bytes and copy <code>16 * 4</code> bytes of data to the mapped memory.</p>
+<p>Recall that when we created the uniform buffers in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_data.rs">vulkan_data</a> back in <a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_2_resources/">step 3</a>, we used a memory location flag as <code>gpu_allocator::MemoryLocation::CpuToGpu</code>. The <code>gpu_allocator</code> crate guarantees that memory with this flag has <code>ash::vk::MemoryPropertyFlags::HOST_VISIBLE</code> and <code>ash::vk::MemoryPropertyFlags::HOST_COHERENT</code> properties. In other words, it guarantees memory coherency, and we do not need to flush caches manually.</p>
+<p><strong>Push constant</strong></p>
+<p>It was perfectly fine to write the tesselation level in a uniform buffer, but for learning purposes, we decided to set it via push constants. The push constants mechanism allows writing a small amount of data directly into a command buffer. We discussed this when we created a <a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_3_pipelines/">pipeline layout</a> where we declared a single float to be used in the tesselation control shader. We write the value by calling the <code>ash::Device::cmd_push_constants</code> function. Here we pass the pipeline layout, shader stage, offset (we have a single value so offset is 0), and the byte representation of the tesselation level. When the GPU starts executing this command buffer, it will copy this value to GPU registers, and this is how the data ends up on the device.</p>
+<p><strong>Binding</strong></p>
+<p>When we updated a descriptor set above, we just wrote where to find certain data for certain descriptors. We can have many descriptor sets for different draw calls, and we need to specify which one we want to use for the next draw call. All we need to do is bind the updated descriptor set by calling the <code>ash::Device::cmd_bind_descriptor_sets</code> function. As the function name suggests, we can bind multiple sets at once. We have one set, and we bind it to slot 0. Dynamic offsets (the last parameter) are used with dynamic-uniform or storage buffers which are not a part of these series.</p>
+<p>Next, we need to tell the GPU which state to use for the next draw call. We do it with the <code>ash::Device::cmd_bind_pipeline</code> function. Depending on the user input, the wireframe or solid pipeline is chosen.</p>
+<p>Though we used a descriptor set to specify buffers we want to use in the shaders, not all buffers are treated equally. Vertex and index buffers are special. When using a vertex shader, we can specify how we want to see data in a shader by providing a vertex input state. For example, we can tell that we want a single <code>u32</code> vertex value to become <code>vec4</code> (with the format <code>VK_FORMAT_R8G8B8A8_UNORM</code>) in the shader, which we can&rsquo;t do with uniform or storage buffers. On the other hand, the index buffer is a must-have for complex geometry. First of all, as you probably know, it allows reducing memory usage by using an index pointing to a vertex buffer. In this case, the vertex buffer will hold unique vertices, and any duplication will be handled by repeating indices in the index buffer. Another useful feature is vertex caching. If the GPU processes a vertex that already was calculated (and if it&rsquo;s in the cache), it will just get the data from the cache instead of running a shader one more time. For our application, we decided not to use a vertex shader. But we have the index buffer, which we bind with the <code>ash::Device::cmd_bind_index_buffer</code> function. We have a small number of patches with a small number of points, and 16-bit indices are enough, so together with the index buffer, we pass the <code>ash::vk::IndexType::UINT16</code> type.</p>
+<p><strong>Drawing</strong></p>
+<p>To tell the GPU to draw, we call the <code>ash::Device::cmd_draw_indexed</code> function. The word <em><code>indexed</code></em> in the name says that this command has to be used with an index buffer. We already bound the buffer, and now we want to draw <code>patch_point_count</code> indices from that buffer.</p>
+<p><strong>Ending render pass and command buffer</strong></p>
+<p>Every render pass that began must be ended. The same is with command buffers. We do it by calling <code>ash::Device::cmd_end_render_pass</code> and <code>ash::Device::end_command_buffer</code> functions.</p>
+<p><strong>Submiting</strong></p>
+<p>At this point, we recorded all commands necessary to draw a teapot. Now we need to send our command buffer to the GPU. We do it by submitting the buffer to a queue. Do you remember the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/vulkan_base/src/get_queue_family.rs">function</a> where we selected a queue family? Notice how we requested the queue that supports graphic operations. Now we submit the command buffer to that queue by calling the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/submit.rs">submit</a> function. Inside this function we call the function <code>ash::Device::queue_submit</code>. Here we pass a submit info where we specify:</p>
+<ul>
+<li><code>wait_semaphores</code> - the execution of the command buffer will not start until all these semaphores are in signaled state. We pass only one semaphore - <code>VulkanData::image_available_semaphore</code>. That is the same semaphore we used in the <code>get_image_index</code> function when got the next swapchain image index. Back then, we passed this semaphore into <code>ash::Device::acquire_next_image</code>, asking to set it to the signaled state as soon as the presentation engine finishes with the swapchain image. We shouldn&rsquo;t start to draw anything into the image until it&rsquo;s busy.</li>
+<li><code>wait_dst_stage_mask</code> - if we specified a semaphore, we must specify a pipeline stage where the GPU will wait for this semaphore. In our case, we wait in <code>ash::vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT</code> - <em>&quot; the stage of the pipeline after blending where the final color values are output from the pipeline&quot;</em>. In other words, the GPU will not write a final value into the image until the semaphore is in signaled state.</li>
+<li><code>cmd_buffers</code> - our recorded command buffer.</li>
+<li><code>signal_semaphores</code> - <em>&ldquo;the list of semaphores to be signaled once the commands specified in command buffers for this batch have completed execution&rdquo;</em>. We have a semaphore that controls when the GPU is allowed to write to a swapchain image. But we also want to present this image, i.e., show it on the screen. And we want to do it when the image is complete. So we need another semaphore for this that should signal when we can present. This semaphore is defined in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_data.rs">VulkanData</a> struct and called <code>VulkanData::rendering_finished_semaphore</code>. We create it in the function <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/vulkan_utils/src/create_semaphore.rs">vulkan_utils::create_semaphore</a> and it&rsquo;s identical to the <code>VulkanData::image_available_semaphore</code>.</li>
+</ul>
+<p>We pass the Submit info into the <code>ash::Device::queue_submit</code> function together with the queue and a fence. That is the fence that we&rsquo;ll wait in the <code>vulkan_draw::wait_resource_available</code> function two frames later.</p>
+<p><strong>Presenting</strong></p>
+<p>When a swapchain is ready, we want to present it. In the function <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/present.rs">vulkan_draw::present</a> we create a <code>ash::vk::PresentInfoKHR</code> struct with the following data:</p>
+<ul>
+<li><code>wait_semaphores</code> - the <code>rendering_finished_semaphore</code> semaphore from the previous step.</li>
+<li><code>swapchains</code> - our swapchain.</li>
+<li><code>indices</code> - the image index in the swapchain.</li>
+</ul>
+<p>We pass the info into the <code>ash::extensions::khr::Swapchain::queue_present</code> function. Also we pass the queue. This queue should be capable of presentation to the surface. In <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/vulkan_base/src/get_queue_family.rs">get_queue_family</a> function we made sure that our queue can do it by calling <code>ash::extensions::khr::Surface::get_physical_device_surface_support</code> function.</p>
+<blockquote>
+<p><strong>NOTE:</strong> interesting that there is a semaphore to wait, but no way to pass a stage where to wait for it. This is one of the rare cases where the API synchronizes automatically: <em>&ldquo;Any writes to memory backing the images referenced by the <code>pImageIndices</code> and <code>pSwapchains</code> members of <code>pPresentInfo</code>, that are available before <code>vkQueuePresentKHR</code> is executed, are automatically made visible to the read access performed by the presentation engine. This automatic visibility operation for an image happens-after the semaphore signal operation, and happens-before the presentation engine accesses the image&rdquo;</em>.</p>
+</blockquote>
+<p>The <code>queue_present</code> function can return many different results. We are handling the codes <code>ash::vk::Result::SUBOPTIMAL_KHR</code> and <code>ash::vk::Result::ERROR_OUT_OF_DATE_KHR</code>, which are returned when the swapchain was resized. In this case, the <code>draw</code> function returns <code>Ok(false)</code>, and in the next frame, the swapchain will be rebuilt.</p>
+<p><strong>Clean</strong></p>
+<p>We created some new objects and all they should be destroyed on application exit. As usual, we do it in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_data.rs">VulkanData::clean</a> function.</p>
+<p><strong>Result</strong></p>
+<p>It&rsquo;s finally done! If we now run the application, we&rsquo;ll see our teapot! The rendering mode can be changed to wireframe or solid by pressing a spacebar. The tesselation level can be increased or decreased by pressing <code>+</code> or <code>-</code> on the Numpad. Here&rsquo;s the screenshot of the running application:</p>
+<a href="#images%2fno_depth.png">
+    <img src=images/no_depth.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/no_depth.png">
+  <img src=images/no_depth.png>
+</a>
+<p>But wait, there is something wrong - if we look at the spout, we&rsquo;ll see that it&rsquo;s in the wrong place. And if we continue to look more carefully, we&rsquo;ll see that some patches that should be on the backside appear in front of the model. What&rsquo;s going on? Of course, we never dealt with the depth. We completely forgot about a depth buffer. No worries, next time, we&rsquo;ll fix that.</p>
+<p><strong>Conclusion</strong></p>
+<p>GPU does its job by executing a batch of commands, which are recorded in a command buffer. Command buffers are allocated from a command pool, which is considered a fast operation, so it&rsquo;s ok to allocate new buffers every frame. These command buffers are submitted to a queue. Some commands work only with specific queue types.</p>
+<p>Telling the GPU which resource to use in a shader is done through descriptors. One descriptor holds a type of resource and a pointer to data. Descriptors submitted to the gpu via descriptor sets. New descriptors are allocated from descriptor pools. In opposite to a command pool where the number of allocations is unknown, it&rsquo;s required to specify the number of sets and the number of descriptors the pool can hold. Allocating from a pool is also considered a fast operation. Before binding a set, descriptors have to be updated with the actual data. This is considered an expensive operation, and some caching mechanisms could be a good idea.</p>
+<p>It&rsquo;s important to record command buffers and update descriptor sets when they are not in use by the GPU. For this, synchronization is needed, for example, a fence that tells the host when the GPU is finished with a buffer or a descriptor set.</p>
+<p>Writing to a framebuffer should be done when a swapchain image is not used by the presentation engine. Similarly, the presenting should be done when the image is completely written. Such kind synchronizations are done with semaphores.</p>
+<p>Let&rsquo;s update the diagram with all the things we have done today:</p>
+<a href="#images%2fteapot_app_5.png">
+    <img src=images/teapot_app_5.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/teapot_app_5.png">
+  <img src=images/teapot_app_5.png>
+</a>
+<p>Notice how everything is tied now. The descriptor set points to correct memory areas, and shaders use these areas to get data. Stating a render pass ties the render pass object and the framebuffer, and now the fragment shader knows where to write pixel data. The command buffer provides a lot of information, including push constant and index buffer information.</p>
+<p><strong>What next</strong></p>
+<p>Today we got the first image. It&rsquo;s not perfect because the polygons are drawn out of order. In the next last step, we&rsquo;ll add the depth buffer to fix the problem.</p>
+<p>The source code for this step is <a href="https://github.com/nikitablack/rust_vulkan_teapot/tree/step_5">here</a>.</p>
+<p>You can subscribe to my <a href="https://twitter.com/nikita_cherniy">Twitter account</a> to be notified when the new post is out or for comments and suggestions. If you found a bug, please <a href="https://github.com/nikitablack/rust_vulkan_teapot/issues">raise an issue</a>. If you have a question, you can start a discussion <a href="https://github.com/nikitablack/rust_vulkan_teapot/discussions">here</a>.</p>
+      
+      <div class="related">
+</div>
+      
+    </div>
+    
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
+    
+      <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
+    
+  </div>
+</section>
+
+
+
+</body>
+</html>
+
