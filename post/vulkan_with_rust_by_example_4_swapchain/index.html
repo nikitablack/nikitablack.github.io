@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"  lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+<title>Vulkan with rust by example 4. Swapchain. | Here should be the blog Title</title>
+
+
+
+<link href="http://nikitablack.github.io/index.xml" rel="alternate" type="application/rss+xml" title="Here should be the blog Title" />
+
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="stylesheet" href="/css/css_lightbox.css"><link rel='stylesheet' href='http://nikitablack.github.io/css/custom.css'><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="canonical" href="http://nikitablack.github.io/post/vulkan_with_rust_by_example_4_swapchain/">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+<section class="section">
+  <div class="container">
+    <nav id="nav-main" class="nav">
+      <div id="nav-name" class="nav-left">
+        <a id="nav-anchor" class="nav-item" href="http://nikitablack.github.io/">
+          <h1 id="nav-heading" class="title is-4">Here should be the blog Title</h1>
+        </a>
+      </div>
+      <div class="nav-right">
+        <nav id="nav-items" class="nav-item level is-mobile"><a class="level-item" aria-label="twitter" href='https://twitter.com/nikita_cherniy'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="github" href='https://github.com/nikitablack'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="email" href='mailto:mynameisnikitablack@gmail.com'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+    
+  </svg></i>
+            </span>
+          </a></nav>
+      </div>
+    </nav>
+
+    <nav class="nav">
+      
+
+      
+    </nav>
+
+  </div>
+  <script src="/js/navicon-shift.js"></script>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="subtitle tags is-6 is-pulled-right">
+      
+    </div>
+    <h2 class="subtitle is-6">January 22, 2022</h2>
+    <h1 class="title">Vulkan with rust by example 4. Swapchain.</h1>
+    
+    <div class="content">
+      <p>At this point, we have shaders, static data is uploaded to the GPU, the pipelines are set up, and we&rsquo;re almost ready to start to draw. Except that we don&rsquo;t have an image where we can draw. An image is just memory, and this entire step is dedicated to these special images for drawing - swapchain images.</p>
+<p>Technically speaking, we could create a <em>usual</em> image and draw into it. But after we finish there&rsquo;s a question about how to display it on the screen? That is where OS-specific stuff comes onto the scene. An operating system can have a desktop manager which is responsible for windows compositing. It&rsquo;s quite complicated and requires a Ph.D. to understand how all that works, but luckily we don&rsquo;t need to go into the details to use it. What is important for us is the so-called swapchain. When we create one, <code>Vulkan</code> creates a necessary amount of images with all necessary parameters. Since this swapchain-thing is very platform-specific, it&rsquo;s not in the core of the API and should be enabled via extensions. To enable it we add the extension name <code>vk::ash::extensions::khr::Swapchain::name()</code> (or simply <code>&quot;VK_KHR_swapchain&quot;</code> string) to the device extensions list in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/teapot/src/main.rs">main.rs</a> which later will be used in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/vulkan_base/src/lib.rs">vulkan_base</a> to create a logical device.</p>
+<p><strong>Swapchain</strong></p>
+<p>We move to <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/vulkan_base/src/lib.rs">vulkan_base</a> workspace. Since swapchain is a generic entity, it can be kept in the library. As was discussed before, swapchain-related functions are not part of the core and should be loaded separately. In <code>C++</code>, we do it by obtaining a function pointer, but in <code>Rust</code> with <code>ash</code>, we just create an object which knows where to find the code (like we did with <code>DebugUtils</code> and <code>Surface</code>). <code>ash::khr::Swapchain</code> is such an object. Here are all the new objects of the <code>vulkan_base::VulkanBase</code> struct:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#bbb">  </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span>swapchain_loader: <span style="color:#0a8;font-weight:bold">khr</span>::Swapchain,<span style="color:#bbb">
+</span><span style="color:#bbb">  </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span>surface_capabilities: <span style="color:#0a8;font-weight:bold">vk</span>::SurfaceCapabilitiesKHR,<span style="color:#bbb">
+</span><span style="color:#bbb">  </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span>surface_extent: <span style="color:#0a8;font-weight:bold">vk</span>::Extent2D,<span style="color:#bbb">
+</span><span style="color:#bbb">  </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span>swapchain: <span style="color:#0a8;font-weight:bold">vk</span>::SwapchainKHR,<span style="color:#bbb">
+</span><span style="color:#bbb">  </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span>swapchain_images: <span style="color:#366">Vec</span><span style="color:#555">&lt;</span>vk::Image<span style="color:#555">&gt;</span>,<span style="color:#bbb">
+</span><span style="color:#bbb">  </span><span style="color:#069;font-weight:bold">pub</span><span style="color:#bbb"> </span>swapchain_image_views: <span style="color:#366">Vec</span><span style="color:#555">&lt;</span>vk::ImageView<span style="color:#555">&gt;</span>,</code></pre></div>
+<ul>
+<li><code>swapchain_loader</code> - loader for swapchain functions. We create it in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/vulkan_base/src/create_swapchain_loader.rs">vulkan_base::swapchain_loader</a> function.</li>
+<li><code>surface_capabilities</code> - well, surface capabilities. They hold some useful information such as min/max extent, min/max image count, and others. We get the capabilities in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/vulkan_base/src/get_surface_capabilities.rs">vulkan_base::get_surface_capabilities</a> function.</li>
+<li><code>surface_extent</code> - we need to know the size of the surface to create a swapchain. In the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/vulkan_base/src/get_surface_extent.rs">vulkan_base::get_surface_extent</a> we calculate the size. Notice how the code handles special values stored in capabilities. That is what the Specification says regarding this:</li>
+</ul>
+<blockquote>
+<p><code>VkSurfaceCapabilitiesKHR::currentExtent</code> is the current width and height of the surface, or the special value (0xFFFFFFFF, 0xFFFFFFFF) indicating that the surface size will be determined by the extent of a swapchain targeting the surface.</p>
+</blockquote>
+<ul>
+<li>
+<p><code>swapchain</code> - the swapchain itself. We create it in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/vulkan_base/src/create_swapchain.rs">vulkan_base::create_swapchain</a> function. Let&rsquo;s go step by step with the parameters of the <code>ash::vk::SwapchainCreateInfoKHR</code> info:</p>
+<ul>
+<li><code>surface</code> - the object we obtained in the earlier step. It was needed to select a physical device, and now we need it again to create a swapchain.</li>
+<li><code>min_image_count</code> - the minimum number of images the API should create when the swapchain is created. You probably heard about double or triple buffering. If we don&rsquo;t want to stall, we need multiple images - while one of the images is presenting, we can draw to another. In the app, we want at least 3 images. There&rsquo;s no guarantee that a GPU can handle this number, so we need to take surface capabilities into account.</li>
+<li><code>image_format</code> - the format of the surface images. We already got it when got the physical device.</li>
+<li><code>image_color_space</code> -  got it as well when got the physical device.</li>
+<li><code>image_extent</code> - discussed above.</li>
+<li><code>image_array_layers</code> - we&rsquo;re using a single layer.</li>
+<li><code>image_usage</code> - the images will be used as <code>ash::vk::ImageUsageFlags::COLOR_ATTACHMENT</code>, i.e. we&rsquo;ll draw into it. Recall, when we created the render pass, we specified properties of a color attachment for the subpass. We want one of the swapchain images to be used in a render pass. We&rsquo;ll see later how an image&rsquo;s physical memory and render passes are bound together.</li>
+<li><code>image_sharing_mode</code> - used with multiple queues. We have a single queue, hence <code>ash::vk::SharingMode::EXCLUSIVE</code>.</li>
+<li><code>pre_transform</code> - used on mobile devices and relates to a screen rotation. We&rsquo;re not handling this anyhow in the app and just passing what we have in the capabilities.</li>
+<li><code>composite_alpha</code> - in theory, we can make our <code>Vulkan</code> window semi-transparent on some systems. In the app we use <code>ash::vk::CompositeAlphaFlagsKHR::OPAQUE</code>.</li>
+<li><code>present_mode</code> - we already got it when got the physical device.</li>
+<li><code>clipped</code> - tells how the OS will handle pixels that are hidden (by another overlapping window, for example). <code>true</code> means that the pixels can be used by other applications. Since we&rsquo;re not reading back and/or examining pixels, we don&rsquo;t care too much about this field.</li>
+<li><code>old_swapchain</code> - it&rsquo;s important to understand that every time we resize a window, an OS invalidates the images, and we need to recreate the swapchain. Providing the old swapchain can help in theory to reuse resources, speed up the creation.</li>
+</ul>
+<p>The filled info structure we provide to <code>ash::extensions::khr::Swapchain::create_swapchain</code> function. After that, we need to destroy the old swapchain if it existed.</p>
+</li>
+<li>
+<p><code>swapchain_images</code> - if the swapchain creation was successful, we can get the images that the API created. We do it in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/vulkan_base/src/get_swapchain_images.rs">vulkan_base::get_swapchain_images</a> function.</p>
+</li>
+<li>
+<p><code>swapchain_image_views</code> - according to the Specification, <em>image objects are not directly accessed by pipeline shaders for reading or writing image data. Instead, image views_representing contiguous ranges of the image subresources and containing additional metadata are used for that purpose. Views <strong>must</strong> be created on images of compatible types, and <strong>must</strong> represent a valid subset of image subresources.</em></p>
+<p>In other words, we don&rsquo;t supply an image directly to an API function. We need a view instead. In the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/vulkan_base/src/create_swapchain_image_views.rs">vulkan_base::create_swapchain_image_views</a> we create views. In the create info struct, we specify an <code>image</code> we want to create a view for, <code>view_type</code> is <code>ash::vk::ImageType::TYPE_2D</code>, <code>format</code> is the same format as image format, in <code>components</code> we can remap color channels, but we don&rsquo;t do it in the app, and in <code>subresource_range</code> we specify which part of the image to use - our image holds color and has a single mip level and a single array layer. Finally, we call the <code>ash::Device::create_image_view</code> function to create an image view and repeat this for every swapchain image.</p>
+</li>
+</ul>
+<p>These were the steps to create a swapchain. As was discussed earlier, a new swapchain has to be recreated every time the window is resized. So we move all the code to the <code>vaulkan_base::resize</code> function.</p>
+<blockquote>
+<p><strong>NOTE:</strong> specifying the desired number of images during swapchain creation doesn&rsquo;t mean that the runtime will create that exact amount of objects. Recall that the property is called <code>min_image_count</code> (notice the <code>min</code> prefix), and the real number of images can be different from what we requested.</p>
+</blockquote>
+<p><strong>Framebuffers</strong></p>
+<p>I&rsquo;m pretty sure that at this point, you already know that creating an object in <code>Vulkan</code> doesn&rsquo;t mean that we&rsquo;re done. With swapchain, we allocated the necessary amount of memory. Now, we need somehow to tell the API about these images' existence.</p>
+<p>If we&rsquo;d create a <em>normal</em> image to sample from the shader, we&rsquo;d do the same things we did with buffers - create an image, allocate memory, bind image and memory, allocate a descriptor and update it with the image information, and finally bind the descriptor to a descriptor set. But when dealing with an image where we suppose to render, we make different steps. In the <a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_3_pipelines/">previous step</a>, we created a render pass where we specified a single color attachment. Our swapchain image will serve as this attachment. In <code>Vulkan</code>, we use framebuffers to specify render targets, and we create them in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/teapot/src/vulkan/create_framebuffers.rs">teapot::create_framebuffers</a> function.</p>
+<p>The first thing to note is that we need multiple framebuffers since we have multiple swapchain images - every framebuffer will refer to a different image. Next, we fill <code>ash::vk::FramebufferCreateInfo</code> struct:</p>
+<ul>
+<li><code>render_pass</code> - render passes operate in conjunction with framebuffers. Here we pass the render pass we created earlier.</li>
+<li><code>attachments</code> - this is where we need an image. For every attachment in a render pass, we need to provide an image view. Recall that our render pass declared a single attachment, hence we&rsquo;re setting a single view. Wonder what happens if we specify the wrong number of views?</li>
+</ul>
+<blockquote>
+<p>Validation Error: vkCreateFramebuffer(): VkFramebufferCreateInfo attachmentCount of 2 does not match attachmentCount of 1 of VkRenderPass 0x1d000000001d[render pass] being used to create Framebuffer. The Vulkan spec states: attachmentCount must be equal to the attachment count specified in renderPass</p>
+</blockquote>
+<ul>
+<li><code>width</code> and <code>height</code> - we use the same size as the swapchain extent. Technically we can create a frame buffer smaller than the size of the attachments but not bigger.</li>
+<li><code>layers</code> - we have a single layer.</li>
+</ul>
+<p>We create a framebuffer with the <code>ash::Device::create_framebuffer</code> function.</p>
+<p>Since framebuffers as render passes are application specific we add them to the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/teapot/src/vulkan/vulkan_data.rs">VulkanData</a> struct. And since the framebuffers depend on the swapchain images they need to be recreated every time the swapchain recreated. We hanle it in <code>VulkanData::resize</code> function.</p>
+<p>Also, we add one more variable <code>teapot::VulkanData::should_resize</code> of <code>bool</code> type. We don&rsquo;t want to react to a window size change immediately. For example, the resize event can happen multiple times per frame, so it would be a good idea to postpone the swapchain rebuild until necessary. For that, we mark that we need a new swapchain by setting <code>should_resize</code> to <code>true</code>, and just before rendering a frame, we check if we need to handle the resize event. This check happens in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/teapot/src/main.rs">main</a> function in the loop. Here we check for the variable, and if it&rsquo;s true, we resize both <code>vulkan_base::VulkanBase</code> (which rebuilds the swapchain) and <code>teapot::VulkanData</code> (which rebuilds framebuffers) structs.</p>
+<p><strong>Clean</strong></p>
+<p>As usual, in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_3/teapot/src/vulkan/vulkan_data.rs">teapot::clean</a> function, we handle framebuffers, and in the [vulkan_base::clean] function, we handle the swapchain and the image views.</p>
+<p><strong>Conclusion</strong></p>
+<p>To present something in the window, we have to create special images. We do it by creating a swapchain. Together with a swapchain, <code>Vulkan</code> will create a necessary amount of swapchain images. All rendering happens in a render pass. A render pass has some sort of slots for different kinds of attachments (color, input, depth-stencil). We set the actual images to these slots via framebuffer. For every render target, we need a new framebuffer, but the render pass can be the same. If the window surface was changed, the swapchain should be recreated. Since framebuffers depend on swapchain images, they should be recreated too.</p>
+<p>Let&rsquo;s look at the diagram:</p>
+<a href="#images%2fteapot_app_4.png">
+    <img src=images/teapot_app_4.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/teapot_app_4.png">
+  <img src=images/teapot_app_4.png>
+</a>
+<p>We can see a render pass from the previous step - it&rsquo;s still not connected to anything, it just describes what types of images we plan to use when we draw. Also, we see 3 swapchain images and one of the framebuffers pointing to an image.</p>
+<p><strong>What next</strong></p>
+<p>Today we created the actual surface to draw into. We have all the resources uploaded to the GPU and waiting to be used. Can we finally draw? Yes! In the next step, the empty-window seal will be broken, and we will finally do what we came here for.</p>
+<p>The source code for this step is <a href="https://github.com/nikitablack/rust_vulkan_teapot/tree/step_4">here</a>.</p>
+<p>You can subscribe to my <a href="https://twitter.com/nikita_cherniy">Twitter account</a> to be notified when the new post is out or for comments and suggestions. If you found a bug, please <a href="https://github.com/nikitablack/rust_vulkan_teapot/issues">raise an issue</a>. If you have a question, you can start a discussion <a href="https://github.com/nikitablack/rust_vulkan_teapot/discussions">here</a>.</p>
+      
+      <div class="related">
+</div>
+      
+    </div>
+    
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
+    
+      <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
+    
+  </div>
+</section>
+
+
+
+</body>
+</html>
+
