@@ -82,18 +82,7 @@
     
     <div class="content">
       <p>Today we&rsquo;ll fight with the final boss and save the princess. We&rsquo;ll finally see our teapot on the screen.</p>
-<p>Let&rsquo;s remember what we did - we initialized <code>Vulkan</code>, created shaders, created resources and uploaded data on the GPU, created pipelines, swapchain, and framebuffers.</p>
-<p>Here&rsquo;s a snapshot of what we have so far:</p>
-<a href="#images%2fteapot_app_5.drawio.png">
-    <img src=images/teapot_app_5.drawio.png class="thumbnail">
-</a>
-</br>
-  
-
-<a href="#_" class="lightbox" id="images/teapot_app_5.drawio.png">
-  <img src=images/teapot_app_5.drawio.png>
-</a>
-<p>In this step, we&rsquo;ll use all this information and instruct the GPU to execute the shaders. The <code>draw</code> function lives in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/draw.rs">draw.rs</a> file in the <code>teapot</code> workspace. And here are the actions we need to take to draw our object:</p>
+<p>Let&rsquo;s remember what we did - we initialized <code>Vulkan</code>, created shaders, created resources and uploaded data on the GPU, created pipelines, swapchain, and framebuffers. In this step, we&rsquo;ll use all this information and instruct the GPU to execute the shaders. The <code>draw</code> function lives in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/draw.rs">draw.rs</a> file in the <code>teapot</code> workspace. And here are the actions we need to take to draw our object:</p>
 <ol>
 <li>We have multiple images in the swapchain. We need to find the index of the next available image in the swapchain - it will be used by some functions.</li>
 <li>We have multiple resources in flight - we need this because we don&rsquo;t want to wait until the GPU is done with a previous frame, so we prepare another meanwhile. But since the CPU may finish its job faster, we have to wait until the resources are safe to reuse.</li>
