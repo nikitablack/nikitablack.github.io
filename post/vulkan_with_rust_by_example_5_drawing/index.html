@@ -82,6 +82,15 @@
     
     <div class="content">
       <p>Today we&rsquo;ll fight with the final boss and save the princess. We&rsquo;ll finally see our teapot on the screen.</p>
+<ol start="0">
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_0_introduction/">Introduction</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_1_shaders/">Shaders</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_2_resources/">Resources</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_3_pipelines/">Pipelines</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_4_swapchain/">Swapchain</a></li>
+<li>Drawing</li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_6_fixing_depth/">Depth Buffer</a></li>
+</ol>
 <p>Let&rsquo;s remember what we did - we initialized <code>Vulkan</code>, created shaders, created resources and uploaded data on the GPU, created pipelines, swapchain, and framebuffers. In this step, we&rsquo;ll use all this information and instruct the GPU to execute the shaders. The <code>draw</code> function lives in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_5/teapot/src/vulkan/vulkan_draw/draw.rs">draw.rs</a> file in the <code>teapot</code> workspace. And here are the actions we need to take to draw our object:</p>
 <ol>
 <li>We have multiple images in the swapchain. We need to find the index of the next available image in the swapchain - it will be used by some functions.</li>

@@ -82,6 +82,15 @@
     
     <div class="content">
       <p>In the <a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_5_drawing/">previous step</a>, we finally got our first image. But unfortunately, it was broken - the polygons were drawn in the incorrect order. I omit the depth buffer management to make the complex Vulkan a little bit simpler. Also, I wanted to show how to change the existing renderer. With all the knowledge we have, it should be quite simple.</p>
+<ol start="0">
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_0_introduction/">Introduction</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_1_shaders/">Shaders</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_2_resources/">Resources</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_3_pipelines/">Pipelines</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_4_swapchain/">Swapchain</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_5_drawing/">Drawing</a></li>
+<li>Depth Buffer</li>
+</ol>
 <p>As you may know, the depth buffer is a special image where the GPU writes the depth information when rasterizes polygons. In this step, we&rsquo;ll create that image and adjust the pipeline to use it.</p>
 <p>The best way to see what was changed is to compare this and previous steps in git. Github allows you to do it directly in a browser. You can check it <a href="https://github.com/nikitablack/rust_vulkan_teapot/compare/step_5...step_6">here</a>. And these are the steps we need:</p>
 <ul>

@@ -82,6 +82,15 @@
     
     <div class="content">
       <p>At this point, we have shaders, static data is uploaded to the GPU, the pipelines are set up, and we&rsquo;re almost ready to start to draw. Except that we don&rsquo;t have an image where we can draw. An image is just memory, and this entire step is dedicated to these special images for drawing - swapchain images.</p>
+<ol start="0">
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_0_introduction/">Introduction</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_1_shaders/">Shaders</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_2_resources/">Resources</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_3_pipelines/">Pipelines</a></li>
+<li>Swapchain</li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_5_drawing/">Drawing</a></li>
+<li><a href="https://nikitablack.github.io/post/vulkan_with_rust_by_example_6_fixing_depth/">Depth Buffer</a></li>
+</ol>
 <p>Technically speaking, we could create a <em>usual</em> image and draw into it. But after we finish there&rsquo;s a question about how to display it on the screen? That is where OS-specific stuff comes onto the scene. An operating system can have a desktop manager which is responsible for windows compositing. It&rsquo;s quite complicated and requires a Ph.D. to understand how all that works, but luckily we don&rsquo;t need to go into the details to use it. What is important for us is the so-called swapchain. When we create one, <code>Vulkan</code> creates a necessary amount of images with all necessary parameters. Since this swapchain-thing is very platform-specific, it&rsquo;s not in the core of the API and should be enabled via extensions. To enable it we add the extension name <code>vk::ash::extensions::khr::Swapchain::name()</code> (or simply <code>&quot;VK_KHR_swapchain&quot;</code> string) to the device extensions list in the <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/teapot/src/main.rs">main.rs</a> which later will be used in <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/vulkan_base/src/lib.rs">vulkan_base</a> to create a logical device.</p>
 <p><strong>Swapchain</strong></p>
 <p>We move to <a href="https://github.com/nikitablack/rust_vulkan_teapot/blob/step_4/vulkan_base/src/lib.rs">vulkan_base</a> workspace. Since swapchain is a generic entity, it can be kept in the library. As was discussed before, swapchain-related functions are not part of the core and should be loaded separately. In <code>C++</code>, we do it by obtaining a function pointer, but in <code>Rust</code> with <code>ash</code>, we just create an object which knows where to find the code (like we did with <code>DebugUtils</code> and <code>Surface</code>). <code>ash::khr::Swapchain</code> is such an object. Here are all the new objects of the <code>vulkan_base::VulkanBase</code> struct:</p>
