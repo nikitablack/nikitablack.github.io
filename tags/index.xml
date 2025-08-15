@@ -6,6 +6,10 @@
     <description>Recent content in Tags on Here should be the blog Title</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <copyright>&amp;copy; &lt;a href=&#34;http://nikitablack.github.io/&#34;&gt;nikitablack&lt;/a&gt; 2021</copyright><atom:link href="http://nikitablack.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <copyright>&amp;copy; &lt;a href=&#34;http://nikitablack.github.io/&#34;&gt;nikitablack&lt;/a&gt; 2021</copyright>
+    
+	<atom:link href="http://nikitablack.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    
+    
   </channel>
 </rss>

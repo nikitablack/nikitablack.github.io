@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"  lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    }
+  };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+
+<title>Hello, Neural Network! | Here should be the blog Title</title>
+
+
+
+<link href="http://nikitablack.github.io/index.xml" rel="alternate" type="application/rss+xml" title="Here should be the blog Title" />
+
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="stylesheet" href="/css/css_lightbox.css"><link rel='stylesheet' href='http://nikitablack.github.io/css/custom.css'><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="canonical" href="http://nikitablack.github.io/post/hello_neural_network/">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+<section class="section">
+  <div class="container">
+    <nav id="nav-main" class="nav">
+      <div id="nav-name" class="nav-left">
+        <a id="nav-anchor" class="nav-item" href="http://nikitablack.github.io/">
+          <h1 id="nav-heading" class="title is-4">Here should be the blog Title</h1>
+        </a>
+      </div>
+      <div class="nav-right">
+        <nav id="nav-items" class="nav-item level is-mobile"><a class="level-item" aria-label="twitter" href='https://twitter.com/nikita_cherniy'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="github" href='https://github.com/nikitablack'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="email" href='mailto:mynameisnikitablack@gmail.com'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+    
+  </svg></i>
+            </span>
+          </a></nav>
+      </div>
+    </nav>
+
+    <nav class="nav">
+      
+
+      
+    </nav>
+
+  </div>
+  <script src="/js/navicon-shift.js"></script>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="subtitle tags is-6 is-pulled-right">
+      
+    </div>
+    <h2 class="subtitle is-6">August 14, 2025</h2>
+    <h1 class="title">Hello, Neural Network!</h1>
+    
+    <div class="content">
+      <p>I don&rsquo;t remember when AI became a big thing. It didn&rsquo;t happen suddenly, but it did happen fast. Three or four years ago, my friend - a big AI fan but not a programmer - told me he didn’t need to learn programming languages because <code>ChatGPT</code> could write programs. I asked him to create a simple ping-pong game with it; the language didn’t matter. He couldn’t - the tool didn’t understand what he wanted, produced incorrect code, and it was impossible to tell it to fix just that specific part. I told my friend that AI was a cool toy, nothing more. Oh boy, how wrong I was. Now, in 2025, my friend launches multiple agents that do tons of work for him. So I thought: now it’s time to learn how this thing works. Sure, I had some idea of how it’s done, and of course I’m a <code>ChatGPT</code> (and other network) user. But I want to understand exactly how the numbers work together to produce an answer. The first step in my journey - as usual in programming - starts with writing a “Hello, World!” program. For a neural network, that’s handwritten digit recognition, which I’ll implement in C++. I will compare different technologies and measure their performance - pure <code>C++</code>, <code>SIMD</code>, <code>CUDA</code>, and, if I don’t burn out, <code>Python</code>. Ultimately, though, my goal is to run it with <code>Vulkan</code>. Why <code>Vulkan</code>? Well, because:</p>
+<ul>
+<li>It&rsquo;s <strong>VERY</strong> low-level, which gives precise GPU control. I can select any type of memory I want and fine-tune synchronization (though in this app I’ll use just the basics).</li>
+<li>It runs on a huge number of devices — <code>NVIDIA</code>, <code>AMD</code>, <code>Intel</code>, <code>Qualcomm</code>, etc. - and operating systems. Even the <code>Raspberry Pi</code> supports it out of the box.</li>
+<li>It’s certified for critical safety systems (though that’s not the focus of this app).</li>
+</ul>
+<blockquote>
+<p><strong>NOTE:</strong> And yeah, I will not use AI to generate code for me. Sure, I’ll ask how to do certain things, but all the code will be written the old-school way - by hand and with love.</p>
+</blockquote>
+<h2 id="another-mnist-dataset-recognition-tutorial">Another MNIST dataset recognition tutorial?</h2>
+<p>No, this will not be a tutorial on how a network works. I will not explain what forward or backward propagation is, why we need biases, or what an activation function does. There are tons - no, <strong>TOOOONS</strong> - of educational materials on <code>YouTube</code>. As usually happens with math explanations, different people build different abstractions in their heads, and if examples with apples work for somebody, for others it’s a complete miss. I see it with my children - an attempt to explain some concept the way I see it simply does not work; I need to find an individual approach. That’s the reason I will not try to explain these concepts - at least not today. Instead, I’ll document the high-level process of implementing it in <code>C++</code> and how to run it on a <code>GPU</code>.</p>
+<p>Another goal is to understand why neural network training and GPUs almost always come together. I’ll implement multiple versions of the same program and measure their execution time.</p>
+<h2 id="naive-attempt">Naive attempt</h2>
+<p>I usually start with a naive, brute-force approach - just to make the thing work. I’ll do the same this time. In my first version, I’ll use standard <code>std::vector</code> containers and perform the math by iterating over them directly. On top of that, I’ll take a straightforward <em>OOP</em> route: a <code>Neuron</code> class, a <code>Layer</code> class, and finally a <code>NeuralNetwork</code> class.</p>
+<blockquote>
+<p><strong>NOTE:</strong> This implementation is <strong>NOT</strong> meant to be a general-purpose library. It’s a one-off application tailored for a single dataset, which, by the way, is embedded directly into the executable to avoid any runtime loading overhead.</p>
+</blockquote>
+<p>And here’s the funny part - I asked <code>ChatGPT</code> a <strong>LOT</strong> about how to write a network. So, a human created AI… and now AI is helping a human create AI.</p>
+<a href="#images%2fhello_nn_1.jpg">
+    <img src=images/hello_nn_1.jpg class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/hello_nn_1.jpg">
+  <img src=images/hello_nn_1.jpg>
+</a>
+<p>And one of the first things it recommended was to use <code>double</code> for high precision. I’m not sure why - the input values for both the training and test datasets are in the <code>[0.0–1.0]</code> range, and so are the weights and biases. A 32-bit <code>float</code> should be more than enough. Besides, <code>GPU</code>s really like <code>floats</code>. In fact, as far as I know, there’s no way to feed 64-bit data into <code>NVIDIA</code>’s tensor cores.</p>
+<p>Still, for the sake of science (and possible <em>“I told you so”</em> moments), I’ll make precision a compile-time option so I can switch between <code>float</code> and <code>double</code> as needed:</p>
+<pre><code>#ifdef USE_DOUBLE
+using Float = double;
+#else
+using Float = float;
+#endif
+</code></pre><p>With that, the <code>Neuron</code> class has the following signature:</p>
+<pre><code>class Neuron {
+public:
+    Neuron() = default;
+    Neuron(size_t inputCountArg) noexcept;
+
+public:
+    Float value{0.0};
+    Float bias{0.0};
+    std::vector&lt;Float&gt; weights{};
+};
+</code></pre><p>It&rsquo;s pretty self-explanatory. The only thing worth mentioning is that a neuron stores weights for the <em>previous</em> layer.</p>
+<p>Let&rsquo;s also agree on the indexing. For weights, I&rsquo;ll use <em>from_to</em> indexing. That is, <span class="math-code">$w^{h1}_{1\_2}$</span> represents the weight from the second neuron (first number in the subscript) in the second hidden layer (superscript) to the third neuron (second number in the subscript) of the previous layer (which is <code>h0</code> in this case).</p>
+<a href="#images%2fhello_nn_0.png">
+    <img src=images/hello_nn_0.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/hello_nn_0.png">
+  <img src=images/hello_nn_0.png>
+</a>
+<p>Upon creation, a <code>Neuron</code> assigns random numbers to the <code>inputCount</code> weights and the bias, uniformly distributed over the <code>[-1.0, 1.0]</code> range. For the input layer, no memory for weights is allocated, since it does not have a previous layer and therefore does not need weights.</p>
+<p>The next level in the abstraction is the <code>Layer</code> class.</p>
+<pre><code>class Layer {
+public:
+    Layer(size_t neuronCount, size_t inputCountArg) noexcept;
+
+public:
+    [[nodiscard]] auto activate(Layer const&amp; prevLayer,  //
+                                std::function&lt;auto(Float)-&gt;Float&gt; const&amp; activationFunction  //
+                                ) noexcept -&gt; bool;
+
+    [[nodiscard]] auto update(Layer const&amp; prevLayer,  //
+                              Float learningRate,  //
+                              std::vector&lt;Float&gt; const&amp; delta  //
+                              ) noexcept -&gt; bool;
+
+public:
+    std::vector&lt;Neuron&gt; neurons{};
+};
+</code></pre><p>It stores neurons and has two methods for updating them. In the <code>Layer::activate()</code> function, I pass the activation function as a parameter, which I added in case I want to try different functions. For now, though, I&rsquo;ll use the sigmoid:</p>
+<p>$$
+\sigma(x) = \frac{1}{1 + e^{-x}}
+$$</p>
+<p>When created, a layer instantiates <code>neuronCount</code> neurons.</p>
+<p>The <code>NeuralNetwork</code> class is also straightforward:</p>
+<pre><code>class NeuralNetwork {
+public:
+    NeuralNetwork(std::vector&lt;size_t&gt; const&amp; layerSizes);
+
+    [[nodiscard]] auto forward(std::vector&lt;Float&gt; const&amp; inputValues,  //
+                               std::vector&lt;Float&gt;&amp; outputValues  //
+                               ) noexcept -&gt; bool;
+
+    [[nodiscard]] auto train(std::vector&lt;std::vector&lt;Float&gt;&gt; const&amp; input,  //
+                             std::vector&lt;uint8_t&gt; const&amp; target,  //
+                             size_t epochCount,  //
+                             Float learningRate  //
+                             ) noexcept -&gt; bool;
+
+private:
+    [[nodiscard]] auto backward(std::vector&lt;Float&gt; const&amp; output,  //
+                                std::vector&lt;Float&gt; const&amp; expectedOutput,  //
+                                Float learningRate  //
+                                ) noexcept -&gt; bool;
+
+    auto print() const noexcept -&gt; void;
+
+private:
+    static auto sigmoid(Float v) noexcept -&gt; Float;
+    static auto sigmoidDerivative(Float sigmoidResult) noexcept -&gt; Float;
+
+public:
+    std::vector&lt;Layer&gt; layers{};
+};
+</code></pre><p>It takes the vector <code>layerSizes</code>, where the size of the vector represents the number of layers and each element corresponds to the layer size. That is, the call <code>impl::NeuralNetwork nn{std::vector&lt;size_t&gt;{784, 100, 10}};</code> creates a network with 3 layers containing 784, 100, and 10 neurons. It also has public functions <code>NeuralNetwork::forward()</code> - for network evaluation - and <code>NeuralNetwork::train()</code> - for training. The <code>NeuralNetwork::train()</code> function calls <code>NeuralNetwork::backward()</code> - the heart of the training. The activation function <code>NeuralNetwork::sigmoid()</code> and its derivative <code>NeuralNetwork::sigmoidDerivative()</code> are also defined here.</p>
+<p>Let&rsquo;s start by looking at the implementation of the simplest function, <code>NeuralNetwork::forward()</code>. It takes the input values - in our case, hand-written digits, where each digit is represented as a 28x28 array of floating-point numbers in the <code>[0.0-1.0]</code> range, with values closer to 1.0 indicating that the <em>pixel</em> is filled. To avoid unnecessary allocations, the output values vector <code>outputValues</code> is passed by reference - it will be allocated once and reused across multiple calls. The function returns <code>true</code> if everything went well. Since all the layers and sizes are guaranteed to be valid, the only thing that can go wrong is incorrect input. All this function does is run through every layer starting from the second (remember - the first layer is the input), calling the corresponding <code>Layer::activate()</code> function. After that, it reads values from the last layer:</p>
+<pre><code>// NeuralNetwork::forward()
+for (size_t i{1}; i &lt; layers.size(); ++i) {
+    auto&amp; currLayer{layers[i]};
+    auto&amp; prevLayer{layers[i - 1]};
+
+    if (!currLayer.activate(prevLayer, sigmoid)) {
+        return false;
+    }
+}
+
+auto const&amp; outputLayer{layers.back()};
+
+outputValues.resize(outputLayer.neurons.size());
+for (size_t i{0}; i &lt; outputLayer.neurons.size(); ++i) {
+    outputValues[i] = outputLayer.neurons[i].value;
+}
+</code></pre><p>Let&rsquo;s look at the <code>Layer::activate()</code> function. All it does is run through every neuron, compute its inner product (or dot product) with the previous layer&rsquo;s neuron values, and apply the activation (sigmoid) function:</p>
+<pre><code>// Layer::activate()
+for (auto&amp; currNeuron : neurons) {
+    Float z{currNeuron.bias};
+
+    for (size_t j{0}; j &lt; prevLayer.neurons.size(); ++j) {
+        if (prevLayer.neurons.size() &lt; currNeuron.weights.size()) {
+            return false;  // Not enough weights for the neuron
+        }
+
+        auto const&amp; prevNeuron{prevLayer.neurons[j]};
+
+        z += currNeuron.weights[j] * prevNeuron.value;
+    }
+
+    currNeuron.value = activationFunction(z);
+}
+</code></pre><p>In the picture below, the loop result is marked as $z_i$, and the result of <code>activationFunction(z)</code> is assigned to the neuron&rsquo;s value. Strictly speaking, the $z_i$ part is not important for the code, but it is necessary when deriving the back-propagation formulas.</p>
+<a href="#images%2fhello_nn_0.png">
+    <img src=images/hello_nn_0.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/hello_nn_0.png">
+  <img src=images/hello_nn_0.png>
+</a>
+<p>After this function, the layer neurons will have updated values ($a_i$ on the picture). As mentioned earlier, the values from the last output ($o$) layer are the result of the network evaluation. For our case, the output layer will have 10 neurons, representing the integers from 0 to 9. The neuron with the highest value is the decision for the forward pass. For example, the output <code>{0.1, 0.2, 0.1, 0.8, 0.0, 0.1, 0.2, 0.3, 0.2, 0.5}</code> means that the decision is the 4th neuron, which represents the number <code>3</code> (we start with <code>0</code>).</p>
+<p>Of course, running the <code>NeuralNetwork::forward()</code> function on an untrained network will return the wrong result, so first we need to train it with the <code>NeuralNetwork::train()</code> function. Let&rsquo;s look at its signature:</p>
+<pre><code>auto NeuralNetwork::train(std::vector&lt;std::vector&lt;Float&gt;&gt; const&amp; input,  // 0.0-1.0
+                          std::vector&lt;uint8_t&gt; const&amp; target,  // 0-9
+                          size_t epochCount,  //
+                          Float learningRate  //
+                          ) noexcept -&gt; bool;
+</code></pre><p>It takes <em>images</em> as an <code>input</code> parameter. In our case, it&rsquo;s a vector of 60&rsquo;000 vectors. The <code>target</code> parameter is the labeled data. In other words, for each input element there&rsquo;s a corresponding target digit. For the very first image, it&rsquo;s 5.</p>
+<blockquote>
+<p><strong>NOTE:</strong> If we print the very first image, assigning <code>X</code> for every value greater than <code>0.5</code> and <code>.</code> otherwise, we&rsquo;ll see:</p>
+</blockquote>
+<pre><code>. . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . X X . X X X . . . . . 
+. . . . . . . . . . . X X X X X X X X X X X X . . . . . 
+. . . . . . . . X X X X X X X X X X . . . . . . . . . . 
+. . . . . . . . X X X X X X X X X X . . . . . . . . . . 
+. . . . . . . . . X . X X X . . . X . . . . . . . . . . 
+. . . . . . . . . . . X X . . . . . . . . . . . . . . . 
+. . . . . . . . . . . X X X . . . . . . . . . . . . . . 
+. . . . . . . . . . . . X X . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . X X X . . . . . . . . . . . . 
+. . . . . . . . . . . . . . X X X . . . . . . . . . . . 
+. . . . . . . . . . . . . . . X X X X . . . . . . . . . 
+. . . . . . . . . . . . . . . . . X X X . . . . . . . . 
+. . . . . . . . . . . . . . . . . X X X . . . . . . . . 
+. . . . . . . . . . . . . . . X X X X X . . . . . . . . 
+. . . . . . . . . . . . . X X X X X X X . . . . . . . . 
+. . . . . . . . . . . . X X X X X X . . . . . . . . . . 
+. . . . . . . . . . X X X X X X . . . . . . . . . . . . 
+. . . . . . . X X X X X X X . . . . . . . . . . . . . . 
+. . . . . X X X X X X X X . . . . . . . . . . . . . . . 
+. . . . X X X X X X X . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+</code></pre><p>As you can imagine, the sizes of <code>input</code> and <code>target</code> should match.</p>
+<p>The <code>epochCount</code> parameter tells how many training iterations we want to run. A low number may not be enough, while a very high number can cause redundant training. We&rsquo;ll choose this parameter by running the program multiple times and selecting the best.</p>
+<p>The <code>learningRate</code> - well, the learning rate - determines how fast we want to move along the <em>gradient descent</em>. In this app, the <code>learningRate</code> is a static parameter, which we&rsquo;ll choose by running the program multiple times and selecting the best.</p>
+<p>At the beginning of the function, I do some input validity checks, allocate memory, and create timers to measure performance. Then I run <code>epochCount</code> training sessions, which do the following:</p>
+<pre><code>// NeuralNetwork::train()
+Float epochLoss{0.0_F};
+
+for (size_t i{0}; i &lt; indices.size(); ++i) {
+    auto const idx{indices[i]};
+
+    if (!forward(input[idx], output)) {
+        fmt::println(&quot;Failed to compute forward pass.&quot;);
+        return false;
+    }
+
+    auto const&amp; outputLayer{layers.back()};
+
+    expectedOutput.resize(outputLayer.neurons.size());
+    expectedOutput.assign(expectedOutput.size(), 0.0_F);
+
+    if (target[idx] &gt;= expectedOutput.size()) {
+        fmt::println(&quot;Target index {} out of bounds for output size {}.&quot;, target[idx], expectedOutput.size());
+        return false;
+    }
+
+    expectedOutput[target[idx]] = 1.0_F;
+
+    Float mse{0.0_F};
+    for (size_t j{0}; j &lt; output.size(); ++j) {
+        Float const diff{expectedOutput[j] - output[j]};
+        mse += diff * diff;
+    }
+    mse /= output.size();  // Mean squared error
+
+    epochLoss += mse;
+
+    if (!backward(output, expectedOutput, learningRate)) {
+        return false;  // Backward pass failed
+    }
+}
+
+shuffle_indices(indices);
+</code></pre><p>Here I introduced the <code>indices</code> vector. The idea is that for every epoch we train the network with the same data, but we don&rsquo;t want this data to be in the same order every time, so we need to shuffle it. Shuffling the <code>input</code> directly is an expensive process and won’t work, since <code>input</code> and <code>target</code> come together: the element <code>input[42]</code> should correspond to <code>target[42]</code>. If we randomly shuffle <code>input</code>, how do we shuffle <code>target</code> the same way? To solve this, I added the <code>indices</code> vector. At the beginning, it is filled with consecutive integers, i.e., <code>{0, 1, 2, 3, ...}</code>. After each iteration, the indices are shuffled, giving us a different order of the original data every time.</p>
+<p>The first thing we do is run the forward propagation pass, collecting the output (a vector of 10 values) and calculating the loss function, which is defined as:</p>
+<p>$$
+\text{MSE} = \frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2
+$$</p>
+<p>where $y_i$ is what we expect, and $\hat{y}_i$ is what we got.</p>
+<p>I keep track of the epoch loss and print it at the end of each epoch so I can better decide how many epochs are needed. If the loss stops changing from epoch to epoch, we don&rsquo;t need to keep calculating.</p>
+<p>The <code>expectedOutput</code> is a vector of size 10, with all elements 0.0 except a single element, which is 1.0 for the target value.</p>
+<p>Once we have the results of the forward pass and the expected results, we can run the backward propagation. For me, this was the most confusing part of the entire algorithm. I spent a lot of time reading, watching videos, and asking <code>ChatGPT</code> about it. All of this helped a lot. But in the end, what actually gave me the <em>AHA</em> moment was good old pen and paper:</p>
+<a href="#images%2fhello_nn_2.jpg">
+    <img src=images/hello_nn_2.jpg class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/hello_nn_2.jpg">
+  <img src=images/hello_nn_2.jpg>
+</a>
+<p>As mentioned, I will not explain it today - I am not a mathematician and I’d probably get it wrong. But in the code, the main idea is to keep a list - the so-called <code>delta</code> - where the <code>delta</code> from the previous layer is used to calculate the <code>delta</code> for the current layer. With these <code>delta</code>s, we can update weights and biases. For the last layer - the output layer - the <code>delta</code> is calculated like this:</p>
+<pre><code>// NeuralNetwork::backward()
+std::vector&lt;Float&gt; deltaOutput(output.size());
+for (size_t i{0}; i &lt; output.size(); ++i) {
+    Float const a{output[i]};
+    Float const dCdA{2.0_F * (a - expectedOutput[i]) / output.size()};
+    Float const dAdZ{sigmoidDerivative(a)};
+    deltaOutput[i] = dCdA * dAdZ;
+}
+</code></pre><p>where <code>dCdA</code> is the derivative of the MSE loss function with respect to the output (i.e., the final) value. Remember that the loss function and its derivative are defined like this:</p>
+<p>$$
+\text{C} = \frac{1}{n} \sum_{i=1}^{n} (y_i - a_i)^2
+$$</p>
+<p>$$
+\frac{\partial \text{C}}{\partial a_i} = \frac{2}{n}(a_i - y_i)
+$$</p>
+<p>Here, $a_i$ is what we get after applying the sigmoid function, and $y_i$ is what we expect.</p>
+<p>The sigmoid function and its derivative are:</p>
+<p>$$
+\sigma(z) = \frac{1}{1 + e^{-z}}
+$$</p>
+<p>$$
+\frac{d\sigma}{dz} = \sigma(z) \big(1 - \sigma(z)\big)
+$$</p>
+<p>Here, $z_i$ is the neuron value after the inner product but before the sigmoid. Since $\sigma(z_i)$ is $a_i$, we don’t actually keep $z_i$ in memory.</p>
+<p>Once we have this <code>delta</code>, we pass it to a layer to adjust its neurons’ weights and biases:</p>
+<pre><code>// Layer::update()
+for (size_t i{0}; i &lt; neurons.size(); ++i) {
+    auto&amp; currNeuron{neurons[i]};
+
+    if (currNeuron.weights.size() != prevLayer.neurons.size()) {
+        return false;  // Not enough weights for the neuron
+    }
+
+    for (size_t j{0}; j &lt; currNeuron.weights.size(); ++j) {
+        currNeuron.weights[j] -= learningRate * delta[i] * prevLayer.neurons[j].value;
+    }
+
+    currNeuron.bias -= learningRate * delta[i];
+}
+</code></pre><p>And then we keep propagating the <code>delta</code> backward through each layer, calling the <code>Layer::update()</code> function to adjust the neurons’ weights and biases.</p>
+<h2 id="results">Results</h2>
+<p>I set up the network with the following parameters:</p>
+<pre><code>// main()
+impl::NeuralNetwork nn{std::vector&lt;size_t&gt;{784, 100, 10}};
+size_t constexpr EPOCH_COUNT{20};
+impl::Float constexpr LEARNING_RATE{1.0};
+
+nn.train(images, labels, EPOCH_COUNT, LEARNING_RATE);
+</code></pre><p>I compiled the code with the <code>-O3</code> option, i.e., in the <em>Release</em> mode.</p>
+<p>Then I used the trained network to test its behavior. The <code>MNIST</code> dataset comes in two parts - the training part, consisting of 60&rsquo;000 images and labels, and the test part, consisting of 10&rsquo;000 images and labels. Running <code>nn.forward()</code> on the test data gave me ~97% confidence, which is quite good.</p>
+<p>To measure performance, I told the program to run the training 100 times. Then my wife called me for dinner, and after that I left for a walk. When I came back, it had already finished with an average training time of 73071.55 ms.</p>
+<blockquote>
+<p><strong>NOTE:</strong> Take these numbers with a grain of salt. I&rsquo;ll put here the time and relative improvement or downgrade on <strong>my machine</strong>. It may be different on other hardware.</p>
+</blockquote>
+<p>Of course, one minute is <em>nothing</em>, and in real life it does not need the GPU at all. But that&rsquo;s not what we came here for, right? What if I want to set the number of layers to 4 (1 input, 2 hidden, 1 output), with both hidden layers having 1000 neurons each? Additionally, what if I want 100 epochs? This time I did not have enough patience - a single epoch took 134640.45 ms, i.e., more than 2 minutes. So one hundred epochs would take more than 3 hours. I don&rsquo;t want to wait just to find out that, with these parameters, my neural network became worse. So in the next attempts I&rsquo;ll work on improving the performance, so stay tuned.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>The source code for this step is <a href="https://github.com/nikitablack/vulkan_neural_network/tree/main">here</a>.</p>
+<p>I am using a static generator (<code>Hugo</code>) to build this site, so there is no comment section directly here. As a personal experiment, I published a short <a href="">post on LinkedIn</a> pointing to this article. If you have a question, you can ask it there. If you want to follow for updates, you can also <a href="">follow me</a> there.</p>
+
+      
+      <div class="related">
+</div>
+      
+    </div>
+    
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
+    
+      <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
+    
+  </div>
+</section>
+
+
+
+</body>
+</html>
+

@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
+
 <title>Call a function from the string name and arguments | Here should be the blog Title</title>
 
 
@@ -83,14 +84,17 @@
     <div class="content">
       <p>Recently I had an interesting task on my work - a cheat system for a game. All the system should do is to call functions during apllication run with console commands (game console). Functions can accept different number of arguments with different types.</p>
 <p>In other words the system should be able to call a function:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">bool</span> <span style="color:#c0f">foo</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>);</code></pre></div>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">bool</span> <span style="color:#c0f">foo</span>(<span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span>);
+</code></pre></div>
 <p>with a console command:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">foo <span style="color:#f60">42</span> <span style="color:#f60">10.5</span></code></pre></div>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">foo <span style="color:#f60">42</span> <span style="color:#f60">10.5</span>
+</code></pre></div>
 <p>I&rsquo;ll not describe how I&rsquo;m receiving this string as well how I&rsquo;m parsing it. Let&rsquo;s assume that we&rsquo;re operating with a vector of strings where the first element - the name of the function and the rest - function parameters. So at some point er have this vector:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">{ <span style="color:#c30">&#34;foo&#34;</span>, <span style="color:#c30">&#34;42&#34;</span>, <span style="color:#c30">&#34;10.5&#34;</span> }</code></pre></div>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">{ <span style="color:#c30">&#34;foo&#34;</span>, <span style="color:#c30">&#34;42&#34;</span>, <span style="color:#c30">&#34;10.5&#34;</span> }
+</code></pre></div>
 <p>And we need somehow call a correct function and pass a correct number of parameters with a correct type.</p>
 <p>There&rsquo;s no way to call an unknown function just knowing it&rsquo;s name in C++. At least I don&rsquo;t know such a way. So in order to call something we first need register it. By registration I mean storing of a function pointer together with it&rsquo;s name. The <code>std::map</code> is a good candidate for that. But I don&rsquo;t store raw pointer. Instead, I have a wrapper class, called <code>Cheat</code>, for my function. Cheat is a templated class with function arguments types as template parameters. It&rsquo;s declaration looks like this:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> ...Args<span style="color:#555">&gt;</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> ...Args<span style="color:#555">&gt;</span>
 <span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Cheat</span> <span style="color:#555">:</span> <span style="color:#069;font-weight:bold">public</span> CheatBase
 {
 	Cheat(<span style="color:#078;font-weight:bold">void</span>(<span style="color:#555">*</span> <span style="color:#069;font-weight:bold">const</span> funcPtr)(Args...)) <span style="color:#555">:</span> func{ funcPtr }
@@ -100,32 +104,36 @@
 	<span style="color:#09f;font-style:italic">// ...
 </span><span style="color:#09f;font-style:italic"></span><span style="color:#069;font-weight:bold">private</span><span style="color:#555">:</span>
 	<span style="color:#078;font-weight:bold">void</span>(<span style="color:#555">*</span> <span style="color:#069;font-weight:bold">const</span> func)(Args...);
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Here <code>func</code> is our pointer to function which we need to call later.</p>
 <blockquote>
 <p>For simplcity the only functions that can be passed are global or static functions or lambdas without capture (such a lambda can be casted to function pointer). But member functions can be added with additional template argument and a little bit of code.</p>
 </blockquote>
 <p>As you already guessed, it&rsquo;s not possible to store instances of this class directly in <code>std::map</code> because for every new function with a new signature the <code>Cheat</code> class type will be different. For example <code>Cheat&lt;int&gt;</code> for the function taking one <code>int</code> parameter and  <code>Cheat&lt;int, float&gt;</code> for the function takind an <code>int</code> and a <code>float</code>. Therefore they all should have common base class. It&rsquo;s very simple:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">CheatBase</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">CheatBase</span>
 {
 <span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
 	<span style="color:#069;font-weight:bold">virtual</span> <span style="color:#555">~</span>CheatBase() {};
 	<span style="color:#069;font-weight:bold">virtual</span> <span style="color:#078;font-weight:bold">bool</span> <span style="color:#c0f">call</span>(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> cheatParams) <span style="color:#555">=</span> <span style="color:#f60">0</span>;
-};</code></pre></div>
+};
+</code></pre></div>
 <p>It&rsquo;s an abstract class with pure virtual function which takes an array of parameters as strings which will be converted to corresponding types.</p>
 <blockquote>
 <p>Instead of <code>call()</code> function we could use <code>operator()</code> function.</p>
 </blockquote>
 <p>Now we can create cheats like this:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">CheatBase<span style="color:#555">*</span> cheat{<span style="color:#069;font-weight:bold">new</span> Cheat<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span><span style="color:#555">&gt;</span>};</code></pre></div>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">CheatBase<span style="color:#555">*</span> cheat{<span style="color:#069;font-weight:bold">new</span> Cheat<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>, <span style="color:#078;font-weight:bold">float</span><span style="color:#555">&gt;</span>};
+</code></pre></div>
 <p>Or with a helper:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> ...Args<span style="color:#555">&gt;</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> ...Args<span style="color:#555">&gt;</span>
 std<span style="color:#555">::</span>shared_ptr<span style="color:#555">&lt;</span>CheatBase<span style="color:#555">&gt;</span> makeCheat(<span style="color:#078;font-weight:bold">void</span>(<span style="color:#555">*</span>funcPtr)(Args... arguments))
 {
 	<span style="color:#069;font-weight:bold">return</span> std<span style="color:#555">::</span>make_shared<span style="color:#555">&lt;</span>Cheat<span style="color:#555">&lt;</span>Args...<span style="color:#555">&gt;&gt;</span>(funcPtr);
 }
 
-myMap[<span style="color:#c30">&#34;foo&#34;</span>] <span style="color:#555">=</span> makeCheat(<span style="color:#555">&amp;</span>foo);</code></pre></div>
+myMap[<span style="color:#c30">&#34;foo&#34;</span>] <span style="color:#555">=</span> makeCheat(<span style="color:#555">&amp;</span>foo);
+</code></pre></div>
 <p>Thanks to type deduction we don&rsquo;t need to type template parameters for the function.</p>
 <blockquote>
 <p>Here for simplcity I&rsquo;m passing arguments by value. The better approach is to use <a href="http://en.cppreference.com/w/cpp/utility/forward">perfect forwarding</a>.</p>
@@ -133,7 +141,7 @@ myMap[<span style="color:#c30">&#34;foo&#34;</span>] <span style="color:#555">=<
 <p>Btw, the strange looking <code>template&lt;typename ...Args&gt;</code> is called a <a href="http://en.cppreference.com/w/cpp/language/parameter_pack">parameter pack</a>. And together with templated class it&rsquo;s called <em>variadic template</em>. This is one of the amazing features of modern C++. I highly recommend you to investigate this topic. It&rsquo;s really really cool! I can recommend for the start this great posts - <a href="http://eli.thegreenplace.net/2014/variadic-templates-in-c/">one</a>, <a href="https://jguegant.github.io/blogs/tech/thread-safe-multi-type-map.html">two</a>.</p>
 <p>That was pretty standard and boring. And now the interesting part - the actual cheat implementation!</p>
 <p>The heart of the <code>Cheat</code> class is a <code>call()</code> function override:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">bool</span> <span style="color:#c0f">call</span>(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> cheatParams) <span style="color:#069;font-weight:bold">override</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">bool</span> <span style="color:#c0f">call</span>(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> cheatParams) <span style="color:#069;font-weight:bold">override</span>
 {
 	<span style="color:#069;font-weight:bold">if</span> (<span style="color:#069;font-weight:bold">sizeof</span>...(Args) <span style="color:#555">!=</span> cheatParams.size()) <span style="color:#09f;font-style:italic">// # &lt;1&gt;
 </span><span style="color:#09f;font-style:italic"></span>	{
@@ -144,74 +152,87 @@ myMap[<span style="color:#c30">&#34;foo&#34;</span>] <span style="color:#555">=<
 	callHelper(cheatParams, std<span style="color:#555">::</span>index_sequence_for<span style="color:#555">&lt;</span>Args...<span style="color:#555">&gt;</span>{});
 
 	<span style="color:#069;font-weight:bold">return</span> <span style="color:#366">true</span>;
-}</code></pre></div>
+}
+</code></pre></div>
 <p>&lt;1&gt; <a href="http://en.cppreference.com/w/cpp/language/sizeof..."><code>sizeof...(Args)</code></a> return a number of arguments of the parameter pack that was used during <code>Cheat</code> class instantiation.</p>
 <p>First we check that we passed correct number of arguments. In the number is wrong simply do nothing and return. And all the magic happens in <code>callHelper()</code> function. Don&rsquo;t think about <code>index_sequence_for&lt;Args...&gt;</code> for now, we&rsquo;ll come to this later:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span>std<span style="color:#555">::</span>size_t... Idx<span style="color:#555">&gt;</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span>std<span style="color:#555">::</span>size_t... Idx<span style="color:#555">&gt;</span>
 <span style="color:#078;font-weight:bold">void</span> callHelper(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> strArgs, std<span style="color:#555">::</span>index_sequence<span style="color:#555">&lt;</span>Idx...<span style="color:#555">&gt;</span>)
 {
 	(func)(fromString<span style="color:#555">&lt;</span>Args<span style="color:#555">&gt;</span>(getStringFromArray<span style="color:#555">&lt;</span>Idx<span style="color:#555">&gt;</span>(strArgs))...);
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Wow! Looks scary. Actually, not. <code>callHelper()</code> is a variadic templated function which accepts a vector with string arguments (and which should be converted to appropriate types) and a <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence">sequence of integers</a>. What are this integers? Why? I can better explain it if we&rsquo;ll start from the end. Let&rsquo;s stick to <code>foo(int, type)</code> function signature for the rest of this post.</p>
 <p>In the very very end I need to call this function with correct parameters, for example:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">foo(<span style="color:#f60">42</span>, <span style="color:#f60">10.5</span>);</code></pre></div>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">foo(<span style="color:#f60">42</span>, <span style="color:#f60">10.5</span>);
+</code></pre></div>
 <p>But I have only a vector of strings <code>{&quot;42&quot;, &quot;10.5&quot;}</code>. I need some conversion function that will return a correct type from the corresponding string. Moreover I need to call this function several times - once for each parameter. Let&rsquo;s call this conversion function <code>fromString</code>:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">foo(fromString(<span style="color:#c30">&#34;42&#34;</span>), fromString(<span style="color:#c30">&#34;10.5&#34;</span>));</code></pre></div>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">foo(fromString(<span style="color:#c30">&#34;42&#34;</span>), fromString(<span style="color:#c30">&#34;10.5&#34;</span>));
+</code></pre></div>
 <p>In order to convert to correct type we&rsquo;ll use templated function with overload for <em>every</em> type I need. For the case with <code>int</code> the overload is (for the <code>float</code> it&rsquo;s similar, just replace <code>int</code> to <code>float</code> and <code>std::stoi()</code> to <code>std::stof()</code>):</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
 <span style="color:#069;font-weight:bold">typename</span> std<span style="color:#555">::</span>enable_if<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>is_same<span style="color:#555">&lt;</span>T, <span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;::</span>value, <span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;::</span>type fromString(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>string<span style="color:#555">&amp;</span> str)
 {
 	<span style="color:#069;font-weight:bold">return</span> std<span style="color:#555">::</span>stoi(str);
-}</code></pre></div>
+}
+</code></pre></div>
 <p>The <a href="http://en.cppreference.com/w/cpp/language/sfinae">SFINAE</a> technique is used here. Good explanation of what it is can be found <a href="http://www.bfilipek.com/2016/02/notes-on-c-sfinae.html">in this awesome blog</a>. In short - <code>std::is_same&lt;T, int&gt;::value</code> will return <code>true</code> if <code>T</code> is <code>int</code> and <code>false</code> overwise. Next, <code>std::enable_if&lt;true, int&gt;::type</code> will return <code>int</code> and <code>std::enable_if&lt;false, int&gt;::type</code> simply will not compile. After substitution we&rsquo;ll have:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>
 <span style="color:#078;font-weight:bold">int</span> fromString(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>string<span style="color:#555">&amp;</span> str)
 {
 	<span style="color:#069;font-weight:bold">return</span> std<span style="color:#555">::</span>stoi(str);
-}</code></pre></div>
+}
+</code></pre></div>
 <p>And additional feature of it is that we&rsquo;ll get a <em>compile time</em> error if we&rsquo;ll use a type for which there&rsquo;s no overload exist! Awesome, this type of error is much much better than an exception during runtime.</p>
 <p>Having all this we can create a first version of our <code>callHelper()</code> function:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">callHelper</span>(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> strArgs)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">callHelper</span>(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> strArgs)
 {
 	foo(fromString<span style="color:#555">&lt;</span>Args<span style="color:#555">&gt;</span>(getStringFromArray(strArgs))...);
-}</code></pre></div>
+}
+</code></pre></div>
 <p>As you remember, <code>Args</code> is a parameter pack. And <code>fromString&lt;Args&gt;()...</code> is a parameter pack expansion. There&rsquo;re <a href="http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion">strict rules</a> how parameter pack is expanded. For our case with <code>int</code> and <code>float</code> it will be expanded to:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">callHelper</span>(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> strArgs)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">callHelper</span>(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> strArgs)
 {
 	foo(fromString<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(getStringFromArray(strArgs)), fromString<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">float</span><span style="color:#555">&gt;</span>(getStringFromArray(strArgs)));
-}</code></pre></div>
+}
+</code></pre></div>
 <p>We already have two <code>fromString()</code> overloads for our types. Now the trick is to pass the correct string from the vector to them, i.e. implement <code>getStringFromArray()</code> function. The naive approach would be to remove <code>getStringFromArray()</code> completely and just use <code>strArgs</code> vector together with some counter which will be incremented every time we access a vector element:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">callHelper</span>(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> strArgs)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">callHelper</span>(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> strArgs)
 {
 	size_t counter{<span style="color:#f60">0</span>};
 	foo(fromString<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(strArgs[counter<span style="color:#555">++</span>], fromString<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">float</span><span style="color:#555">&gt;</span>(strArgs[counter<span style="color:#555">++</span>]));
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Unfortunately this will not work. The C++ standard does not specify the <a href="http://en.cppreference.com/w/cpp/language/eval_order">order of function arguments eveluation</a>. That means it can differ from compiler to compiler. And it&rsquo;s absolutelly possible to have this setup (remember - we have <code>{ &quot;42&quot;, &quot;10.5&quot; }</code> in our vector):</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">foo(fromString<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(strArgs[<span style="color:#f60">1</span>]), fromString<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">float</span><span style="color:#555">&gt;</span>(strArgs[<span style="color:#f60">0</span>])); <span style="color:#09f;font-style:italic">// notice how we&#39;re passing wrong arguments
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">foo(fromString<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(strArgs[<span style="color:#f60">1</span>]), fromString<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">float</span><span style="color:#555">&gt;</span>(strArgs[<span style="color:#f60">0</span>])); <span style="color:#09f;font-style:italic">// notice how we&#39;re passing wrong arguments
 </span></code></pre></div>
 <p>We need instead a robust solution that will work across compilers. Let&rsquo;s rewrite <code>callHelper</code> slightly:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">callHelper</span>(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> strArgs)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">callHelper</span>(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> strArgs)
 {
 	foo(fromString<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(getStringFromArray<span style="color:#555">&lt;</span><span style="color:#f60">0</span><span style="color:#555">&gt;</span>(strArgs)), fromString<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">float</span><span style="color:#555">&gt;</span>(getStringFromArray<span style="color:#555">&lt;</span><span style="color:#f60">1</span><span style="color:#555">&gt;</span>(strArgs)));
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Notice the extra template parameters <code>&lt;0&gt;</code> and <code>&lt;1&gt;</code>. And here the definition of <code>getStringFromArray()</code> function:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span>std<span style="color:#555">::</span>size_t N<span style="color:#555">&gt;</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span>std<span style="color:#555">::</span>size_t N<span style="color:#555">&gt;</span>
 std<span style="color:#555">::</span>string getStringFromArray(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> strArgs)
 {
 	<span style="color:#069;font-weight:bold">return</span> strArgs[N];
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Now no matter what is the evaluation order our function will return correct string, since <code>&lt;0&gt;</code> and <code>&lt;1&gt;</code> are template parameters and will always be in right sequence. And this order is guaranteed by <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence">sequence of integers</a> that we will use. For the moment let&rsquo;s not think how we create one but see what happens when the function receives it:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span>std<span style="color:#555">::</span>size_t... Idx<span style="color:#555">&gt;</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span>std<span style="color:#555">::</span>size_t... Idx<span style="color:#555">&gt;</span>
 <span style="color:#078;font-weight:bold">void</span> callHelper(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> strArgs, std<span style="color:#555">::</span>index_sequence<span style="color:#555">&lt;</span>Idx...<span style="color:#555">&gt;</span>)
 {
 	foo(fromString<span style="color:#555">&lt;</span>Args<span style="color:#555">&gt;</span>(getStringFromArray<span style="color:#555">&lt;</span>Idx<span style="color:#555">&gt;</span>(strArgs))...);
-}</code></pre></div>
+}
+</code></pre></div>
 <p>The function itself templated with <a href="http://en.cppreference.com/w/cpp/language/template_parameters#Non-type_template_parameter">non-type</a> parameter pack, in simple words the template parameters are integers and their number is equal to the number of <code>Args</code> (<code>Cheat</code> class parameter pack). This <code>Idx</code> sequence will be deduced from the function&rsquo;s second unnamed argument <code>std::index_sequence&lt;Idx...&gt;</code>. Do you see, we even don&rsquo;t have the name for it, because we don&rsquo;t use this parameter in the function&rsquo;s body! The sole reason for this argument is to provide compile-time integers <code>...Idx</code>. In the function&rsquo;s body the two parameter packs - <code>Args</code> and <code>Idx</code> will be expanded together simultaneously according to <a href="http://en.cppreference.com/w/cpp/language/parameter_pack#Pack_expansion">aforementioned rules</a>. In our case everything will be expanded to:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span><span style="color:#f60">0</span>, <span style="color:#f60">1</span><span style="color:#555">&gt;</span> <span style="color:#09f;font-style:italic">// this is deduced from the function&#39;s second argument
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">template</span> <span style="color:#555">&lt;</span><span style="color:#f60">0</span>, <span style="color:#f60">1</span><span style="color:#555">&gt;</span> <span style="color:#09f;font-style:italic">// this is deduced from the function&#39;s second argument
 </span><span style="color:#09f;font-style:italic"></span><span style="color:#078;font-weight:bold">void</span> callHelper(<span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>string<span style="color:#555">&gt;&amp;</span> strArgs, std<span style="color:#555">::</span>index_sequence<span style="color:#555">&lt;</span><span style="color:#f60">0</span>, <span style="color:#f60">1</span><span style="color:#555">&gt;</span>)
 {
 	foo(fromString<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span><span style="color:#555">&gt;</span>(getStringFromArray<span style="color:#555">&lt;</span><span style="color:#f60">0</span><span style="color:#555">&gt;</span>(strArgs)), fromString<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">float</span><span style="color:#555">&gt;</span>(getStringFromArray<span style="color:#555">&lt;</span><span style="color:#f60">1</span><span style="color:#555">&gt;</span>(strArgs)));
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Amazing, isn&rsquo;t it?</p>
 <p>There&rsquo;s a last piece of puzzle left - how to get this integer sequence? The bad news - in C++11 this should be done manually.  <a href="https://ngathanasiou.wordpress.com/2015/02/19/compile-time-integer-sequences">Here</a> the great explanation how to do this. And actually on my work I have to use this solution.</p>
 <p>But the happy owners of C++14 compliant compiler (and me in this post) can use <a href="http://en.cppreference.com/w/cpp/utility/integer_sequence">standard sequence of integers</a>. I&rsquo;ll put here explanation directly from the link:</p>
@@ -220,7 +241,8 @@ std<span style="color:#555">::</span>string getStringFromArray(<span style="colo
 </blockquote>
 <p>In other words, <code>&lt;...Args&gt;</code> which, for example, can be <code>&lt;int, float, std::string, double&gt;</code> will be converted to <code>std::index_sequence&lt;0, 1, 2, 3&gt;</code>.</p>
 <p>Putting it all together we can call our helper like this:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">callHelper(cheatParams, std<span style="color:#555">::</span>index_sequence_for<span style="color:#555">&lt;</span>Args...<span style="color:#555">&gt;</span>{});</code></pre></div>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">callHelper(cheatParams, std<span style="color:#555">::</span>index_sequence_for<span style="color:#555">&lt;</span>Args...<span style="color:#555">&gt;</span>{});
+</code></pre></div>
 <p>Where, again, <code>Args...</code> is a <code>Cheat</code> class parameter pack.</p>
 <p>The source code together with usage example can be found <a href="https://github.com/nikitablack/cpp-tests/blob/master/StringArgsFunction/StringArgsFunction.cpp">here</a>.</p>
       

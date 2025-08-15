@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
+
 <title>Data Oriented Design by example | Here should be the blog Title</title>
 
 
@@ -84,7 +85,7 @@
       <p>The last couple of years interesting but not so popular paradigm appears more often. I’m talking about Data Oriented Design (DOD). If you’re searching for a job that involves high-performance calculations be ready to hear corresponding questions. And I was surprised knowing that some my colleagues have never heard about the approach and after the short discussion stayed skeptical. In this article I’ll try to compare traditional OOP approach with DOD on a real world example.</p>
 <h4 id="what-is-dod">What is DOD?</h4>
 <p>This post is an attempt to compare different programming approach without trying to explain them. I assume you know what we&rsquo;ll talk about. There&rsquo;re a lot of articles on the web about the subject. <a href="https://fuzzyreflection.com/2016/07/14/maximizing-code-performance-by-thinking-data-first-part-1/">This one</a> is good. <a href="https://www.youtube.com/watch?v=rX0ItVEVjHc">This video</a> from <strong>CppCon</strong> also is a <em>must see</em>. But in layman&rsquo;s terms, <strong>DOD</strong> is a way to work with data in <em>cache friendly</em> manner. Better see an example:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#099">#include</span> <span style="color:#099">&lt;chrono&gt;</span><span style="color:#099">
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#099">#include</span> <span style="color:#099">&lt;chrono&gt;</span><span style="color:#099">
 </span><span style="color:#099">#include</span> <span style="color:#099">&lt;iostream&gt;</span><span style="color:#099">
 </span><span style="color:#099">#include</span> <span style="color:#099">&lt;vector&gt;</span><span style="color:#099">
 </span><span style="color:#099"></span>
@@ -160,7 +161,8 @@
 	}
     
     <span style="color:#069;font-weight:bold">return</span> result;
-}</code></pre></div>
+}
+</code></pre></div>
 <p>The second test runs faster by <code>30%</code> (in VS2017 and gcc7.0.1). But why?</p>
 <p>The size of the <code>S</code> struct is <code>24</code> bytes. My CPU (Intel Core i7) have <code>32KB</code> L1 cache for each core with <code>64B</code> cache line. That means that when we&rsquo;re requesting data from the main memory one cache line can hold only two full <code>S</code> structs at most. In the first test we&rsquo;re reading only one <code>int</code> field, i.e. in the best case scenario one cache line can hold only two <code>S::i</code> (ok, sometimes three). In the second test we&rsquo;re reading similar <code>int</code> but from the vector of integers. <code>std::vector</code> guarantees sequentiality of the data it holds. That means that one cache line can hold up to <code>16</code> (<code>64KB</code> / <code>sizeof(int)</code> = <code>16</code>) values we need. Obviously, we&rsquo;re communicating with the RAM less often. And it&rsquo;s known that memory operations are the bottleneck in modern CPUs.</p>
 <h4 id="what-about-real-life">What about real life?</h4>
@@ -175,7 +177,7 @@
 </blockquote>
 <p>The purpose of this article is to show some numbers on CPU so we&rsquo;ll not discuss graphics.</p>
 <p>The <code>Shape</code> class which represents physical body looks like this (simplified):</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Shape</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">class</span> <span style="color:#0a8;font-weight:bold">Shape</span>
 {
 <span style="color:#069;font-weight:bold">public</span><span style="color:#555">:</span>
 	math<span style="color:#555">::</span>Vec2 position{ <span style="color:#f60">0.0f</span>, <span style="color:#f60">0.0f</span> };
@@ -185,7 +187,8 @@
 	math<span style="color:#555">::</span>Color color;
 	std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>math<span style="color:#555">::</span>Vec2<span style="color:#555">&gt;</span> vertices;
 	math<span style="color:#555">::</span>Bounds bounds;
-};</code></pre></div>
+};
+</code></pre></div>
 <ul>
 <li>I believe <code>position</code> and <code>velocity</code> fields don&rsquo;t need a discussion</li>
 <li><code>vertices</code> — a random number of polygon vertices</li>
@@ -208,7 +211,7 @@
 </a>
 <p>When the triangle intersects shape <code>a</code> we need to move it apart to avoid figures overlapping. Also, we have to recalculate <code>bounds</code>. But now the triangle intersects shape <code>b</code> and we need to repeat the procedure again - move the shape and recalculate bounds. Notice that after the second move the triangle again will be over shape <code>a</code>. To avoid this repetition we&rsquo;ll store the value necessary to separate objects in special accumulator - <code>overlapResolveAccumulator</code> - and later will move the shape by this value but only once. Not physically correct at all, but looks ok. Notice also that this field also adds to the total size of the class which is not good for the memory.</p>
 <p>The heart of our program is a <code>ShapesApp::update()</code> function. Here it&rsquo;s simplified form:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> ShapesApp<span style="color:#555">::</span>update(<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> dt)
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> ShapesApp<span style="color:#555">::</span>update(<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> dt)
 {
 	<span style="color:#078;font-weight:bold">float</span> <span style="color:#069;font-weight:bold">const</span> dtStep{ dt <span style="color:#555">/</span> NUM_PHYSICS_STEPS };
 	<span style="color:#069;font-weight:bold">for</span> (<span style="color:#078;font-weight:bold">uint32_t</span> s{ <span style="color:#f60">0</span> }; s <span style="color:#555">&lt;</span> NUM_PHYSICS_STEPS; <span style="color:#555">++</span>s)
@@ -223,7 +226,8 @@
 			}
 		}
 	}
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Every frame we call a <code>ShapesApp::updatePositions()</code> function that updates every shape&rsquo;s <code>position</code> and <code>bounds</code>. Next we check every shape with every other for collision in <code>CollisionSolver::solveCollision()</code> function. I used <a href="https://en.wikipedia.org/wiki/Hyperplane_separation_theorem">Separating Axis Theorem</a> (<em>SAT</em>) for that. And we repeat these steps <code>NUM_PHYSICS_STEPS</code> times. This variable serves several purposes - first, the physics becomes more stable, and second, it limits the number of objects on the screen. <em>c++</em> is fast, amazingly fast, and without this limitation we&rsquo;ll have tens of thosands of objects which will lead to rendering performance issues. In my tests I used <code>NUM_PHYSICS_STEPS = 20</code>.</p>
 <p>On my humble laptop this version of the program simulates <code>500</code> shapes before fps starts to drop below <code>30</code>. Wat?? Only <code>500</code>?? Even JavaScript can do better. I agree, not a lot, but don&rsquo;t forget - we&rsquo;re repeating calculations <code>20</code> times per frame.</p>
 <p>I think I need to add some pictures to make the post not so boring, so here we go:</p>
@@ -238,7 +242,7 @@
 </a>
 <p><strong>Optimization #1. Spatial Grid</strong></p>
 <p>I mentioned several times that I want to make tests on a program which is as close to real world as possible. Obviously, the code above is not usable - nobody checks each shape with each other - this is veeeery slow. For acceleration usually, some spetial spatial structure being used. We&rsquo;ll use simple <code>2d</code> grid - I called it <code>Grid</code> in the code - which consists of <code>NxM</code> cells - <code>struct Cell</code>. At the calculation start we&rsquo;ll put each object in the corresponding cell. This way all we have to do is to iterate over cells and check intersection between several pairs of objects. I used the similar code a lot of times in real projects and it behaved very well. Besides, it&rsquo;s very easy to implement, easy to debug and understand.</p>
-<p>The commit for this version can be found <a href="https://github.com/nikitablack/cpp-tests/tree/8364d7c55c8948ab2fc5630e828d44551c6db951/data_oriented/oop/oop">here</a>. We added a new entity - <code>Grid</code> and changed <code>ShapesApp::update()</code> function. Now it calls <code>Grid</code>&rsquo;s methods for updating and intersections.</p>
+<p>The commit for this version can be found <a href="https://github.com/nikitablack/cpp-tests/tree/8364d7c55c8948ab2fc5630e828d44551c6db951/data_oriented/oop/oop">here</a>. We added a new entity - <code>Grid</code> and changed <code>ShapesApp::update()</code> function. Now it calls <code>Grid</code>'s methods for updating and intersections.</p>
 <p>This version can simulate <code>8000</code> shapes now at <code>30</code> fps (don&rsquo;t forget about <code>20</code> repetitions in each frame)! I had to decrease shape&rsquo;s sizes in order to fit them in the window.</p>
 <a href="#images%2f3.png">
     <img src=images/3.png class="thumbnail">
@@ -276,7 +280,7 @@
 <h4 id="structure-of-arrays">Structure of Arrays</h4>
 <p><strong>Initial program</strong></p>
 <p>The code we wrote above I call traditional <em>OOP</em> approach - I write such code many years and see similar code in general. But now we&rsquo;ll modify it a little - we&rsquo;ll remove class <code>Shape</code> and replace it with vectors and see can this tiny change affect the performance? To my happiness refactoring wasn&rsquo;t hard, even trivial. Instead of the <code>Shape</code> class, we&rsquo;ll use a struct with vectors of data.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">ShapesData</span>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">ShapesData</span>
 {
 	std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>math<span style="color:#555">::</span>Vec2<span style="color:#555">&gt;</span> positions;
 	std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>math<span style="color:#555">::</span>Vec2<span style="color:#555">&gt;</span> velocities;
@@ -285,7 +289,8 @@
 	std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>math<span style="color:#555">::</span>Color<span style="color:#555">&gt;</span> colors;
 	std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>math<span style="color:#555">::</span>Vec2<span style="color:#555">&gt;&gt;</span> vertices;
 	std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>math<span style="color:#555">::</span>Bounds<span style="color:#555">&gt;</span> bounds;
-};</code></pre></div>
+};
+</code></pre></div>
 <p>We pass this struct like this - <code>solveCollision(struct ShapesData &amp; data, std::size_t const indA, std::size_t const indB)</code>. I.e. instead of shapes instances we pass indices and inside function necessary data is taking from the vectors.</p>
 <p><a href="https://github.com/nikitablack/cpp-tests/tree/8363e60c614377cccb777625805b6aea9e699117/data_oriented/dod/dod">This version</a> of the program can simulate <code>500</code> objects at <code>30</code> fps. As you can see there&rsquo;s no difference with the original version. This is because we have relatively small data set and the &ldquo;heaviest&rdquo; function uses almost all fields of the struct.</p>
 <p>Further without pictures since they are the same.</p>

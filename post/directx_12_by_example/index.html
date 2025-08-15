@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
+
 <title>DirectX 12 by example | Here should be the blog Title</title>
 
 
@@ -82,11 +83,11 @@
     
     <div class="content">
       <h4 id="disclaimer">Disclaimer!</h4>
-<p>I&rsquo;m not an expert, computer graphics is my hobby. When I started to learn directx 12 I already was quite comfortable with directx 11 but it was still difficult to switch. And even after several months of investigations I still have a feeling that I just scratched a surface. I&rsquo;m constantly learning and this post is a synchronization of my thoughts. I found that attempts to explain complex things makes me understand these things better. Thought the article was written by me for me I hope you&rsquo;ll find it useful too.</p>
-<p>Directx 12 is low level, it has many concepts and in order to make your code work well you need to take into account a lot of things. You need to profile a lot. And you need to know hardware. For example you need to know that changing descriptor heaps is a heavy operation. I have no idea what&rsquo;s happening in hardware and why it&rsquo;s expensive. I&rsquo;m just following guidelines trying to remember and reading gpu specs in parallel.</p>
+<p>I&rsquo;m not an expert, computer graphics is my hobby. When I started to learn directx 12 I already was quite comfortable with directx 11 but it was still difficult to switch. And even after several months of investigations I still have a feeling that I just scratched a surface. I&rsquo;m constantly learning and this post is a syncronization of my thoughts. I found that attempts to explain complex things makes me understand these things better. Thought the artile was written by me for me I hope you&rsquo;ll find it useful too.</p>
+<p>Directx 12 is low level, it have many concepts and in order to make your code work well you need to take into account a lot of things. You need to profile a lot. And you need to know a hardware. For example you need to know that changing descriptor heaps is a heavy operation. I have no idea what&rsquo;s happening in hardware and why it&rsquo;s expensive. I&rsquo;m just following guidelines trying to remember and reading gpu specs in parallel.</p>
 <p>Also I assume that you have an experience with previous directx versions because I&rsquo;ll not explain in this post what is swapchain or backbuffer. You should be familar with tesselation - what are tesselation factors, what is a constant function, why do you need hull and domain shaders. Good overview of directx 11 tesselation can be found <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/ff476340(v=vs.85).aspx">here</a>. Also you need to know basic windows programming because we need to create a window and I&rsquo;ll not explain how to do it.</p>
 <h4 id="preface">Preface</h4>
-<p>In this tutorial we&rsquo;ll render a teapot. But not just a static mesh, no. We&rsquo;ll render a tesselated teapot. Why did I choose this? Well, because you can find in the web a plenty of different <em>HelloWorld</em> examples. I didn&rsquo;t want to create another <em>HelloWorld</em> but something that covers different areas of the api and at the same time is simple.</p>
+<p>In this tutorial we&rsquo;ll render a teapot. But not just a static mesh, no. We&rsquo;ll render a tesselated teapot. Why did I choose this? Well, because you can find in the web a plenty of different <em>HelloWorld</em> examples. I didn&rsquo;t want to create another <em>HelloWorld</em> but somethig that covers different areas of the api and at the same time is simple.</p>
 <a href="#images%2fteapot.png">
     <img src=images/teapot.png class="thumbnail">
 </a>
@@ -111,15 +112,15 @@
   <img src=images/teapot_quarter.png>
 </a>
 <p>There&rsquo;re several ways to fix it. One way is to use separate draw call for every part. This way we can render rim four times with different transformations. Another way is to draw a part once but use instancing. This way we&rsquo;ll have a draw call for every part&rsquo;s family (<em>rim</em>, <em>body</em> etc.) but the repeated parts will be instances.</p>
-<p>We&rsquo;ll go other way and render everything in one draw call. For this we&rsquo;ll duplicate indices required number of times and also provide a transformation for every part. Let&rsquo;s take a rim as an example. Instead of having one patch for the quarter we&rsquo;ll have <code>4</code> patches for the entire circle, that means <code>16 * 4 = 64</code> indices for this part. In the shader knowing the patch id we can apply a transform. In our case we&rsquo;ll rotate initial patch around an axis by <code>0</code>, <code>90</code>, <code>180</code> and <code>270</code> degrees. All that means that together with points positions and indices we need to provide a transformation data as. Additionally to visually separate patches we&rsquo;ll use different colors which also should be provided as a separate data. In total we&rsquo;ll have <code>28</code> patches and our data will consist of list of points (some points are shared between patches - that&rsquo;s why we need indices), list of indices (<code>28 * 16</code>), list of transforms (<code>28</code> matrices) and list of colors (<code>28</code> randomly generated rgb colors). Final data can be found <a href="https://github.com/nikitablack/directx-12/blob/master/TeapotTutorial/TeapotTutorial/TeapotData.cpp">here</a>.</p>
+<p>We&rsquo;ll go other way and render everything in one draw call. For this we&rsquo;ll duplicate indices required number of times and also provide a transformation for every part. Let&rsquo;s take a rim as an example. Instead of having one patch for the quarter we&rsquo;ll have <code>4</code> patches for the entire circle, that means <code>16 * 4 = 64</code> indices for this part. In the shader knowing the patch id we can apply a transform. In our case we&rsquo;ll rotate initial patch around an axis by <code>0</code>, <code>90</code>, <code>180</code> and <code>270</code> degrees. All that means that together with points positions and indices we need to provide a transformation data as. Additionaly to visually separate patches we&rsquo;ll use different colors which also should be provided as a separate data. In total we&rsquo;ll have <code>28</code> patches and our data will consist of list of points (some points are shared between patches - that&rsquo;s why we need indices), list of indices (<code>28 * 16</code>), list of transforms (<code>28</code> matrices) and list of colors (<code>28</code> randomly generated rgb colors). Final data can be found <a href="https://github.com/nikitablack/directx-12/blob/master/TeapotTutorial/TeapotTutorial/TeapotData.cpp">here</a>.</p>
 <h4 id="shaders">Shaders</h4>
 <p>In our example we&rsquo;ll use vertex, hull, domain and pixel shaders.</p>
 <p><strong>Vertex shader</strong></p>
-<p>The first shader in our pipeline is the vertex shader. All it&rsquo;s do is accepts control point position from the application and passes it to the hull shader. Because of its simplicity I&rsquo;ll not provide it here but you can observe it in <a href="https://github.com/nikitablack/directx-12/blob/master/TeapotTutorial/TeapotTutorial/VertexShader.hlsl">github</a>.</p>
-<p>Just to remind you - the vertex shader will be called once for every control point in the patch. For <code>28</code> patches (recall that this is the number of patches used for the model) <code>16</code> points each this is <code>448</code> times.</p>
+<p>The first shader in our pipeline is the vertex shader. All it&rsquo;s do is accepts control point position from the application and passes it to the hull shader. Because of it&rsquo;s simplicity I&rsquo;ll not provide it here but you can observe it in <a href="https://github.com/nikitablack/directx-12/blob/master/TeapotTutorial/TeapotTutorial/VertexShader.hlsl">github</a>.</p>
+<p>Just for the remainder - the vertex shader will be called once for every control point in the patch. For <code>28</code> patches (recall that this is the number of patches used for the model) <code>16</code> points each this is <code>448</code> times.</p>
 <p><strong>Hull shader</strong></p>
 <p>This shader, as you already know, receives control point position from the vertex shader and also some data from the application in the form of constants which we&rsquo;ll use as tesseltion factors for edge and inside of the patch.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#099">#define NUM_CONTROL_POINTS 16
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#099">#define NUM_CONTROL_POINTS 16
 </span><span style="color:#099"></span>
 <span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">PatchTesselationFactors</span>
 {
@@ -169,14 +170,16 @@ HullToDomain main(InputPatch<span style="color:#555">&lt;</span>VertexToHull, NU
 	output.pos <span style="color:#555">=</span> input[i].pos;
 
 	<span style="color:#069;font-weight:bold">return</span> output;
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Here you can see that the patch outputs the same <code>16</code> control points, uses <code>integer</code> partitioning and <code>quad</code> domain. Also note the new <code>hlsl 5.1</code> syntax for the constant buffer:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">ConstantBuffer<span style="color:#555">&lt;</span>PatchTesselationFactors<span style="color:#555">&gt;</span> <span style="color:#99f">tessFactors</span> : <span style="color:#069;font-weight:bold">register</span>(b0);</code></pre></div>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">ConstantBuffer<span style="color:#555">&lt;</span>PatchTesselationFactors<span style="color:#555">&gt;</span> <span style="color:#99f">tessFactors</span> : <span style="color:#069;font-weight:bold">register</span>(b0);
+</code></pre></div>
 <p>Thought you can use the old syntax I like the new one more. Beyond this the shader is a simple pass-through, like a vertex shader.</p>
 <p>This shader will be invoked <code>28</code> number of times (by the number of patches).</p>
 <p><strong>Domain shader</strong></p>
 <p>Finally we arrived to the point of interest. Basically this is the place where all the work is done in our program.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#099">#define NUM_CONTROL_POINTS 16
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#099">#define NUM_CONTROL_POINTS 16
 </span><span style="color:#099"></span>
 <span style="color:#069;font-weight:bold">struct</span> <span style="color:#0a8;font-weight:bold">ConstantBufferPerObj</span>
 {
@@ -251,7 +254,8 @@ DomainToPixel main(PatchConstantData input, float2 <span style="color:#99f">doma
 	output.color <span style="color:#555">=</span> patchColors[patchID].color;
 
 	<span style="color:#069;font-weight:bold">return</span> output;
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Going from the top we see that we&rsquo;re operating on the same <code>16</code> point patch, we have a constant buffer for the teapot`s world-view-projection transform, structured buffer for the patch transform and structured buffer for the patch color. In practice we can use one structured buffer for both transforms and colors but I deliberately split it in two to show how we can assign resources through the root table (more on this later). This data we&rsquo;re receiving from the application.</p>
 <p>There&rsquo;re also structs: <code>PatchConstantData</code> and <code>HullToDomain</code> - data from the hull shader (remember that position is a pass through from the vertex shader which also passes it from the input assembler), <code>DomainToPixel</code> - the data we&rsquo;re passing further down the pipeline - to the pixel shader.</p>
 <p>Next is a pure math - in the <code>main()</code> function we have a list of control points for one patch (<code>16</code> points) and we need to sample it so we can assign a position to the new vertex generated by tesselator. The good overview of the math behind you can find <a href="http://www.gamasutra.com/view/feature/131755/curved_surfaces_using_bzier_.php">here</a>. Also <a href="http://www.gdcvault.com/play/1012740/direct3d">this presentation</a> is a very good reading about patch tesselation in <code>directx 11</code> (I took the most of the code from there to be honest).</p>
@@ -277,7 +281,8 @@ DomainToPixel main(PatchConstantData input, float2 <span style="color:#99f">doma
 <p>When I started to write this tutorial I wanted to make it as simple as possible and put everything in one file. But when this file became more than <code>1000</code> lines I decided to split the code on several logic units. <code>Window</code> is a class which encapsulates window creation and accepts a key press callback in the form of <code>std::function</code>. We&rsquo;ll use this callback to change demo parameters. <code>Graphics</code> is a base class for our demo. It creates a <code>Window</code> and also initializes d3d. For example it creates device, swap chain, depth buffer, back buffers, command list and so on. <code>TeapotTutorial</code> extends this class and adds functionality related to our demo - resources creation, rendering. I&rsquo;ll describe why each method exist and we&rsquo;ll start with creation of the root signature.</p>
 <h4 id="root-signature">Root Signature</h4>
 <p>At this point we should know that shaders require resources and this resources should be bound to the correct resource slots (<code>b0</code> for constant buffer, <code>t0</code> for structured buffer, for example). In directx 12 we bind with special interface - <code>ID3D12RootSignature</code>. With the help of the interface we can describe which resources a shader needs and in which slot. We can say that signature only declares input parameters, just like usual c++ function signature. For example:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">rootSignature</span>(std<span style="color:#555">::</span>array<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>, <span style="color:#f60">2</span><span style="color:#555">&gt;</span> constants, XMFLOAT4X4<span style="color:#555">*</span> wvpMatrix, std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>XMFLOAT3<span style="color:#555">*&gt;*</span> colors);</code></pre></div>
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#078;font-weight:bold">void</span> <span style="color:#c0f">rootSignature</span>(std<span style="color:#555">::</span>array<span style="color:#555">&lt;</span><span style="color:#078;font-weight:bold">int</span>, <span style="color:#f60">2</span><span style="color:#555">&gt;</span> constants, XMFLOAT4X4<span style="color:#555">*</span> wvpMatrix, std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>XMFLOAT3<span style="color:#555">*&gt;*</span> colors);
+</code></pre></div>
 <p>What we see here is that our function expects <code>3</code> parameters - two ints, copied by value; pointer to a matrix, and a pointer to vector of pointers to some colors. This is what happening if we&rsquo;re using these values: the first parameter - two ints - will be copied to registers so accessing them will be extremely fast; for the second parameter we need to dereference a pointer and it will lead to memory read with a potential cache miss, so it&rsquo;s slower that the first parameter; the third parameter is the slowest one - to read from the vector we need to dereference it first and then dereference the element we want to access - that means two indirections.</p>
 <p>Please notice that this is just a signature - it doesn&rsquo;t tell us what are the actual parameter values. Basically we can use as many different combinations of parameters as we can imagine with a single signature - the only mandatory is that we need to maintain correct types. Why did I tell all this? Because this is exactly how root signature works! We specify the input parameters and their types and later during runtime we call the function passing the actual data.</p>
 <p>As you remember we have <code>4</code> resources for our demo - hull constant buffer, domain constant buffer and <code>2</code> domain structured buffers.</p>
@@ -304,7 +309,7 @@ DomainToPixel main(PatchConstantData input, float2 <span style="color:#99f">doma
 </blockquote>
 <p>Remember that signature doesn&rsquo;t define any parameters - it just declares the type and the order. The actual data will be passed later.</p>
 <p>Knowing all this we can write our first <code>directx 12</code> code.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12RootSignature<span style="color:#555">&gt;</span> rootSignature;
 
 <span style="color:#09f;font-style:italic">// TeapotTutorial.cpp
@@ -373,7 +378,8 @@ DomainToPixel main(PatchConstantData input, float2 <span style="color:#99f">doma
 	{
 		<span style="color:#069;font-weight:bold">throw</span>(runtime_error{ <span style="color:#c30">&#34;Error creating root signature&#34;</span> });
 	}
-}</code></pre></div>
+}
+</code></pre></div>
 <p>We&rsquo;re using <code>3</code> root parameters: root descriptor for domain shader&rsquo;s constant buffer, <code>2</code> root constants for hull shader&rsquo;s constant buffer and a descriptor table for <code>2</code> structured buffers.</p>
 <p>First we&rsquo;re creating a descriptor table - for this we need to specify the range of descriptors (<em>#1</em>) we&rsquo;ll use and pass this range to the parameter description (<em>#2</em>). Next we&rsquo;re creating a root descriptor for the domain constant buffer (<em>#3</em>). The final parameter is our root constants (<em>#4</em>). Notice how we specified shader visibility for each parameter. The api will validate this input and say us if there&rsquo;s something wrong. Also notice how we excluded certain stages from accessing root signature (<em>#5</em>) - this is recommended. Next we&rsquo;re creating root signature description struct (<em>#6</em>) with all the information we have so far and serializing it (<em>#7</em>). The last step is necessary because there&rsquo;s another way to create a root signature - directly in shader, not c++ app. And finally we&rsquo;re creating our root signature.</p>
 <blockquote>
@@ -394,7 +400,7 @@ DomainToPixel main(PatchConstantData input, float2 <span style="color:#99f">doma
 <p>The last method - <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn899182(v=vs.85).aspx"><code>ID3D12Device::CreateRootSignature</code></a> - uses some <code>device</code> that we don&rsquo;t know yet. This is a software representation of the hardware and we&rsquo;ll find how to create one in the next section.</p>
 <h4 id="directx-initialization">DirectX Initialization</h4>
 <p>As you remember the base initialization is done in the base class called <code>Graphics</code>. This is how we create a device:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Device<span style="color:#555">&gt;</span> device;
 
 <span style="color:#09f;font-style:italic">// Graphics.cpp
@@ -404,9 +410,10 @@ DomainToPixel main(PatchConstantData input, float2 <span style="color:#99f">doma
 	{
 		<span style="color:#069;font-weight:bold">throw</span>(runtime_error{ <span style="color:#c30">&#34;Error creating device.&#34;</span> });
 	}
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Simple enough. But what is this <code>adapter</code>? We can use <code>nullptr</code> instead and let the api to choose the default adapter, but let&rsquo;s see how we can select among many adapters that exist in our system. <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb174523(v=vs.85).aspx"><code>IDXGIAdapter</code></a> is similar to <code>ID3D12Device</code> interface - it also a presentation of a gpu. It&rsquo;s hard for me to tell why do we need two similar interfaces that basically represent the same thing. Let&rsquo;s think that <code>dxgi</code> interface provides different information about a gpu itself (vendor, name etc.), but <code>d3d</code> interface allows us to manipulate it - create different resources, change states.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>IDXGIAdapter3<span style="color:#555">&gt;</span> adapter;
 
 <span style="color:#09f;font-style:italic">// Graphics.cpp
@@ -436,9 +443,10 @@ DomainToPixel main(PatchConstantData input, float2 <span style="color:#99f">doma
 	{
 		<span style="color:#069;font-weight:bold">throw</span>(runtime_error{ <span style="color:#c30">&#34;Error getting an adapter.&#34;</span> });
 	}
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Here we just grab the first adapter that is not software (starting from <code>Windows 8</code> there&rsquo;s always a software adapter presented in the system). But you can use different logic - like checking a vendor. For enumerating we&rsquo;re using some <code>factory</code> which is <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb174535(v=vs.85).aspx"><code>IDXGIFactory</code></a> interface. So let&rsquo;s create it too:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>IDXGIFactory4<span style="color:#555">&gt;</span> factory;
 
 <span style="color:#09f;font-style:italic">// Graphics.cpp
@@ -461,14 +469,15 @@ DomainToPixel main(PatchConstantData input, float2 <span style="color:#99f">doma
 	{
 		<span style="color:#069;font-weight:bold">throw</span>(runtime_error{ <span style="color:#c30">&#34;Error creating IDXGIFactory.&#34;</span> });
 	}
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Finally no more new dependent interfaces! Thought there&rsquo;s one which we not depend on - <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn950153(v=vs.85).aspx"><code>ID3D12Debug</code></a>. You should always use it with debug configuration. During an error it writes detailed message to the output.</p>
 <p>Now we can compile the code we have successfully thought we&rsquo;ll not see anything on the screen. That&rsquo;s one of the downside of programming with directx - we can&rsquo;t have some intermediate results like render only one triangle from the teapot or shade only one pixel. We need to write a lot of code for both cpu and gpu just to find the black screen or artifacts.</p>
 <p>At this point we have defined shaders and a signature. But the gpu doesn&rsquo;t know about our shaders - we only have several text files that are useful for us - not the hardware. As you have guessed we need to load our shaders to the graphics card. But first we need to compile them. Later we&rsquo;ll use a new addtition to the api which allows us to send this compiled data (and a lot of other stuff) to the gpu - pipeline state object (or pso for short).</p>
 <h4 id="pipeline-state-object">Pipeline State Object</h4>
 <p>As you know the gpu is a state machine - once it&rsquo;s setted up it will do the same actions over and over again until we change a state. In directx 12 the entire gpu state (plus or minus some minor things) is represented by <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn788705(v=vs.85).aspx"><code>ID3D12PipelineState</code></a> interface. This means that if you want to render the same object in wireframe and solid you have to create <code>2</code> such objects which will differ only by fill mode. State creation is a heavy operation that should be avoided in runtime. Instead all states that you need for your scene should be created as a part of initialization.</p>
 <p>In our demo we&rsquo;ll use <code>2</code> states - one for solid rendering and backface culling and another for wireframe rendering and without culling. Creating a state means filling a lot of structures and setting shaders. We&rsquo;re compiling our shaders as a build process in Visual Studio. This means that during application start we should have <code>cso</code> files somewhere which we need to load. The loading is very simple and can be done like this:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3DBlob<span style="color:#555">&gt;</span> vertexShaderBlob;
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3DBlob<span style="color:#555">&gt;</span> hullShaderBlob;
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3DBlob<span style="color:#555">&gt;</span> domainShaderBlob;
@@ -496,9 +505,10 @@ Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>
 	{
 		<span style="color:#069;font-weight:bold">throw</span>(runtime_error{ <span style="color:#c30">&#34;Error reading pixel shader.&#34;</span> });
 	}
-}</code></pre></div>
+}
+</code></pre></div>
 <p>And now the pipeline state creation (remember - we have <code>2</code> states):</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12PipelineState<span style="color:#555">&gt;</span> pipelineStateWireframe;
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12PipelineState<span style="color:#555">&gt;</span> pipelineStateSolid;
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12PipelineState<span style="color:#555">&gt;</span> currPipelineState;
@@ -590,7 +600,8 @@ ComPtr<span style="color:#555">&lt;</span>ID3D12PipelineState<span style="color:
 	}
 
 	<span style="color:#069;font-weight:bold">return</span> pipelineState;
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Wow, that&rsquo;s a lot of code. Let&rsquo;s step through the code line by line. First we create input layout (<em>#1</em>). In vertex shader we&rsquo;re expecting only one input - the control point position so we have only one entry in <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn770377(v=vs.85).aspx"><code>D3D12_INPUT_ELEMENT_DESC</code></a> vector. Next we&rsquo;re creating a rasterizer state (<em>#2</em>). This structure can be replaced with a helper <code>CD3DX12_RASTERIZER_DESC</code> to make it shorter. Next is blend (<em>#</em>) - it can be replaced with <code>CD3DX12_BLEND_DESC</code>. Next is depth stencil (<em>#4</em> and <code>CD3DX12_DEPTH_STENCIL_DESC</code>). And finally pipeline state object itself where we assign all the things we created (<em>#5</em>). All these structures are pretty simple and I think it should be clear from the names what each field represent so I won&rsquo;t describe it in detail.</p>
 <blockquote>
 <p>Interesting thing - thought we assigned a root signature to pso this assignmend done only for validation, i.e. the api will check that shader inputs correspond to signature parameters. After pipeline state creation the information about root signature is lost and we need to assign it again before drawing.</p>
@@ -609,20 +620,22 @@ ComPtr<span style="color:#555">&lt;</span>ID3D12PipelineState<span style="color:
 <p>All buffer instantiations are in constructor of our demo class.</p>
 <p><strong>Vertex Buffer</strong></p>
 <p>This is a special buffer that doesn&rsquo;t requires a descriptor heap (but still requires a descriptor/view).</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Resource<span style="color:#555">&gt;</span> controlPointsBuffer;
 
 <span style="color:#09f;font-style:italic">// TeapotTutorial.cpp
-</span><span style="color:#09f;font-style:italic"></span>controlPointsBuffer <span style="color:#555">=</span> teapot_tutorial<span style="color:#555">::</span>createVertexBuffer(device.Get(), TeapotData<span style="color:#555">::</span>points, <span style="color:#c30">L</span><span style="color:#c30">&#34;control points&#34;</span>);</code></pre></div>
+</span><span style="color:#09f;font-style:italic"></span>controlPointsBuffer <span style="color:#555">=</span> teapot_tutorial<span style="color:#555">::</span>createVertexBuffer(device.Get(), TeapotData<span style="color:#555">::</span>points, <span style="color:#c30">L</span><span style="color:#c30">&#34;control points&#34;</span>);
+</code></pre></div>
 <p>Looks simple, but it&rsquo;s not. Here we can see a helper function <code>teapot_tutorial::createVertexBuffer()</code> which takes a device (remember, we need it to create almost everything for the application), a data and a buffer name. The last parameter is super helpful during debugging - in visual studio graphics debugger we can easily find our buffer knowing it&rsquo;s name. This helper function lives in a helper header called <code>Utils.h</code> (surprise surprise) and this is how it&rsquo;s defined:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Utils.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Utils.h
 </span><span style="color:#09f;font-style:italic"></span><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Resource<span style="color:#555">&gt;</span> createVertexBuffer(ID3D12Device<span style="color:#555">*</span> device, <span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;&amp;</span> data, std<span style="color:#555">::</span>wstring name <span style="color:#555">=</span> <span style="color:#c30">L</span><span style="color:#c30">&#34;&#34;</span>)
 {
 	<span style="color:#069;font-weight:bold">return</span> details<span style="color:#555">::</span>createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, name);
-}</code></pre></div>
+}
+</code></pre></div>
 <p>This function calls another helper function - <code>createDefaultBuffer()</code>;</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Utils.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Utils.h
 </span><span style="color:#09f;font-style:italic"></span><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Resource<span style="color:#555">&gt;</span> createDefaultBuffer(ID3D12Device<span style="color:#555">*</span> device, <span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;&amp;</span> data, D3D12_RESOURCE_STATES finalState, std<span style="color:#555">::</span>wstring name <span style="color:#555">=</span> <span style="color:#c30">L</span><span style="color:#c30">&#34;&#34;</span>)
 {
@@ -780,7 +793,8 @@ Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>
 	}
 
 	<span style="color:#069;font-weight:bold">return</span> defaultBuffer;
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Looks scary. But going step by step we&rsquo;ll get familar with a lot of directx 12 concepts. In the top we&rsquo;re creating a couple of structures that describe that we&rsquo;re going to create a default heap (<em>#1</em>) and a buffer (<em>#2</em>). Notice that we&rsquo;re not specifying the purpose of the buffer - we&rsquo;re just declaring the size. In other words we&rsquo;re asking for a certain amount of memory. Among other things notice that <code>Alignment</code> is <code>0</code>. Remember, on previous diagramm we had <code>2</code> numbers for the resource size - the actual data size and the alignement size. We should specify <code>64KB</code> for the buffer or <code>0</code> (which will set it to <code>64KB</code> under the hood). We can use helper structures <code>CD3DX12_HEAP_PROPERTIES</code> and <code>CD3DX12_RESOURCE_DESC</code> here.</p>
 <p>Next we&rsquo;re calling <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn899178(v=vs.85).aspx"><code>ID3D12Device::CreateCommittedResource()</code></a> method that actually reserves a memory (<em>#3</em>). This method asks the gpu to find a free space. There&rsquo;re other methods for resource creation - for example we can use already reserved memory and create placed resource in it - just like a <code>placement new</code> operator in c++ (we&rsquo;ll not use this in our demo).</p>
 <p>Next we&rsquo;re creating an intermediate resource (<em>#4</em>). The only difference is that now we&rsquo;re asking for upload heap so we can write to it from the cpu.</p>
@@ -796,7 +810,7 @@ Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>
 <p>Previously we talked about cpu-gpu communication. Now we&rsquo;re interested in gpu-cpu talk. We do it with fences. Fence is nothing more than an integer value. After we submitted a command list we can add one more command to the queue that will set the fence to the specified value. All we left to do is to check wherether our fence have a correct value or not and if it not - just wait untill it change. Super simple, isn&rsquo;t it? First we&rsquo;re creating <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn899188%28v=vs.85%29.aspx"><code>ID3D12Fence</code></a> itself (<em>#12</em>) and also some <code>fenceEventHandle</code> (<em>#13</em>). This handle is not a part of <code>directx</code> but <code>winapi</code>. We&rsquo;re assigning value to the fence on the gpu with <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn899171(v=vs.85).aspx"><code>ID3D12CommandQueue::Signal()</code></a> method (<em>#14</em>). The first parameter is a fence object and the second is a desired value we want out fence be after the command list executed. Next we&rsquo;re setting an event on completion with <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn899190%28v=vs.85%29.aspx"><code>ID3D12Fence::SetEventOnCompletion()</code></a> method (<em>#15</em>). When the fence value will be equal to the first parameter then the event (second parameter) will be raised. In <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms687032(v=vs.85).aspx"><code>WaitForSingleObject()</code></a> (<em>#16</em>) we&rsquo;re waiting when this happens for specified number of seconds (<code>10</code> seconds in our case but can be up to infinite). If at the moment of calling the fence already have a desired value it will return <code>WAIT_OBJECT_0</code> immediately in other case it will wait.</p>
 <p>Finally we&rsquo;re returning created default buffer to the caller.</p>
 <p>Now we need to create a view for our resource. Remember that resource is just a bunch of data in memory - we need to describe this data so the gpu can use it correctly.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
 </span><span style="color:#09f;font-style:italic"></span>D3D12_VERTEX_BUFFER_VIEW controlPointsBufferView;
 
 <span style="color:#09f;font-style:italic">// TeapotTutorial.cpp
@@ -804,48 +818,54 @@ Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>
 
 controlPointsBufferView.BufferLocation <span style="color:#555">=</span> controlPointsBuffer<span style="color:#555">-&gt;</span>GetGPUVirtualAddress();
 controlPointsBufferView.StrideInBytes <span style="color:#555">=</span> <span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span>UINT<span style="color:#555">&gt;</span>(<span style="color:#069;font-weight:bold">sizeof</span>(PointType));
-controlPointsBufferView.SizeInBytes <span style="color:#555">=</span> <span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span>UINT<span style="color:#555">&gt;</span>(controlPointsBufferView.StrideInBytes <span style="color:#555">*</span> TeapotData<span style="color:#555">::</span>points.size());</code></pre></div>
+controlPointsBufferView.SizeInBytes <span style="color:#555">=</span> <span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span>UINT<span style="color:#555">&gt;</span>(controlPointsBufferView.StrideInBytes <span style="color:#555">*</span> TeapotData<span style="color:#555">::</span>points.size());
+</code></pre></div>
 <p><strong>Index Buffer</strong></p>
 <p>Similar to vertex buffer this buffer doesn’t require a descriptor heap.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Resource<span style="color:#555">&gt;</span> controlPointsIndexBuffer;
 
 <span style="color:#09f;font-style:italic">// TeapotTutorial.cpp
-</span><span style="color:#09f;font-style:italic"></span>controlPointsIndexBuffer <span style="color:#555">=</span> teapot_tutorial<span style="color:#555">::</span>createIndexBuffer(device.Get(), TeapotData<span style="color:#555">::</span>patches, <span style="color:#c30">L</span><span style="color:#c30">&#34;patches&#34;</span>);</code></pre></div>
+</span><span style="color:#09f;font-style:italic"></span>controlPointsIndexBuffer <span style="color:#555">=</span> teapot_tutorial<span style="color:#555">::</span>createIndexBuffer(device.Get(), TeapotData<span style="color:#555">::</span>patches, <span style="color:#c30">L</span><span style="color:#c30">&#34;patches&#34;</span>);
+</code></pre></div>
 <p>And</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Utils.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Utils.h
 </span><span style="color:#09f;font-style:italic"></span><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Resource<span style="color:#555">&gt;</span> createIndexBuffer(ID3D12Device<span style="color:#555">*</span> device, <span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;&amp;</span> data, std<span style="color:#555">::</span>wstring name <span style="color:#555">=</span> <span style="color:#c30">L</span><span style="color:#c30">&#34;&#34;</span>)
 {
 	<span style="color:#069;font-weight:bold">return</span> details<span style="color:#555">::</span>createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_INDEX_BUFFER, name);
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Here we changed the final state of our buffer to <code>D3D12_RESOURCE_STATE_INDEX_BUFFER</code>. All other code remains the same as for the vertex buffer.</p>
 <p>The view is also very simple:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
 </span><span style="color:#09f;font-style:italic"></span>D3D12_INDEX_BUFFER_VIEW controlPointsIndexBufferView;
 
 <span style="color:#09f;font-style:italic">// TeapotTutorial.cpp
 </span><span style="color:#09f;font-style:italic"></span>controlPointsIndexBufferView.BufferLocation <span style="color:#555">=</span> controlPointsIndexBuffer<span style="color:#555">-&gt;</span>GetGPUVirtualAddress();
 controlPointsIndexBufferView.Format <span style="color:#555">=</span> DXGI_FORMAT_R32_UINT;
-controlPointsIndexBufferView.SizeInBytes <span style="color:#555">=</span> <span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span>UINT<span style="color:#555">&gt;</span>(TeapotData<span style="color:#555">::</span>patches.size() <span style="color:#555">*</span> <span style="color:#069;font-weight:bold">sizeof</span>(<span style="color:#078;font-weight:bold">uint32_t</span>));</code></pre></div>
+controlPointsIndexBufferView.SizeInBytes <span style="color:#555">=</span> <span style="color:#069;font-weight:bold">static_cast</span><span style="color:#555">&lt;</span>UINT<span style="color:#555">&gt;</span>(TeapotData<span style="color:#555">::</span>patches.size() <span style="color:#555">*</span> <span style="color:#069;font-weight:bold">sizeof</span>(<span style="color:#078;font-weight:bold">uint32_t</span>));
+</code></pre></div>
 <p><strong>Structured buffers</strong></p>
 <p>Resource creation for this buffers is also the same as for previous buffers:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Resource<span style="color:#555">&gt;</span> transformsBuffer;
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Resource<span style="color:#555">&gt;</span> colorsBuffer;
 
 <span style="color:#09f;font-style:italic">// TeapotTutorial.cpp
 </span><span style="color:#09f;font-style:italic"></span>transformsBuffer <span style="color:#555">=</span> teapot_tutorial<span style="color:#555">::</span>createStructuredBuffer(device.Get(), TeapotData<span style="color:#555">::</span>patchesTransforms, <span style="color:#c30">L</span><span style="color:#c30">&#34;transforms&#34;</span>);
-colorsBuffer <span style="color:#555">=</span> teapot_tutorial<span style="color:#555">::</span>createStructuredBuffer(device.Get(), TeapotData<span style="color:#555">::</span>patchesColors, <span style="color:#c30">L</span><span style="color:#c30">&#34;colors&#34;</span>);</code></pre></div>
+colorsBuffer <span style="color:#555">=</span> teapot_tutorial<span style="color:#555">::</span>createStructuredBuffer(device.Get(), TeapotData<span style="color:#555">::</span>patchesColors, <span style="color:#c30">L</span><span style="color:#c30">&#34;colors&#34;</span>);
+</code></pre></div>
 <p>Where <code>createStructuredBuffer</code> defined as here:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Utils.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Utils.h
 </span><span style="color:#09f;font-style:italic"></span><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Resource<span style="color:#555">&gt;</span> createStructuredBuffer(ID3D12Device<span style="color:#555">*</span> device, <span style="color:#069;font-weight:bold">const</span> std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>T<span style="color:#555">&gt;&amp;</span> data, std<span style="color:#555">::</span>wstring name <span style="color:#555">=</span> <span style="color:#c30">L</span><span style="color:#c30">&#34;&#34;</span>)
 {
 	<span style="color:#069;font-weight:bold">return</span> details<span style="color:#555">::</span>createDefaultBuffer(device, data, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, name);
-}</code></pre></div>
+}
+</code></pre></div>
 <p>This buffer finally needs a descriptor heap which we&rsquo;re creating with the following code:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12DescriptorHeap<span style="color:#555">&gt;</span> transformsAndColorsDescHeap;
 
 <span style="color:#09f;font-style:italic">// TeapotTutorial.cpp
@@ -862,17 +882,19 @@ Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>
 	{
 		<span style="color:#069;font-weight:bold">throw</span>(runtime_error{ <span style="color:#c30">&#34;Error creating descriptor heap.&#34;</span> });
 	}
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Here we&rsquo;re specifying that we need a heap for <code>2</code> descriptors. Remember - we have <code>2</code> structured buffers - transforms and colors. Next we&rsquo;re telling that we want this heap to be accessible from the shader. Examples of non shader visible heaps are render target view or stream output. Also we&rsquo;re defining a type. Constant buffer, srv and uav descriptors can leave in the same heap and this is for good - having many heaps and switching between them is not performance friendly.</p>
 <p>Now when we have a heap we need to fill it with descriptors.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.cpp
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.cpp
 </span><span style="color:#09f;font-style:italic"></span><span style="color:#069;font-weight:bold">using</span> TransformType <span style="color:#555">=</span> <span style="color:#069;font-weight:bold">decltype</span>(TeapotData<span style="color:#555">::</span>patchesTransforms)<span style="color:#555">::</span>value_type;
 <span style="color:#069;font-weight:bold">using</span> ColorType <span style="color:#555">=</span> <span style="color:#069;font-weight:bold">decltype</span>(TeapotData<span style="color:#555">::</span>patchesColors)<span style="color:#555">::</span>value_type;
     
 teapot_tutorial<span style="color:#555">::</span>createSrv<span style="color:#555">&lt;</span>TransformType<span style="color:#555">&gt;</span>(device.Get(), transformsAndColorsDescHeap.Get(), <span style="color:#f60">0</span>, transformsBuffer.Get(), TeapotData<span style="color:#555">::</span>patchesTransforms.size());
-teapot_tutorial<span style="color:#555">::</span>createSrv<span style="color:#555">&lt;</span>ColorType<span style="color:#555">&gt;</span>(device.Get(), transformsAndColorsDescHeap.Get(), <span style="color:#f60">1</span>, colorsBuffer.Get(), TeapotData<span style="color:#555">::</span>patchesColors.size());</code></pre></div>
+teapot_tutorial<span style="color:#555">::</span>createSrv<span style="color:#555">&lt;</span>ColorType<span style="color:#555">&gt;</span>(device.Get(), transformsAndColorsDescHeap.Get(), <span style="color:#f60">1</span>, colorsBuffer.Get(), TeapotData<span style="color:#555">::</span>patchesColors.size());
+</code></pre></div>
 <p>Here we&rsquo;re calling a method from our <code>Utils.h</code> header:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Utils.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Utils.h
 </span><span style="color:#09f;font-style:italic"></span><span style="color:#069;font-weight:bold">template</span><span style="color:#555">&lt;</span><span style="color:#069;font-weight:bold">typename</span> T<span style="color:#555">&gt;</span>
 <span style="color:#078;font-weight:bold">void</span> createSrv(ID3D12Device<span style="color:#555">*</span> device, ID3D12DescriptorHeap<span style="color:#555">*</span> descHeap, <span style="color:#078;font-weight:bold">int</span> offset, ID3D12Resource<span style="color:#555">*</span> resource, size_t numElements)
 {
@@ -894,7 +916,8 @@ teapot_tutorial<span style="color:#555">::</span>createSrv<span style="color:#55
 </span><span style="color:#09f;font-style:italic"></span>	d.ptr <span style="color:#555">+=</span> descriptorSize <span style="color:#555">*</span> offset;
     <span style="color:#09f;font-style:italic">// #4
 </span><span style="color:#09f;font-style:italic"></span>	device<span style="color:#555">-&gt;</span>CreateShaderResourceView(resource, <span style="color:#555">&amp;</span>srvDesc, d);
-}</code></pre></div>
+}
+</code></pre></div>
 <p>We&rsquo;re describing a view with the struct <code>D3D12_SHADER_RESOURCE_VIEW_DESC</code> (<em>#1</em>). Since we can have arbitrary stride in structured buffer the format should defined as <code>DXGI_FORMAT_UNKNOWN</code>. <code>Shader4ComponentMapping</code> is a bit confusing for me - it looks like we can force some components be <code>0</code> or <code>1</code>. We don&rsquo;t need this so we&rsquo;re using default mapping, but if you have information how this can be useful please write in comments. All other parameters are pretty strightforward.</p>
 <p>Next we&rsquo;re creating descriptor in the heap. Descritors for constant buffer, srv and uav have the same size (but can differ in size among hardware vendors) and we&rsquo;re requesting this size with <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn899186(v=vs.85).aspx"><code>ID3D12Device::GetDescriptorHandleIncrementSize()</code></a> method (<em>#2</em>). We&rsquo;re searching the place in the heap where we can create a descriptor (<em>#3</em>). The very first descriptor we can put in the heap start but for the next descriptor we need to offset position by the size of the descriptor. And finally we&rsquo;re asking the device to create specified descriptor in specified place (<em>#4</em>).</p>
 <p><strong>Constant buffers</strong></p>
@@ -905,7 +928,7 @@ teapot_tutorial<span style="color:#555">::</span>createSrv<span style="color:#55
 <p>Several buffers is not a silver buller. There still can be a situation when the cpu is faster than gpu and we need to syncronize anyway.</p>
 </blockquote>
 <p>So how much buffers do we need? Usually <code>2</code> or <code>3</code> is enough. In the demo I made this number adjustible but by default using <code>3</code>. That means that we need to create <code>3</code> constant buffers. Or create one big buffer that can fit <code>3</code> matrices (remember that resource is just a blob of memory). This is how we create our resource:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Resource<span style="color:#555">&gt;</span> constBuffer;
 
 <span style="color:#09f;font-style:italic">// TeapotTutorial.cpp
@@ -951,7 +974,8 @@ teapot_tutorial<span style="color:#555">::</span>createSrv<span style="color:#55
 	}
 
 	constBuffer<span style="color:#555">-&gt;</span>SetName(<span style="color:#c30">L</span><span style="color:#c30">&#34;constants&#34;</span>);
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Since constant buffer will be updated every frame there&rsquo;s no need to create it with default type. The read of constant buffer in directx 12 should be aligned by <code>256B</code>. If we have <code>4x4</code> matrix of <code>float</code> which requires <code>16 * 4 = 64B</code> we can&rsquo;t place the next matrix immediately after it or we&rsquo;ll break the alignment rule and will get an error. So our total size for <code>3</code> buffers will be <code>3 * 256 = 768B</code>. And since constant buffer is just a usual buffer it will be aligned by <code>64KB</code>. Finally we can finish our diagram.</p>
 <a href="#images%2fshader_res_3.png">
     <img src=images/shader_res_3.png class="thumbnail">
@@ -977,7 +1001,7 @@ teapot_tutorial<span style="color:#555">::</span>createSrv<span style="color:#55
 <p>If we would use multiple threads for commands creation submission, we have to use <code>3 * numTheads</code> allocators and <code>numThreads</code> lists. That&rsquo;s because when the list is in use with particular allocator it can&rsquo;t be used with another until it closed.</p>
 </blockquote>
 <p>This is how we&rsquo;re creating necessary data:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
 </span><span style="color:#09f;font-style:italic"></span>std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12CommandAllocator<span style="color:#555">&gt;&gt;</span> commandAllocators;
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12GraphicsCommandList<span style="color:#555">&gt;</span> commandList;
 std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Fence<span style="color:#555">&gt;&gt;</span> fences;
@@ -1035,10 +1059,11 @@ HANDLE fenceEventHandle;
 	{
 		<span style="color:#069;font-weight:bold">throw</span>(runtime_error{ <span style="color:#c30">&#34;Error creating fence event.&#34;</span> });
 	}
-}</code></pre></div>
+}
+</code></pre></div>
 <p>All this code should be already familar to you. Here we&rsquo;re creating allocators, a list and we&rsquo;re closing it because we&rsquo;re not going to use it now, fences - one for each buffered frame and one handle. We need multiple fences by the same reason we need multiple allocators. Imagine we submitted commands for frame <code>1</code> and told the queue to set a fence after this frame. We do the same for frames <code>2</code> and <code>3</code>. Now when we&rsquo;re ready to reuse allocator <code>1</code> we need to check fence value <code>1</code> - not <code>2</code> or <code>3</code> (they still can be in use) and if the value is what we&rsquo;re expecting we can safely reuse the memory. In other case we need to wait.</p>
 <p>Next we&rsquo;ll create command queue and  swap chain:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12CommandQueue<span style="color:#555">&gt;</span> commandQueue;
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>IDXGISwapChain3<span style="color:#555">&gt;</span> swapChain;
 
@@ -1086,10 +1111,11 @@ Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>
 	{
 		<span style="color:#069;font-weight:bold">throw</span>(runtime_error{ <span style="color:#c30">&#34;Error creating IDXGISwapChain3.&#34;</span> });
 	}
-}</code></pre></div>
+}
+</code></pre></div>
 <p>You should be familar with command queue. The swap chain concept didn&rsquo;t change since directx 11 the only interesting thing is that you need to specify command queue during swap chain creation. Here <code>bufferCount</code> variable is a number of buffered frames.</p>
 <p>Now it&rsquo;s time to create back buffers:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
 </span><span style="color:#09f;font-style:italic"></span>std<span style="color:#555">::</span>vector<span style="color:#555">&lt;</span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Resource<span style="color:#555">&gt;&gt;</span> swapChainBuffers;
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12DescriptorHeap<span style="color:#555">&gt;</span> descHeapRtv;
 
@@ -1126,10 +1152,11 @@ Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>
 		d.ptr <span style="color:#555">+=</span> i <span style="color:#555">*</span> rtvStep;
 		device<span style="color:#555">-&gt;</span>CreateRenderTargetView(swapChainBuffers[i].Get(), <span style="color:#069;font-weight:bold">nullptr</span>, d);
 	}
-}</code></pre></div>
+}
+</code></pre></div>
 <p>When we specified the number of back buffers in swap chain creation they become created implicitly so we don&rsquo;t need to create resources manualy. But we still need to create descriptors for all our back buffers. In <code>Graphics::getSwapChainBuffers()</code> we&rsquo;re obtaining pointers to created resources and in <code>Graphics::createDescriptoprHeapRtv()</code> we&rsquo;re creating a descriptor heap (recal that descriptors should be stored somewhere) with the type <code>D3D12_DESCRIPTOR_HEAP_TYPE_RTV</code> and big enough to store necessary amount of views. Next we&rsquo;re iterating over obtained buffer pointers and for every resource we&rsquo;re creating a corresponding view (recal that <code>ID3D12Device::GetDescriptorHandleIncrementSize</code> is a cross vendor way to get descriptor size).</p>
 <p>For our demo we also need a depth buffer:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.h
 </span><span style="color:#09f;font-style:italic"></span>Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12Resource<span style="color:#555">&gt;</span> depthStencilBuffer;
 Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>ComPtr<span style="color:#555">&lt;</span>ID3D12DescriptorHeap<span style="color:#555">&gt;</span> descHeapDepthStencil;
 
@@ -1201,12 +1228,13 @@ Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>
 	depthStencilViewDesc.Flags <span style="color:#555">=</span> D3D12_DSV_FLAG_NONE;
 
 	device<span style="color:#555">-&gt;</span>CreateDepthStencilView(depthStencilBuffer.Get(), <span style="color:#555">&amp;</span>depthStencilViewDesc, descHeapDepthStencil<span style="color:#555">-&gt;</span>GetCPUDescriptorHandleForHeapStart());
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Nothing special here - we&rsquo;re creating a resource heap with default type (depth buffer used by gpu without cpu access) and a texture resource. Field names are self explanatory - dimension, size, etc. In flags we&rsquo;re specifying that we want to use this texture as depth stencil. And as we did million times already we`re creating a descriptor heap and a descriptor inside it.</p>
 <p>Wow. Finally. We&rsquo;re ready to draw!</p>
 <h4 id="rendering">Rendering</h4>
 <p>We have everything for our demo - all resources and infrastructure. Now we&rsquo;ll call <code>TeapotTutorial::render()</code> method every frame where we&rsquo;ll tell gpu to use resources and run shaders.</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.cpp
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// TeapotTutorial.cpp
 </span><span style="color:#09f;font-style:italic"></span><span style="color:#078;font-weight:bold">void</span> TeapotTutorial<span style="color:#555">::</span>render()
 {
 	<span style="color:#09f;font-style:italic">// #1
@@ -1352,7 +1380,8 @@ Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>
 
 	<span style="color:#09f;font-style:italic">// #21
 </span><span style="color:#09f;font-style:italic"></span>	waitFrameComplete(swapChain<span style="color:#555">-&gt;</span>GetCurrentBackBufferIndex());
-}</code></pre></div>
+}
+</code></pre></div>
 <p>As usual we&rsquo;ll go step by step.</p>
 <p><code>IDXGISwapChain3</code> have a very handy method <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn903675(v=vs.85).aspx">IDXGISwapChain3::GetCurrentBackBufferIndex()</a> (<em>#1</em>). It shows the index of the current back buffer. In the beginnig the index is <code>0</code> and after calling <code>IDXGISwapChain::Present()</code> it will change to <code>2</code> (if we have more than <code>1</code> buffer of course). So we don&rsquo;t need to track manually the current frame.</p>
 <p>Using current frame index we can obtain a corresponding allocator (<em>#2</em>). We need to reset it before we can start to work with it. Remember that we need to be sure that there&rsquo;re no more commands in flight from this allocator so we&rsquo;ll not break anything. Also we need to tell our command list that we&rsquo;re going to use this allocator with it.</p>
@@ -1370,7 +1399,7 @@ Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>
 <p>If you&rsquo;re thinking that after drawing we can relax - I&rsquo;ll upset you. We still need some work to do. Remember that before drawing to a back buffer we set it&rsquo;s state as <code>D3D12_RESOURCE_STATE_RENDER_TARGET</code>. In order to be presented the buffer have to be in <code>D3D12_RESOURCE_STATE_PRESENT</code> state (<em>#16</em>).</p>
 <p>Now when we&rsquo;re done with command list we need to close it (<em>#17</em>) and send it to the command queue for execution (<em>#18</em>).</p>
 <p>After calling <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb174576(v=vs.85).aspx"><code>IDXGISwapChain-&gt;Present()</code></a> (<em>#19</em>) we need to tell the gpu to increment corresponding fence after frame will finish (<em>#20</em>). Exactly how we did during default buffer creation. For example if we rendered a frame <code>0</code> we need to update a fence <code>0</code> for this frame and store the updated value (also with index <code>0</code>) on cpu. This way we can anytime check the current value of fence <code>0</code> and say for sure if it&rsquo;s done or not. And we&rsquo;re doing it in <code>waitFrameComplete()</code> function (<em>#21</em>):</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.cpp
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.cpp
 </span><span style="color:#09f;font-style:italic"></span><span style="color:#078;font-weight:bold">void</span> Graphics<span style="color:#555">::</span>waitFrameComplete(UINT frameIndex)
 {
 	UINT64 fenceValue{ fenceValues[frameIndex] };
@@ -1386,18 +1415,20 @@ Microsoft<span style="color:#555">::</span>WRL<span style="color:#555">::</span>
 	{
 		<span style="color:#069;font-weight:bold">throw</span>(runtime_error{ <span style="color:#c30">&#34;Failed WaitForSingleObject().&#34;</span> });
 	}
-}</code></pre></div>
+}
+</code></pre></div>
 <p>One more time - imagine we just finished a frame with index <code>2</code>. Since we have <code>3</code> buffered frames total the next index will be <code>0</code>. In <code>waitFrameComplete()</code> we&rsquo;re checking the status of frame <code>0</code> - if it&rsquo;s still in flight we have to stall and wait until fence will be equal to the expected value.</p>
 <h4 id="cleanup">Cleanup</h4>
 <p>One thing we didn&rsquo;t mention is cleaning. But it&rsquo;s pretty simple - since we used smart pointers we don&rsquo;t need to delete pointers manually. The only thing we need to take care of is to be sure that during resources desctruction gpu finished with them. We can do it with good old fences:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.cpp
+<div class="highlight"><pre style="background-color:#f0f3f3;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#09f;font-style:italic">// Graphics.cpp
 </span><span style="color:#09f;font-style:italic"></span>Graphics<span style="color:#555">::~</span>Graphics()
 {
 	<span style="color:#069;font-weight:bold">for</span> (UINT i{ <span style="color:#f60">0</span> }; i <span style="color:#555">&lt;</span> bufferCount; i<span style="color:#555">++</span>)
 	{
 		waitFrameComplete(i);
 	}
-}</code></pre></div>
+}
+</code></pre></div>
 <p>Here I just iterate over all buffered frames and check that all they are done.</p>
 <h4 id="conclusion">Conclusion</h4>
 <p>Wow, that&rsquo;s was a really long journey. As you can see there&rsquo;s a lot of code for such a simple application but most of this code can be abstracted with reusable structures like ones in <code>d3dx12.h</code>.</p>
