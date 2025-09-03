@@ -7,10 +7,20 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <copyright>&amp;copy; &lt;a href=&#34;http://nikitablack.github.io/&#34;&gt;nikitablack&lt;/a&gt; 2021</copyright>
-    <lastBuildDate>Sun, 17 Aug 2025 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 03 Sep 2025 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Hello, Neural Network 2! Follow the White Rabbit.</title>
+      <link>http://nikitablack.github.io/post/hello_neural_network_3_eigen/</link>
+      <pubDate>Wed, 03 Sep 2025 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/hello_neural_network_3_eigen/</guid>
+      <description>Last time, we ended with a working naive implementation of a simple neural network. We also briefly touched on the performance difference between floats and doubles. But as you may remember, the ultimate goal is to train the network on a GPU using Vulkan Compute.
+In Vulkan Compute shaders (I&amp;rsquo;ll use GLSL as the shader language), we don&amp;rsquo;t have anything comparable to the C++ standard library. In fact, we have very little - just basic arithmetic operations and a small set of built-in functions.</description>
+    </item>
     
     <item>
       <title>Hello, Neural Network 1.5! Float vs Double.</title>

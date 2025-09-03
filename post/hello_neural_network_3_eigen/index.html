@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"  lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    }
+  };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+
+<title>Hello, Neural Network 2! Follow the White Rabbit. | Here should be the blog Title</title>
+
+
+
+<link href="http://nikitablack.github.io/index.xml" rel="alternate" type="application/rss+xml" title="Here should be the blog Title" />
+
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="stylesheet" href="/css/css_lightbox.css"><link rel='stylesheet' href='http://nikitablack.github.io/css/custom.css'><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="canonical" href="http://nikitablack.github.io/post/hello_neural_network_3_eigen/">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+<section class="section">
+  <div class="container">
+    <nav id="nav-main" class="nav">
+      <div id="nav-name" class="nav-left">
+        <a id="nav-anchor" class="nav-item" href="http://nikitablack.github.io/">
+          <h1 id="nav-heading" class="title is-4">Here should be the blog Title</h1>
+        </a>
+      </div>
+      <div class="nav-right">
+        <nav id="nav-items" class="nav-item level is-mobile"><a class="level-item" aria-label="twitter" href='https://twitter.com/nikita_cherniy'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="github" href='https://github.com/nikitablack'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="email" href='mailto:mynameisnikitablack@gmail.com'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+    
+  </svg></i>
+            </span>
+          </a></nav>
+      </div>
+    </nav>
+
+    <nav class="nav">
+      
+
+      
+    </nav>
+
+  </div>
+  <script src="/js/navicon-shift.js"></script>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="subtitle tags is-6 is-pulled-right">
+      
+    </div>
+    <h2 class="subtitle is-6">September 3, 2025</h2>
+    <h1 class="title">Hello, Neural Network 2! Follow the White Rabbit.</h1>
+    
+    <div class="content">
+      <p>Last time, we ended with a working naive implementation of a simple neural network. We also briefly touched on the performance difference between floats and doubles. But as you may remember, the ultimate goal is to train the network on a GPU using Vulkan Compute.</p>
+<p>In Vulkan Compute shaders (I&rsquo;ll use GLSL as the shader language), we don&rsquo;t have anything comparable to the C++ standard library. In fact, we have very little - just basic arithmetic operations and a small set of built-in functions. Because of that, we need something that make the code porting easier.</p>
+<p>As you know, GPUs are highly parallel devices, and we want to use algorithms that are embarrassingly parallelizable or at least close to that. Matrix multiplication maps well onto GPU architectures. As a preparation step, I&rsquo;ll transform the naive implementation into one that uses basic linear algebra rules. For now, it will still run on the CPU, but to make it as fast as (or even faster than) the original, I&rsquo;ll use the Eigen library, which makes extensive use of SIMD.</p>
+<p>The <em>&ldquo;Follow the White Rabbit&rdquo;</em> part in the post title is a reference to <code>The Matrix</code> movie - because we&rsquo;ll be working with matrices. Alternatively, it can also be read as a nod to Lewis Carroll&rsquo;s Alice&rsquo;s <code>Adventures in Wonderland</code>, where Alice literally follows a white rabbit into a fantastical world. Figuratively, it means to pursue an unknown clue, embark on an adventure, or explore a different reality.</p>
+<a href="#images%2f0.png">
+    <img src=images/0.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/0.png">
+  <img src=images/0.png>
+</a>
+<h2 id="lets-start-from-the-beginning">Let&rsquo;s start from the beginning</h2>
+<p>In a previous <a href="https://nikitablack.github.io/post/hello_neural_network_2_float_vs_double/">post</a>, we discovered that the data layout in <code>Neuron.cpp</code> caused a significant performance loss. The first step, therefore, is to completely remove this intermediate object. Now, the weights and biases are stored directly in the <code>Layer</code> class.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Layer</span> {
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+    <span style="color:#66d9ef">using</span> MatrixX <span style="color:#f92672">=</span> Eigen<span style="color:#f92672">::</span>Matrix<span style="color:#f92672">&lt;</span>common<span style="color:#f92672">::</span>Float, Eigen<span style="color:#f92672">::</span>Dynamic, Eigen<span style="color:#f92672">::</span>Dynamic<span style="color:#f92672">&gt;</span>;
+    <span style="color:#66d9ef">using</span> VectorX <span style="color:#f92672">=</span> Eigen<span style="color:#f92672">::</span>Matrix<span style="color:#f92672">&lt;</span>common<span style="color:#f92672">::</span>Float, Eigen<span style="color:#f92672">::</span>Dynamic, <span style="color:#ae81ff">1</span><span style="color:#f92672">&gt;</span>;
+
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+    Layer() <span style="color:#66d9ef">noexcept</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">default</span>;
+
+    Layer(size_t neuronCount, size_t inputCount) <span style="color:#66d9ef">noexcept</span>;
+
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+    <span style="color:#a6e22e">[[nodiscard]]</span> <span style="color:#66d9ef">auto</span> activate(Layer <span style="color:#66d9ef">const</span><span style="color:#f92672">&amp;</span> prevLayer,  <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>                                std<span style="color:#f92672">::</span>function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">auto</span>(common<span style="color:#f92672">::</span>Float)<span style="color:#f92672">-&gt;</span>common<span style="color:#f92672">::</span>Float<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">const</span><span style="color:#f92672">&amp;</span> activationFunction  <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>                                ) <span style="color:#66d9ef">noexcept</span> <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span>;
+
+    <span style="color:#a6e22e">[[nodiscard]]</span> <span style="color:#66d9ef">auto</span> update(Layer <span style="color:#66d9ef">const</span><span style="color:#f92672">&amp;</span> prevLayer,  <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>                              common<span style="color:#f92672">::</span>Float learningRate,  <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>                              MatrixX <span style="color:#66d9ef">const</span><span style="color:#f92672">&amp;</span> delta  <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>                              ) <span style="color:#66d9ef">noexcept</span> <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span>;
+
+    size_t <span style="color:#a6e22e">size</span>() <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">noexcept</span>;
+
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+    MatrixX weights{};
+    MatrixX biases{};
+    MatrixX values{};
+};
+</code></pre></div><p>Here, the weights form a regular rectangular matrix, while the biases and values are single-column matrices (or simply vectors). The weights always point to the previous layer.</p>
+<a href="#images%2f1.png">
+    <img src=images/1.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/1.png">
+  <img src=images/1.png>
+</a>
+<p>Let&rsquo;s see how we would calculate the values for the first hidden layer, $h0$.</p>
+<p>$$
+a^{h0}_0 = f(z^{h0}_0)
+$$</p>
+<p>$$
+a^{h0}_1 = f(z^{h0}_1)
+$$</p>
+<p>$$
+a^{h0}_2 = f(z^{h0}_2)
+$$</p>
+<p>where $f(z_i)$ is the activation function - in our case, the sigmoid.</p>
+<p>$$
+z_0^{h0} = a_0^i \cdot w_\text{0_0}^{h0} + a_1^i \cdot w_\text{0_1}^{h0} + b_0^{h0}
+$$</p>
+<p>$$
+z_1^{h0} = a_0^i \cdot w_\text{1_0}^{h0} + a_1^i \cdot w_\text{1_1}^{h0} + b_1^{h0}
+$$</p>
+<p>$$
+z_2^{h0} = a_0^i \cdot w_\text{2_0}^{h0} + a_1^i \cdot w_\text{2_1}^{h0} + b_2^{h0}
+$$</p>
+<p>Here, the superscript denotes the layer. The subscript in $a_n$ refers to the value of the $n$-th neuron, while the subscript in $w_\text{n_k}$ denotes the weight from the $n$-th neuron to the $k$-th neuron in the previous layer.</p>
+<p>Now if we look closely, we can see a pattern that looks like a matrix multiplication followed by a matrix addition. If we mark:</p>
+<p>$$
+W^{h0} =
+\begin{bmatrix}
+w_\text{0_0}^{h0} &amp; w_\text{0_1}^{h0} \\<br>
+w_\text{1_0}^{h0} &amp; w_\text{1_1}^{h0} \\<br>
+w_\text{2_0}^{h0} &amp; w_\text{2_1}^{h0}
+\end{bmatrix}
+$$</p>
+<p>$$
+A^{i} =
+\begin{bmatrix}
+a_0^{i} \\<br>
+a_1^{i}
+\end{bmatrix}
+$$</p>
+<p>$$
+B^{h0} =
+\begin{bmatrix}
+b_0^{h0} \\<br>
+b_1^{h0} \\<br>
+b_2^{h0}
+\end{bmatrix}
+$$</p>
+<p>$$
+Z^{h0} =
+\begin{bmatrix}
+z_0^{h0} \\<br>
+z_1^{h0} \\<br>
+z_2^{h0}
+\end{bmatrix}
+$$</p>
+<p>then the layer activation becomes:</p>
+<p>$$
+Z^{h0} = W^{h0} \cdot A^{i} + B^{h0}
+$$</p>
+<p>$$
+A^{h0} = f(Z^{h0})
+$$</p>
+<p>which maps perfectly onto Eigen&rsquo;s arithmetic operations:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// Layer::activate()
+</span><span style="color:#75715e"></span>values.noalias() <span style="color:#f92672">=</span> weights <span style="color:#f92672">*</span> prevLayer.values;
+values <span style="color:#f92672">+=</span> biases;
+
+values <span style="color:#f92672">=</span> values.unaryExpr(activationFunction);
+</code></pre></div><p>Now you need to do this for every layer starting from the second one (skipping the input layer), i.e., propagating the changes forward - hence the name.</p>
+<blockquote>
+<p><strong>NOTE:</strong> In the beginning, I stored weights and biases in a single matrix, with biases placed in the last column. Layer values had an additional row with a constant value of 1. With this setup, I could perform both the multiplication and the bias addition in a single operation instead of two. However, the code quickly became messy, and the extra arithmetic operations still had to be executed. For a small neural network, these operations are negligible, but for huge networks with billions of parameters, the overhead could matter. I don&rsquo;t plan to multiply matrices of that scale, but I decided to split the operations anyway for the sake of code clarity.</p>
+</blockquote>
+<h2 id="back-propagation">Back propagation</h2>
+<p>With matrix notation, the forward pass becomes trivially simple. For me, the biggest challenge was understanding how to apply a similar notation to backpropagation. As mentioned earlier, I&rsquo;m not going to explain what backpropagation is or how it works in detail. Instead, I&rsquo;ll just show it in matrix form. Personally, solving a small neural network from the image above by hand - using pen and paper - helped me much more than watching YouTube videos or asking ChatGPT for the ready solution. If you really want to follow my thinking process, and if this post collects 1,000 likes, I&rsquo;ll create a separate post explaining it step by step.</p>
+<p>After the forward pass, we have values in the output layer, which we compare against the expected results. From this, we calculate the layer&rsquo;s delta (more on that shortly) and use it to update the layer:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">auto</span> Layer<span style="color:#f92672">::</span>update(Layer <span style="color:#66d9ef">const</span><span style="color:#f92672">&amp;</span> prevLayer,  <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>                   common<span style="color:#f92672">::</span>Float learningRate,  <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>                   MatrixX <span style="color:#66d9ef">const</span><span style="color:#f92672">&amp;</span> delta  <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>                   ) <span style="color:#66d9ef">noexcept</span> <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span> {
+    <span style="color:#66d9ef">if</span> (<span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span>size_t<span style="color:#f92672">&gt;</span>(delta.rows()) <span style="color:#f92672">!=</span> size()) {
+        <span style="color:#66d9ef">return</span> false;  <span style="color:#75715e">// Mismatch in delta size
+</span><span style="color:#75715e"></span>    }
+
+    MatrixX <span style="color:#66d9ef">const</span> gradient{delta <span style="color:#f92672">*</span> prevLayer.values.transpose()};
+
+    weights <span style="color:#f92672">-=</span> learningRate <span style="color:#f92672">*</span> gradient;
+    biases <span style="color:#f92672">-=</span> learningRate <span style="color:#f92672">*</span> delta;
+
+    <span style="color:#66d9ef">return</span> true;
+}
+</code></pre></div><p>We treat weights and biases slightly differently, but this still maps perfectly onto matrix math. The same operation can be written in mathematical form as:</p>
+<p>$$
+G^n = \delta^n \cdot T(A^{n-1})
+$$</p>
+<p>where $T(A^{n-1})$ denotes the transpose of the values from the previous layer. In other words, it converts a column vector into a row vector - this is necessary to satisfy the rules of matrix multiplication.</p>
+<p>$$
+W^n = W^n - learningRate \cdot G^n
+$$</p>
+<p>$$
+B^n = B^n - learningRate \cdot \delta^n
+$$</p>
+<p>We repeat this process for every layer, starting from the last one (skipping the first layer, since it&rsquo;s the input).</p>
+<p>Calculating this $\delta^n$ is, in my opinion, the trickiest part - partly because it is computed differently for different layers. For the last layer (the one we start backpropagation with), it is calculated as:</p>
+<p>$$
+\delta_i^o = \frac{\partial \text{C}}{\partial a_i} \cdot \frac{d\sigma}{dz_i}
+$$</p>
+<p>Please refer to the <a href="https://nikitablack.github.io/post/hello_neural_network/">previous post</a> where I explained what these partial derivatives represent.</p>
+<p>For the other layers, it is calculated as:</p>
+<p>$$
+\delta^n = (T(W^n) \cdot \delta^{n+1}) \odot sigmoidDerivative(A^n)
+$$</p>
+<p>Here, $T(W^n)$ is the transpose of the weights for the $n$-th layer, $\delta^{n+1}$ is the delta from the next layer (e.g., for the second-to-last layer, it will be the delta of the last layer - $\delta^o$), $\odot$ denotes component-wise multiplication (not to be confused with standard matrix multiplication), and $sigmoidDerivative(A^n)$ is the derivative of the sigmoid function applied to each value in the layer.</p>
+<p>As you can see, a layer calculates its $\delta^n$ using the $\delta$ from another layer - hence the term <em>backpropagation</em>.</p>
+<p>I understand that this can all be complicated, and I want to emphasize once more that the goal of these posts is not to teach how backpropagation works, but to show how performance is affected by different implementation approaches.</p>
+<h2 id="results">Results</h2>
+<p>As a reminder, the naive implementation with 20 epochs, a single hidden layer, and float as the data type took 73&rsquo;071.55 ms on my machine, or roughly 3&rsquo;653 ms per epoch.</p>
+<p>The same configuration using double was actually faster - 56&rsquo;971.18 ms, or about 2&rsquo;849 ms per epoch.</p>
+<p>The new Eigen-based approach takes 30&rsquo;624.57 ms, or roughly 1&rsquo;531 ms per epoch for float, which is a significant improvement! The double data type behaves more predictably this time, taking 74&rsquo;144.21 ms, or about 3&rsquo;707 ms per epoch.</p>
+<p>But wait - we used the <code>-O3</code> compiler optimization flag, yet didn&rsquo;t specify any vectorization flags. Let&rsquo;s see what Eigen is using under the hood. I added the following code in <code>main.cpp</code> to print this information:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#if defined(EIGEN_VECTORIZE_AVX512)
+</span><span style="color:#75715e"></span>    fmt<span style="color:#f92672">::</span>println(<span style="color:#e6db74">&#34;Using AVX-512&#34;</span>);
+<span style="color:#75715e">#elif defined(EIGEN_VECTORIZE_AVX2)
+</span><span style="color:#75715e"></span>    fmt<span style="color:#f92672">::</span>println(<span style="color:#e6db74">&#34;Using AVX2&#34;</span>);
+<span style="color:#75715e">#elif defined(EIGEN_VECTORIZE_AVX)
+</span><span style="color:#75715e"></span>    fmt<span style="color:#f92672">::</span>println(<span style="color:#e6db74">&#34;Using AVX</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>);
+<span style="color:#75715e">#elif defined(EIGEN_VECTORIZE_SSE)
+</span><span style="color:#75715e"></span>    fmt<span style="color:#f92672">::</span>println(<span style="color:#e6db74">&#34;Using SSE&#34;</span>);
+<span style="color:#75715e">#else
+</span><span style="color:#75715e"></span>    fmt<span style="color:#f92672">::</span>println(<span style="color:#e6db74">&#34;No vectorization&#34;</span>);
+<span style="color:#75715e">#endif
+</span></code></pre></div><p>By default, Eigen prints <code>&quot;Using SSE&quot;</code>, which means it uses 128-bit registers. One such register can hold 4 float values or 2 double values.</p>
+<p>My CPU supports AVX2 instructions, which are 256 bits wide - meaning one register can process 8 float values or 4 double values at a time. I recompiled the project with the <code>-mavx2</code> flag, and here are the results:</p>
+<ul>
+<li>
+<p>float - 25&rsquo;830.90 ms, or ~1&rsquo;291 ms per epoch</p>
+</li>
+<li>
+<p>double - 56&rsquo;573.02 ms, or ~2&rsquo;828 ms per epoch</p>
+</li>
+</ul>
+<p>I also tried an extreme - but extremely interesting - case with a 4-layer network. It used the same input and output as before, but each of the two hidden layers had 1&rsquo;000 neurons. The naive float version took ~134&rsquo;640 ms per epoch. With <code>EIGEN_VECTORIZE_AVX2</code> and float, it now takes <em>&ldquo;only&rdquo;</em> ~88&rsquo;930 ms per epoch! Not bad.</p>
+<h2 id="summary">Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Time per Epoch (ms)</th>
+<th>Total Time per 20 Epochs (ms)</th>
+<th>Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Naive float, 1 hidden layer, 100 neurons</td>
+<td>3&rsquo;653</td>
+<td>73&rsquo;071</td>
+<td>1×</td>
+</tr>
+<tr>
+<td>Naive double, 1 hidden layer, 100 neurons</td>
+<td>2&rsquo;849</td>
+<td>56&rsquo;971</td>
+<td>1.28×</td>
+</tr>
+<tr>
+<td>Eigen float, 1 hidden layer, 100 neurons</td>
+<td>1&rsquo;531</td>
+<td>30&rsquo;625</td>
+<td>2.38×</td>
+</tr>
+<tr>
+<td>Eigen double, 1 hidden layer, 100 neurons</td>
+<td>3&rsquo;707</td>
+<td>74&rsquo;144</td>
+<td>0.99×</td>
+</tr>
+<tr>
+<td>Eigen float + AVX2, 1 hidden layer, 100 neurons</td>
+<td>1&rsquo;291</td>
+<td>25&rsquo;830</td>
+<td>2.83×</td>
+</tr>
+<tr>
+<td>Eigen double + AVX2, 1 hidden layer, 100 neurons</td>
+<td>2&rsquo;828</td>
+<td>56&rsquo;573</td>
+<td>1.29×</td>
+</tr>
+</tbody>
+</table>
+<p>Extreme case:</p>
+<table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Time per Epoch (ms)</th>
+<th>Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Naive float, 4-layer network, 1000 neurons per hidden layer</td>
+<td>134&rsquo;640</td>
+<td>1×</td>
+</tr>
+<tr>
+<td>Eigen float + AVX2, 4-layer network, 1000 neurons per hidden layer</td>
+<td>88&rsquo;930</td>
+<td>1.514×</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusion">Conclusion</h2>
+<p>Today, we achieved significant progress - we more than doubled performance by utilizing SIMD. Can we push it even further by training the network on a GPU?</p>
+<p>The project&rsquo;s source code is <a href="https://github.com/nikitablack/vulkan_neural_network/tree/main">here</a>.</p>
+<p>I am using a static generator (<code>Hugo</code>) to build this site, so there is no comment section directly here. As a personal experiment, I published a short <a href="">post on LinkedIn</a> pointing to this article. If you have a question, you can ask it there. If you want to follow for updates, you can also <a href="https://www.linkedin.com/in/nikitablack">follow me</a> there.</p>
+
+      
+      <div class="related">
+</div>
+      
+    </div>
+    
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
+    
+      <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
+    
+  </div>
+</section>
+
+
+
+</body>
+</html>
+
