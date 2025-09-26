@@ -7,10 +7,19 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <copyright>&amp;copy; &lt;a href=&#34;http://nikitablack.github.io/&#34;&gt;nikitablack&lt;/a&gt; 2021</copyright>
-    <lastBuildDate>Wed, 03 Sep 2025 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 26 Sep 2025 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="http://nikitablack.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Hello, Neural Network 3! GPU time.</title>
+      <link>http://nikitablack.github.io/post/hello_neural_network_4_vulkan/</link>
+      <pubDate>Fri, 26 Sep 2025 00:00:00 +0000</pubDate>
+      
+      <guid>http://nikitablack.github.io/post/hello_neural_network_4_vulkan/</guid>
+      <description>Today is the day we finally move training of our simple model onto the GPU. As I&amp;rsquo;ve mentioned before, I&amp;rsquo;ll be using the Vulkan API for that. The shaders - the actual programs that run on the GPU - will be written in GLSL, a simple C-like language. Vulkan is famous for its complexity and verbosity, but in return it offers an incredible amount of control. Writing GPU code is tough, and writing GPU code in Vulkan is even tougher.</description>
+    </item>
     
     <item>
       <title>Hello, Neural Network 2! Follow the White Rabbit.</title>

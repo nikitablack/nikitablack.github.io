@@ -167,8 +167,9 @@
 
 <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
     std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>Neuron<span style="color:#f92672">&gt;</span> neurons{};
+    std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>common<span style="color:#f92672">::</span>Float<span style="color:#f92672">&gt;</span> delta{};
 };
-</code></pre></div><p>It stores neurons and has two methods for updating them. In the <code>Layer::activate()</code> function, I pass the activation function as a parameter, which I added in case I want to try different functions. For now, though, I&rsquo;ll use the sigmoid:</p>
+</code></pre></div><p>It stores neurons and delta (we will meet it later) and has two methods for updating them. In the <code>Layer::activate()</code> function, I pass the activation function as a parameter, which I added in case I want to try different functions. For now, though, I&rsquo;ll use the sigmoid:</p>
 <p>$$
 \sigma(x) = \frac{1}{1 + e^{-x}}
 $$</p>
@@ -349,12 +350,11 @@ $$</p>
 </a>
 <p>As mentioned, I will not explain it today - I am not a mathematician and I’d probably get it wrong. But in the code, the main idea is to keep a list - the so-called <code>delta</code> - where the <code>delta</code> from the previous layer is used to calculate the <code>delta</code> for the current layer. With these <code>delta</code>s, we can update weights and biases. For the last layer - the output layer - the <code>delta</code> is calculated like this:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// NeuralNetwork::backward()
-</span><span style="color:#75715e"></span>std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>Float<span style="color:#f92672">&gt;</span> deltaOutput(output.size());
-<span style="color:#66d9ef">for</span> (size_t i{<span style="color:#ae81ff">0</span>}; i <span style="color:#f92672">&lt;</span> output.size(); <span style="color:#f92672">++</span>i) {
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">for</span> (size_t i{<span style="color:#ae81ff">0</span>}; i <span style="color:#f92672">&lt;</span> output.size(); <span style="color:#f92672">++</span>i) {
     Float <span style="color:#66d9ef">const</span> a{output[i]};
     Float <span style="color:#66d9ef">const</span> dCdA{<span style="color:#ae81ff">2.0</span>_F <span style="color:#f92672">*</span> (a <span style="color:#f92672">-</span> expectedOutput[i]) <span style="color:#f92672">/</span> output.size()};
     Float <span style="color:#66d9ef">const</span> dAdZ{sigmoidDerivative(a)};
-    deltaOutput[i] <span style="color:#f92672">=</span> dCdA <span style="color:#f92672">*</span> dAdZ;
+    outputLayer.delta[i] <span style="color:#f92672">=</span> dCdA <span style="color:#f92672">*</span> dAdZ;
 }
 </code></pre></div><p>where <code>dCdA</code> is the derivative of the MSE loss function with respect to the output (i.e., the final) value. Remember that the loss function and its derivative are defined like this:</p>
 <p>$$
@@ -372,7 +372,27 @@ $$</p>
 \frac{d\sigma}{dz} = \sigma(z) \big(1 - \sigma(z)\big)
 $$</p>
 <p>Here, $z_i$ is the neuron value after the inner product but before the sigmoid. Since $\sigma(z_i)$ is $a_i$, we don’t actually keep $z_i$ in memory.</p>
-<p>Once we have this <code>delta</code>, we pass it to a layer to adjust its neurons’ weights and biases:</p>
+<p>The output delta is a special one and it is calculated separately. But once we have it, we can update deltas for hiden layers:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// NeuralNetwork::backward()
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">for</span> (size_t layerInd{layers.size() <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>}; layerInd <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>; <span style="color:#f92672">--</span>layerInd) {
+    <span style="color:#66d9ef">auto</span><span style="color:#f92672">&amp;</span> layer{layers[layerInd]};
+    <span style="color:#66d9ef">auto</span> <span style="color:#66d9ef">const</span><span style="color:#f92672">&amp;</span> rightLayer{layers[layerInd <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>]};
+
+    <span style="color:#75715e">// currLayer.neurons.size == rightLayer.neurons[X].weights.size
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (size_t i{<span style="color:#ae81ff">0</span>}; i <span style="color:#f92672">&lt;</span> layer.neurons.size(); <span style="color:#f92672">++</span>i) {
+        Float deltaSum{<span style="color:#ae81ff">0.0</span>};
+
+        <span style="color:#66d9ef">for</span> (size_t j{<span style="color:#ae81ff">0</span>}; j <span style="color:#f92672">&lt;</span> rightLayer.neurons.size(); <span style="color:#f92672">++</span>j) {
+            <span style="color:#66d9ef">auto</span><span style="color:#f92672">&amp;</span> rightLayerNeuron{rightLayer.neurons[j]};
+
+            deltaSum <span style="color:#f92672">+=</span> rightLayer.delta[j] <span style="color:#f92672">*</span> rightLayerNeuron.weights[i];
+        }
+
+        layer.delta[i] <span style="color:#f92672">=</span> deltaSum <span style="color:#f92672">*</span> sigmoidDerivative(layer.neurons[i].value);
+    }
+}
+</code></pre></div><p>Here, the delta from the next layer (<code>rightLayer</code>) is provided to the currently processed layer and so on.</p>
+<p>Once we have all the deltas, we call the <code>Layer::update()</code> function to adjust its neurons’ weights and biases:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// Layer::update()
 </span><span style="color:#75715e"></span><span style="color:#66d9ef">for</span> (size_t i{<span style="color:#ae81ff">0</span>}; i <span style="color:#f92672">&lt;</span> neurons.size(); <span style="color:#f92672">++</span>i) {
     <span style="color:#66d9ef">auto</span><span style="color:#f92672">&amp;</span> currNeuron{neurons[i]};

@@ -134,6 +134,7 @@
     MatrixX weights{};
     MatrixX biases{};
     MatrixX values{};
+    MatrixX delta{};
 };
 </code></pre></div><p>Here, the weights form a regular rectangular matrix, while the biases and values are single-column matrices (or simply vectors). The weights always point to the previous layer.</p>
 <a href="#images%2f1.png">
@@ -145,6 +146,7 @@
 <a href="#_" class="lightbox" id="images/1.png">
   <img src=images/1.png>
 </a>
+<p>Delta is also a single-column matrix and stored per layer for easy access. Its values shows how much we need to adjust the weights and biases.</p>
 <p>Let&rsquo;s see how we would calculate the values for the first hidden layer, $h0$.</p>
 <p>$$
 a^{h0}_0 = f(z^{h0}_0)
@@ -218,14 +220,9 @@ values <span style="color:#f92672">=</span> values.unaryExpr(activationFunction)
 <h2 id="back-propagation">Back propagation</h2>
 <p>With matrix notation, the forward pass becomes trivially simple. For me, the biggest challenge was understanding how to apply a similar notation to backpropagation. As mentioned earlier, I&rsquo;m not going to explain what backpropagation is or how it works in detail. Instead, I&rsquo;ll just show it in matrix form. Personally, solving a small neural network from the image above by hand - using pen and paper - helped me much more than watching YouTube videos or asking ChatGPT for the ready solution. If you really want to follow my thinking process, and if this post collects 1,000 likes, I&rsquo;ll create a separate post explaining it step by step.</p>
 <p>After the forward pass, we have values in the output layer, which we compare against the expected results. From this, we calculate the layer&rsquo;s delta (more on that shortly) and use it to update the layer:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">auto</span> Layer<span style="color:#f92672">::</span>update(Layer <span style="color:#66d9ef">const</span><span style="color:#f92672">&amp;</span> prevLayer,  <span style="color:#75715e">//
-</span><span style="color:#75715e"></span>                   common<span style="color:#f92672">::</span>Float learningRate,  <span style="color:#75715e">//
-</span><span style="color:#75715e"></span>                   MatrixX <span style="color:#66d9ef">const</span><span style="color:#f92672">&amp;</span> delta  <span style="color:#75715e">//
-</span><span style="color:#75715e"></span>                   ) <span style="color:#66d9ef">noexcept</span> <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span> {
-    <span style="color:#66d9ef">if</span> (<span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span>size_t<span style="color:#f92672">&gt;</span>(delta.rows()) <span style="color:#f92672">!=</span> size()) {
-        <span style="color:#66d9ef">return</span> false;  <span style="color:#75715e">// Mismatch in delta size
-</span><span style="color:#75715e"></span>    }
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#a6e22e">[[nodiscard]]</span> <span style="color:#66d9ef">auto</span> Layer<span style="color:#f92672">::</span>update(Layer <span style="color:#66d9ef">const</span><span style="color:#f92672">&amp;</span> prevLayer,  <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>                                 common<span style="color:#f92672">::</span>Float learningRate  <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>                                 ) <span style="color:#66d9ef">noexcept</span> <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span> {
     MatrixX <span style="color:#66d9ef">const</span> gradient{delta <span style="color:#f92672">*</span> prevLayer.values.transpose()};
 
     weights <span style="color:#f92672">-=</span> learningRate <span style="color:#f92672">*</span> gradient;
@@ -252,10 +249,11 @@ $$</p>
 <p>Please refer to the <a href="https://nikitablack.github.io/post/hello_neural_network/">previous post</a> where I explained what these partial derivatives represent.</p>
 <p>For the other layers, it is calculated as:</p>
 <p>$$
-\delta^n = (T(W^n) \cdot \delta^{n+1}) \odot sigmoidDerivative(A^n)
+\delta^n = (T(W^{n+1}) \cdot \delta^{n+1}) \odot sigmoidDerivative(A^n)
 $$</p>
-<p>Here, $T(W^n)$ is the transpose of the weights for the $n$-th layer, $\delta^{n+1}$ is the delta from the next layer (e.g., for the second-to-last layer, it will be the delta of the last layer - $\delta^o$), $\odot$ denotes component-wise multiplication (not to be confused with standard matrix multiplication), and $sigmoidDerivative(A^n)$ is the derivative of the sigmoid function applied to each value in the layer.</p>
+<p>Here, $T(W^{n+1})$ is the transpose of the weights for the next layer and $\delta^{n+1}$ is the delta from the next layer (e.g., for the second-to-last layer, it will be the weight and the delta of the last layer - $W^o$ and $\delta^o$), $\odot$ denotes component-wise multiplication (not to be confused with standard matrix multiplication), and $sigmoidDerivative(A^n)$ is the derivative of the sigmoid function applied to each value in the layer.</p>
 <p>As you can see, a layer calculates its $\delta^n$ using the $\delta$ from another layer - hence the term <em>backpropagation</em>.</p>
+<p>One important thing to keep in mind is that we fist calculate the deltas for each layers and only after that update the layers.</p>
 <p>I understand that this can all be complicated, and I want to emphasize once more that the goal of these posts is not to teach how backpropagation works, but to show how performance is affected by different implementation approaches.</p>
 <h2 id="results">Results</h2>
 <p>As a reminder, the naive implementation with 20 epochs, a single hidden layer, and float as the data type took 73&rsquo;071.55 ms on my machine, or roughly 3&rsquo;653 ms per epoch.</p>

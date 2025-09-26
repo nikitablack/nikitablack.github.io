@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"  lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    }
+  };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+
+<title>Hello, Neural Network 3! GPU time. | Here should be the blog Title</title>
+
+
+
+<link href="http://nikitablack.github.io/index.xml" rel="alternate" type="application/rss+xml" title="Here should be the blog Title" />
+
+<link rel="stylesheet" href="/css/style.css"/>
+<link rel="stylesheet" href="/css/css_lightbox.css"><link rel='stylesheet' href='http://nikitablack.github.io/css/custom.css'><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="canonical" href="http://nikitablack.github.io/post/hello_neural_network_4_vulkan/">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+<section class="section">
+  <div class="container">
+    <nav id="nav-main" class="nav">
+      <div id="nav-name" class="nav-left">
+        <a id="nav-anchor" class="nav-item" href="http://nikitablack.github.io/">
+          <h1 id="nav-heading" class="title is-4">Here should be the blog Title</h1>
+        </a>
+      </div>
+      <div class="nav-right">
+        <nav id="nav-items" class="nav-item level is-mobile"><a class="level-item" aria-label="twitter" href='https://twitter.com/nikita_cherniy'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="github" href='https://github.com/nikitablack'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+    
+  </svg></i>
+            </span>
+          </a><a class="level-item" aria-label="email" href='mailto:mynameisnikitablack@gmail.com'
+            target='_blank' rel='noopener'>
+            <span class="icon">
+              <i class><svg viewbox='0 0 24 24' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' aria-hidden='true'>
+    
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+    
+  </svg></i>
+            </span>
+          </a></nav>
+      </div>
+    </nav>
+
+    <nav class="nav">
+      
+
+      
+    </nav>
+
+  </div>
+  <script src="/js/navicon-shift.js"></script>
+</section>
+<section class="section">
+  <div class="container">
+    <div class="subtitle tags is-6 is-pulled-right">
+      
+    </div>
+    <h2 class="subtitle is-6">September 26, 2025</h2>
+    <h1 class="title">Hello, Neural Network 3! GPU time.</h1>
+    
+    <div class="content">
+      <p>Today is the day we finally move training of our simple model onto the GPU. As I&rsquo;ve mentioned before, I&rsquo;ll be using the Vulkan API for that. The shaders - the actual programs that run on the GPU - will be written in GLSL, a simple C-like language. Vulkan is famous for its complexity and verbosity, but in return it offers an incredible amount of control. Writing GPU code is tough, and writing GPU code in Vulkan is even tougher. For comparison: the Eigen version of this project took just 377 lines of code (LOC), while the Vulkan version ended up at 3&rsquo;309 LOC - most of it boilerplate API calls unrelated to shaders or the neural network itself. But hey, these kinds of challenges are what make it interesting. This article will dive into technical details, so I assume the reader already knows at least the basics of Vulkan.</p>
+<p>I decided to use plain Vulkan 1.0 without any extensions. No helper libraries or frameworks - just pure, handwritten Vulkan. The current Vulkan version as of this writing is 1.4, and the API has evolved a lot since 1.0. Many features were added to make a programmer&rsquo;s life easier. But my main motivation was portability: I wanted the code to run on any device that supports Vulkan, even very old ones. That means no descriptor indexing, no new synchronization model, no <code>VK_KHR_maintenanceN</code> features, etc. The result is admittedly uglier code, but that was a deliberate decision. At least the performance remains consistent across versions.</p>
+<p>For data types, I&rsquo;m sticking to single-precision floats only. In my earlier implementations, I allowed a choice between doubles and floats, but here it&rsquo;s unnecessary. I&rsquo;m testing on a regular consumer GPU - an NVIDIA RTX A5500 Laptop GPU - and such hardware has poor double-precision throughput. Using doubles would just waste time and memory while being guaranteed to run slower than floats.</p>
+<a href="#images%2f0.png">
+    <img src=images/0.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/0.png">
+  <img src=images/0.png>
+</a>
+<h2 id="intro">Intro</h2>
+<p>The basic structure stays the same - I still use <code>Layer</code> and <code>NeuralNetwork</code> classes - but now they&rsquo;re enhanced with Vulkan-specific objects.</p>
+<p>For testing, as yoiu remember, I used a simple 3-layer neural network with 784 input neurons, 100 hidden neurons, and 10 output neurons. The diagram below shows how everything is connected. The layers are <strong>I</strong>nput, <strong>H</strong>idden, and <strong>O</strong>utput.</p>
+<p>There are two main steps: forward propagation and backward propagation. Backward propagation itself is split into two sub-phases: the gradient calculation phase and the update phase.</p>
+<a href="#images%2f1.png">
+    <img src=images/1.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/1.png">
+  <img src=images/1.png>
+</a>
+<ul>
+<li>
+<p>$A^i$ - the input, representing a hand-written digit. During training, this is the data we use to teach the network. It comes from outside the model and is never modified in our code.</p>
+</li>
+<li>
+<p>$A^h$, $W^h$, $B^h$ - the activations, weights, and biases of the hidden layer. These values are updated continuously during every iteration of each epoch.</p>
+</li>
+<li>
+<p>$\delta^o$ - the gradient of the output layer. This is also updated at every iteration of each epoch.</p>
+</li>
+<li>
+<p>$\delta^h$ - the gradient of the hidden layer. Like the others, it is updated at every iteration of each epoch.</p>
+</li>
+</ul>
+<p>The arrows and colors in the diagram are not arbitrary - they represent data dependencies. For example, to calculate $A^h$ we need $A^i$, $W^h$, and $B^h$. These dependencies are <strong>crucial</strong>, and I will show later why. Keep that diagram in mind.</p>
+<p>To store data on the GPU, I use storage buffers - buffers created with the <code>VK_BUFFER_USAGE_STORAGE_BUFFER_BIT</code> flag. Memory is allocated during the instantiation of the <code>NeuralNetwork</code> class: each layer allocates the necessary buffers, and additional buffers are allocated for the network as a whole. Memory is released manually once training is finished, the GPU is idle, and it is safe to destroy the buffers.</p>
+<p>There are four compute shaders in total, one for each corresponding step:</p>
+<ul>
+<li>
+<p><code>forward.comp</code> - computes the activations $A$ using the following formulas:</p>
+<p>$$
+Z^{n} = W^{n} \cdot A^{n-1} + B^{n}
+$$</p>
+<p>$$
+A^{n} = \sigma(Z^{n})
+$$</p>
+<p>Here, $n$ denotes the current layer being calculated, $n-1$ is the previous layer, and $\sigma()$ is the activation function - in this case, the sigmoid.</p>
+</li>
+<li>
+<p><code>delta.comp</code> - the compute shader that calculates the deltas for both the output and hidden layers:</p>
+<p>$$
+\delta_i^o = \frac{\partial \text{C}}{\partial a_i} \cdot \frac{d\sigma}{dz_i}
+$$</p>
+<p>$$
+\delta^n = (T(W^{n+1}) \cdot \delta^{n+1}) \odot sigmoidDerivative(A^n)
+$$</p>
+<p>For a refresher on the underlying formulas, see the <a href="https://nikitablack.github.io/post/hello_neural_network/">previous post</a>.</p>
+</li>
+<li>
+<p><code>update.comp</code> - the compute shader that takes the deltas and updates the weights and biases for all layers (except the input layer, of course):</p>
+<p>$$
+W^n = W^n - learningRate \cdot \delta^n \cdot T(A^{n-1})
+$$</p>
+<p>$$
+B^n = B^n - learningRate \cdot \delta^n
+$$</p>
+<p>Here, $T(A^{n-1})$ denotes the transpose of the previous layer&rsquo;s activations. Since these activations are stored as a single-row matrix (a vector), the transpose is effectively a no-op.</p>
+</li>
+</ul>
+<p>I mentioned that there are four shaders in total. The fourth shader is special, and I will explain it in more detail later.</p>
+<p>The shaders themselves are fairly straightforward. I use shared memory to store a tile of a matrix in fast memory - standard GPU optimization. The shaders are also optimized for vector operations; if you examine the formulas closely, one of the operands is a vector. I won&rsquo;t go into the details here, but the source code is linked at the end of the post.</p>
+<p>Next, let&rsquo;s recall how the input data is organized. The <code>MNIST</code> dataset consists of the following parts:</p>
+<ul>
+<li>60&rsquo;000 training images, or <em>batches</em>.</li>
+<li>60&rsquo;000 training targets - that is, each image has a corresponding <em>&ldquo;correct&rdquo;</em> label, a single number (for example, 5).</li>
+<li>20&rsquo;000 test images.</li>
+<li>20&rsquo;000 test targets.</li>
+</ul>
+<p>This means that for training, we perform the same steps 60&rsquo;000 times per epoch, and we have multiple epochs. For my timing measurements, I used 20 epochs.</p>
+<p>With all this information, I began the implementation.</p>
+<h2 id="denial">Denial</h2>
+<p>In my first attempt, I tried to replicate the approach used in the Eigen implementation. The algorithm can be summarized in the following pseudo-code:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">for</span> every epoch
+    <span style="color:#66d9ef">for</span> every batch
+        allocate command buffer
+        upload input batch to the GPU
+        upload target to the GPU
+        forward()
+        bachward()
+        submit()
+        queue wait idle
+        free command buffer
+
+    shuffle batches
+
+forward()
+    <span style="color:#66d9ef">for</span> each layer except input
+        activate layer
+
+backward()
+    calculate output delta
+
+    <span style="color:#66d9ef">for</span> each hidden layer
+        calculate hidden delta
+
+    <span style="color:#66d9ef">for</span> each layer except input
+        update layer
+</code></pre></div><p>Now, let&rsquo;s get more Vulkan-specific. For each batch, I allocated a command buffer. The input and target buffers I made host-visible - primarily to avoid unnecessary copies, since these buffers are short-lived.</p>
+<p>I was a bit lazy when it came to descriptor sets, so I created a single set with five <code>VK_DESCRIPTOR_TYPE_STORAGE_BUFFER</code> bindings - enough to hold the necessary amount of buffers for a shader. Some shaders use all the bindings, while others use only a subset.</p>
+<p>By the way, in GLSL it&rsquo;s possible to do the following:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-glsl" data-lang="glsl">layout(set <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, binding <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>) readonly buffer ExpectedOutput
+{
+    <span style="color:#75715e">// used only by output layer</span>
+    <span style="color:#66d9ef">float</span> expectedOutput[]; <span style="color:#75715e">// neuronCount x 1</span>
+};
+
+<span style="color:#75715e">// uses the same binding slot. Depending on dispatch either this or the other will be bound</span>
+layout(set <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, binding <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>) readonly buffer NeighbourDelta
+{
+    <span style="color:#75715e">// used only by hidden layer</span>
+    <span style="color:#66d9ef">float</span> neighbourDelta[]; <span style="color:#75715e">// neighbourLayerNeuronCount x 1</span>
+};
+</code></pre></div><p>That is, you can bind different data to the same slot. Here, I&rsquo;m using lists of floats, but it could be completely different data types. I applied this in the <code>delta.comp</code> shader, which calculates both output and hidden deltas. Depending on the step, I updated the descriptor set at slot 2 with the appropriate data.</p>
+<p>To calculate the output delta, I need the target expanded into an array. Recall that a batch target is just a single number, but for the calculations, I need a list equal in size to the output layer. For example, if the target value is 5 and the output layer has 10 neurons, the expanded list looks like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">[<span style="color:#ae81ff">0.0f</span>, <span style="color:#ae81ff">0.0f</span>, <span style="color:#ae81ff">0.0f</span>, <span style="color:#ae81ff">0.0f</span>, <span style="color:#ae81ff">0.0f</span>, <span style="color:#ae81ff">1.0f</span>, <span style="color:#ae81ff">0.0f</span>, <span style="color:#ae81ff">0.0f</span>, <span style="color:#ae81ff">0.0f</span>, <span style="color:#ae81ff">0.0f</span>]
+</code></pre></div><ul>
+<li>that is, an array of size 10 with the fifth element set to 1. As in previous implementations, I expanded this on the CPU and uploaded it to a host-visible buffer.</li>
+</ul>
+<p>The <code>forward()</code> and <code>backward()</code> steps updated the corresponding descriptor sets, added the necessary memory barriers, and recorded the dispatch calls into the command buffer. Then I submitted everything, waited for the GPU to finish processing the batch, and proceeded to the next batch - repeating this 60&rsquo;000 times per epoch.</p>
+<p>For reference, the best Eigen implementation using <code>AVX2</code> instructions takes on average 1&rsquo;291 ms per epoch on my machine. After compiling the Vulkan code and verifying correctness, I ran it - and it took&hellip; ~5&rsquo;500 ms per epoch. Wait, what? The GPU is slower? I reran it several times, confirmed that the NVIDIA GPU was selected, and still got 5&rsquo;500 ms. I went to bed very sad and unsatisfied.</p>
+<h4 id="a-note-on-how-i-check-correctness">A note on how I check correctness</h4>
+<p>For Vulkan API usage, I always test with validation layers. They are a lifesaver and, in my opinion, a strict requirement when developing a Vulkan application. Yes, they are slow - especially noticeable when making thousands of calls inside a 60&rsquo;000-iteration loop. Sometimes they are so slow that I had to reduce the number of iterations. But having an application run without a single warning is a goal for me.</p>
+<p>To verify the correctness of the algorithm, I compare the results of each step with my previous implementations - naive and Eigen. I use a random number generator with identical seeds to ensure reproducibility. As the algorithm runs, small differences accumulate due to floating-point non-associativity, and after 60&rsquo;000 iterations the numbers diverge significantly. However, the first iterations are sufficient to check if the results are matching, since each iteration applies the same calculations repeatedly. Final tests using the test dataset confirm that the results are identical.</p>
+<h4 id="a-note-on-how-i-debug-gpu-code">A note on how I debug GPU code</h4>
+<p>For this program, I didn&rsquo;t need complex debugging. Usually, for more complicated shaders, I use RenderDoc - it allows capturing Vulkan calls via the RenderDoc API and supports debugging compute shaders, including selecting specific workgroups and threads for step-by-step inspection.</p>
+<p>However, since my shaders are relatively simple, I relied on the good old <code>printf</code>, together with the <code>GL_EXT_debug_printf</code> extension. It works out of the box when you launch the vkconfig tool - you just need to enable the corresponding checkbox.</p>
+<h2 id="anger">Anger</h2>
+<p>Waiting for the queue to become idle is definitely a bad idea, since it stalls the CPU. Could this be bad enough to completely ruin my performance? After all, I&rsquo;m calling it 60&rsquo;000 times per epoch, so there&rsquo;s obviously some overhead.</p>
+<p>I decided to implement a technique we commonly use in graphics: multiple frames in flight. This allows the CPU to continue working while the GPU is busy. I assume you&rsquo;re familiar with the concept, so I won&rsquo;t go into details.</p>
+<p>My approach was straightforward: instead of using a single instance of the descriptor sets and host-visible buffers, I created N instances, where N is the number of frames in flight. In graphics, this is usually 2 or 3, but for compute I could use any number - even 50. I also created N fences to ensure synchronization when necessary.</p>
+<p>After making all the adjustments and setting N to 10, I ran the code&hellip; 5&rsquo;000 ms. Sligtly faster then before, but still bad. Hmm, maybe 10 frames isn&rsquo;t enough. How about 50? Still 5&rsquo;000 ms. I&rsquo;m cursed.</p>
+<h2 id="depression">Depression</h2>
+<p>Ok, I decided to optimize aggressively. Why do I need to synchronize in the first place? If you looked at the pseudo-code, you might have noticed these lines:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">upload input batch to the GPU
+upload target to the GPU
+</code></pre></div><p>Why upload data every batch? CPU-GPU communication is slow. Instead, I can upload all 60&rsquo;000 input batches and their corresponding targets just once. It&rsquo;s not that much data-the full input is approximately 180 MB, and the target data is only 2.3 MB. Even older devices can handle this easily.</p>
+<p>But wait, there&rsquo;s this line in the pseudo-code that&rsquo;s called once per epoch:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">shuffle batches
+</code></pre></div><p>What&rsquo;s that for? Well, it&rsquo;s good practice to shuffle the input data between epochs. I can&rsquo;t explain exactly why, but the textbooks recommend it.</p>
+<p>Of course, shuffling the input alone doesn&rsquo;t make sense, since each input entry has a corresponding target. How can we shuffle both while keeping them aligned? I solve this with a batch indices list. At the start of training, it contains the integers 0 through 59&rsquo;999: <code>[0, 1, 2, 3, ...]</code>.</p>
+<p>When reading the input data, I use the current index from this list to sample both input and target. After an epoch, I shuffle the indices list. For example, it might become <code>[5365, 897, 56147, ...]</code>, so the first batch in the next epoch samples the 5&rsquo;365th input and target, and so on.</p>
+<p>To make this work efficiently on the GPU, I modified the code as follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">upload input batch to the GPU
+upload target to the GPU
+
+<span style="color:#66d9ef">for</span> every epoch
+    upload shuffled batch indices to the GPU
+    reset batch index
+    allocate command buffer
+
+    <span style="color:#66d9ef">for</span> every batch
+        updateBatchIndex()
+        forward()
+        bachward()
+        submit()
+        
+    free command buffer
+    shuffle batches
+</code></pre></div><p>Here, I removed the CPU-GPU communication from the long loop: the input data is now uploaded only once, and the shuffled indices are uploaded once per epoch. There&rsquo;s probably a way to shuffle them entirely on the GPU, but I haven&rsquo;t explored that.</p>
+<p>Additionally, I added a new <code>updateBatchIndex()</code> function. Since almost everything now runs on the GPU, I needed a way to provide the correct batch index for each iteration. The complete compute shader for this function is as follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-glsl" data-lang="glsl"><span style="color:#75715e">#version 450</span>
+
+layout (local_size_x <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, local_size_y <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, local_size_z <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">in</span>;
+
+layout (set <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, binding <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>) buffer BatchIndex {
+    uint currBatchIndex[]; <span style="color:#75715e">// 0 - counter, 1 - current index</span>
+};
+
+layout(set <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, binding <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) readonly buffer BatchIndices
+{
+    uint batchIndices[];
+};
+
+<span style="color:#66d9ef">void</span> main() {
+    uint idx <span style="color:#f92672">=</span> currBatchIndex[<span style="color:#ae81ff">0</span>];
+    currBatchIndex[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> batchIndices[idx];
+
+    currBatchIndex[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>;
+}
+</code></pre></div><p><code>batchIndices</code> is our shuffled list of indices, e.g., <code>[5365, 897, 56147, ...]</code>. It is stored as a two-element array, where the first element is a counter and the second is the batch index. Here&rsquo;s how it works:</p>
+<ul>
+<li>
+<p>At the start of each epoch, I upload <code>batchIndices</code> to the GPU and reset <code>currBatchIndex</code> to <code>[0, 0]</code>.</p>
+</li>
+<li>
+<p>For every batch, I call <code>vkCmdDispatch(commandBuffer, 1, 1, 1)</code>, i.e., a single-thread compute shader. I know this wastes some threads in a subgroup, but the overhead is negligible compared to CPU-GPU transfers.</p>
+</li>
+<li>
+<p>Each call to this shader reads the corresponding batch index. In our example, the first call has <code>counter = 0</code>, which points to <code>batchIndices[0] = 5365</code>.</p>
+</li>
+<li>
+<p>Each call also increments the counter. After the first call, the counter becomes 1, so the next call reads <code>batchIndices[1] = 897</code>, and so on.</p>
+</li>
+</ul>
+<p>This is the fourth shader I mentioned earlier.</p>
+<p>I also adjusted all the other shaders to use this new batch index and updated the necessary memory barriers.</p>
+<p>The attentive reader may have already noticed something: why am I recording commands to the command buffer 60&rsquo;000 times per epoch if nothing changes between iterations? There&rsquo;s absolutely no need to do that.</p>
+<p>Instead, I can record a small command buffer once and replay it 60&rsquo;000 times. To allow a command buffer to be used simultaneously, it must be created with the <code>VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT</code> flag. Other than that, no special steps are required - it&rsquo;s perfectly legal in Vulkan.</p>
+<p>With this optimization, the pseudo-code simplifies to:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">upload input batch to the GPU
+upload target to the GPU
+record command buffer
+
+<span style="color:#66d9ef">for</span> every epoch
+    upload shuffled batch indices to the GPU
+    reset batch index
+
+    <span style="color:#66d9ef">for</span> every batch
+        submit()
+
+    shuffle batches
+
+free command buffer
+</code></pre></div><p>I was already anticipating victory. I compiled and ran the code&hellip; 5&rsquo;000 ms.</p>
+<a href="#images%2f2.jpg">
+    <img src=images/2.jpg class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/2.jpg">
+  <img src=images/2.jpg>
+</a>
+<h2 id="bargaining">Bargaining</h2>
+<p>Previously, I mentioned that my shaders are trivial. That&rsquo;s true - they are relatively small, and I&rsquo;m not doing anything particularly complex. But maybe I&rsquo;m wrong? I decided to measure shader performance.</p>
+<p>Measuring performance in Vulkan isn&rsquo;t straightforward. Wrapping a <code>vkCmdDispatch()</code> call with a CPU timer doesn&rsquo;t make sense, because this call merely records a command in the command buffer - it doesn&rsquo;t execute it immediately on the GPU. There are vendor-specific profiling tools, but this time I chose to use timestamp queries.</p>
+<p>With timestamp queries, you insert a start query, record your commands, insert a stop query, and later read the results. The difference between the two timestamps gives you the GPU execution time. In pseudo-code, it looks like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vkCmdWriteTimestamp()
+vkCmdDispatch()
+vkCmdWriteTimestamp()
+</code></pre></div><p>It looks simple and should work, right? Right? As it turned out - no. Timestamp queries have limited resolution, and if the start and stop queries are too close, the GPU can write incorrect values. It took me a while to figure this out. Previously, a shader reported 0.05 ms, which doesn&rsquo;t seem like much - but multiplied by 60&rsquo;000, that&rsquo;s 3&rsquo;000 ms for a single shader. And remember, I have multiple layers running multiple shaders.</p>
+<p>The solution is straightforward: instead of measuring a single dispatch, I measured 10&rsquo;000 dispatches of the same shader:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vkCmdWriteTimestamp()
+
+<span style="color:#66d9ef">for</span> <span style="color:#ae81ff">0</span> to <span style="color:#ae81ff">1000</span>
+    vkCmdDispatch()
+
+vkCmdWriteTimestamp()
+</code></pre></div><p>This approach actually worked. Using it, I measured the three main shaders, and here are the results. Recall that my network has three layers - input (784), hidden (100), and output (10). Since the input layer does not participate in calculations, there are six shader calls per batch (I did not measure the batch index update shader).</p>
+<p>Here are the measured times on my device:</p>
+<table>
+<thead>
+<tr>
+<th>Shader</th>
+<th>Hidden layer (100)</th>
+<th>Output layer (10)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>forward.comp</td>
+<td>0,000762982 ms</td>
+<td>0,000166298 ms</td>
+</tr>
+<tr>
+<td>delta.comp</td>
+<td>0,000169882 ms</td>
+<td>0,000167731 ms</td>
+</tr>
+<tr>
+<td>update.comp</td>
+<td>0,001256346 ms</td>
+<td>0,000171213 ms</td>
+</tr>
+</tbody>
+</table>
+<p>For 60&rsquo;000 calls, this corresponds to approximately 161.649 ms total (one hundred sixty one milliseconds).</p>
+<p>So the problem isn&rsquo;t the shaders - as expected, the GPU handles computation very quickly. Looking at pure computation, it actually outperforms the Eigen version by an order of magnitude. Sure, there&rsquo;s room for improvement: fine-tuning the shaders themselves, adjusting the number of workgroups and threads for my machine, and so on. But even if I doubled the shader performance, it wouldn&rsquo;t make the overall code faster. Clearly, there&rsquo;s something else causing the slowdown&hellip;</p>
+<h2 id="acceptance">Acceptance</h2>
+<p>To understand what&rsquo;s really happening, let&rsquo;s revisit the diagram I shared earlier. I&rsquo;ll drop it here again for reference:</p>
+<a href="#images%2f1.png">
+    <img src=images/1.png class="thumbnail">
+</a>
+</br>
+  
+
+<a href="#_" class="lightbox" id="images/1.png">
+  <img src=images/1.png>
+</a>
+<p>Let&rsquo;s examine the forward pass in our three-layer network. To calculate the values for a batch, we need the layer&rsquo;s weights and biases as well as the activations from the previous layer. This means the output layer <strong>must wait</strong> until the hidden layer has fully completed its computations.</p>
+<p>Moreover, the weights and biases are updated during the backpropagation phase. As a result, the forward pass for the next batch cannot begin until the previous batch is fully processed. The other phases follow a similar pattern.</p>
+<p>In other words, the computational pipeline is fully serial - no phase can run in parallel with another. This also implies that if some layers are small (for example, the output layer with only 10 neurons), the GPU will be mostly idle during that phase.</p>
+<p>But the most crucial aspect is memory. GPUs have a multi-layer memory hierarchy: global &ldquo;big&rdquo; memory, L2 cache, and multiple L1 caches. Unlike CPUs, these memories are not coherent - if one thread writes a value, there is no guarantee that another thread (on a different compute unit) will see the updated value. It is the programmer&rsquo;s responsibility to ensure that writes are visible and reads see the latest data.</p>
+<p>In Vulkan, this is handled with memory barriers. For example, when the hidden layer writes its activations and the output layer reads them, a barrier must be placed between these steps. Similarly, to guarantee that the latest weights and biases are read, a barrier must be added before using them.</p>
+<p>It&rsquo;s well known that barriers are slow - the official Vulkan specification even mentions this and provides recommendations. But I didn&rsquo;t expect them to be this slow. In fact, if I remove all barriers in my application, the epoch time drops to roughly ~3&rsquo;200 ms. Of course, the results are completely incorrect, but this clearly demonstrates the performance impact that barriers have.</p>
+<p>Can we do something about that? Actually, not really. We can optimize barrier usage - try to combine multiple barriers into a single call or find steps that can be overlapped - but this won&rsquo;t change the overall picture.</p>
+<p>Then why does everyone use GPUs for training? As we&rsquo;ve seen, raw compute power is much higher on GPUs than on CPUs. My tests were on a laptop, where the CPU is comparable to a desktop, while the GPU is smaller, more energy-efficient, and slower than a desktop variant. The key factor, however, is the network size. With this tiny neural network, there&rsquo;s not much work to do, and the GPU spends most of its time idle.</p>
+<p>Previously, I tested an &ldquo;extreme case&rdquo; - a neural network with four layers: 784, 1000, 1000, 10. The best result so far with the <code>AVX2</code> Eigen version was 88&rsquo;930 ms per epoch. I&rsquo;m happy to report that the Vulkan version outperforms it at 21&rsquo;112 ms per epoch - roughly four times faster. With a larger workload, the GPU stays busy almost all the time. Sure, there are still memory transfer bottlenecks, but their relative impact decreases as the data size increases. And the larger the network, the greater the performance gap between CPU and GPU.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Today we learned that the CPU can actually be faster for small neural networks. However, in the era of big data, the GPU reigns supreme. With Vulkan, we can train and run inference on neural networks efficiently across a wide range of platforms - from small devices like a Raspberry Pi to servers with AMD GPUs. Using C++ and Vulkan makes it easier to develop truly cross-platform code.</p>
+<p>The project&rsquo;s source code is <a href="https://github.com/nikitablack/vulkan_neural_network/tree/main">here</a>.</p>
+<p>I am using a static generator (<code>Hugo</code>) to build this site, so there is no comment section directly here. As a personal experiment, I published a short <a href="">post on LinkedIn</a> pointing to this article. If you have a question, you can ask it there. If you want to follow for updates, you can also <a href="https://www.linkedin.com/in/nikitablack">follow me</a> there.</p>
+
+      
+      <div class="related">
+</div>
+      
+    </div>
+    
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>If you like what I do you can <a href="https://www.buymeacoffee.com/nikitablack">buy me a coffee</a> &copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</p>
+    
+      <p>Powered by <a href="https://gohugo.io/">Hugo</a> &amp; <a href="https://github.com/ribice/kiss">Kiss</a>.</p>
+    
+  </div>
+</section>
+
+
+
+</body>
+</html>
+
