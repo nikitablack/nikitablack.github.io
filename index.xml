@@ -1,12 +1,12 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Here should be the blog Title</title>
+    <title>Notes from the GPU</title>
     <link>http://nikitablack.github.io/</link>
-    <description>Recent content on Here should be the blog Title</description>
+    <description>Recent content on Notes from the GPU</description>
     <generator>Hugo - gohugo.io</generator>
     <language>en</language>
     <contact>mynameisnikitablack@gmail.com</contact>
-    <copyright>&copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2021</copyright>
+    <copyright>&copy; <a href="http://nikitablack.github.io/">nikitablack</a> 2026</copyright>
     
         <atom:link href="http://nikitablack.github.io/index.xml" rel="self" type="application/rss+xml" />
     
@@ -14,7 +14,7 @@
     <item>
       <title>Posts</title>
       <link>http://nikitablack.github.io/post/</link>
-      <pubDate>Fri, 26 Sep 2025 00:00:00 +0000</pubDate>
+      <pubDate>Mon, 08 Jun 2026 00:00:00 +0000</pubDate>
       <author>nikitablack</author>
       <guid>http://nikitablack.github.io/post/</guid>
       <description></description>
